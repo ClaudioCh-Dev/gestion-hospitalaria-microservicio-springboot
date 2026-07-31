@@ -64,10 +64,36 @@ public class PatientServiceImpl implements IPatientService {
                 .orElseThrow(() -> new RuntimeException("Patient not found with id: " + id));
 
         // Actualizar campos permitidos desde el request (Record)
-        existingPatient.setFirstName(request.firstName());
-        existingPatient.setLastName(request.lastName());
-        existingPatient.setDocumentNumber(request.documentNumber());
-        // TODO: Agrega aquí los demás campos que contenga tu PatientRequest
+        if(request.firstName() != null) {
+            existingPatient.setFirstName(request.firstName());
+        }
+        if(request.lastName() != null) {
+            existingPatient.setLastName(request.lastName());
+        }
+        if(request.documentNumber() != null) {
+            existingPatient.setDocumentNumber(request.documentNumber());
+        }
+        if(request.phone() != null) {
+            existingPatient.setPhone(request.phone());
+        }
+        if(request.email() != null) {
+            existingPatient.setEmail(request.email());
+        }
+        if(request.address() != null) {
+            existingPatient.setAddress(request.address());
+        }
+        if(request.bloodType() != null) {
+            existingPatient.setBloodType(request.bloodType());
+        }
+        if(request.allergies() != null) {
+            existingPatient.setAllergies(request.allergies());
+        }
+        if(request.birthDate() != null) {
+            existingPatient.setBirthDate(request.birthDate());
+        }
+        if(request.gender() != null) {
+            existingPatient.setGender(request.gender());
+        }
 
         Patient updatedPatient = patientRepository.save(existingPatient);
         return mapToResponse(updatedPatient);
@@ -111,7 +137,14 @@ public class PatientServiceImpl implements IPatientService {
         patient.setFirstName(request.firstName());
         patient.setLastName(request.lastName());
         patient.setDocumentNumber(request.documentNumber());
-        // TODO: Mapea el resto de propiedades según los campos que tengas en PatientRequest
+        patient.setBirthDate(request.birthDate());
+        patient.setGender(request.gender());
+        patient.setPhone(request.phone());
+        patient.setEmail(request.email());
+        patient.setAddress(request.address());
+        patient.setBloodType(request.bloodType());
+        patient.setAllergies(request.allergies());
+
         return patient;
     }
 }

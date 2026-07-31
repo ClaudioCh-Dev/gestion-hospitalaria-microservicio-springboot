@@ -9,7 +9,7 @@ services:
     container_name: db-hospital
     restart: always
     volumes:
-      - ./sql/create_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./sql/create-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./sql/data.sql:/docker-entrypoint-initdb.d/02-data.sql
     environment:
       POSTGRES_DB: hospital_db
@@ -158,3 +158,14 @@ services:
       OTLP_TRACING_URL: http://otel-collector:4318/v1/traces
       OTLP_LOGGING_URL: http://otel-collector:4318/v1/logs
       OTLP_METRICS_URL: http://otel-collector:4318/v1/metrics
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: always
+    depends_on:
+      - kafka
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: hospital-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-hospital:29092
