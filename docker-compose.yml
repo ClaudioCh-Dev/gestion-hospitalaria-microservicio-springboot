@@ -143,6 +143,8 @@ services:
       dockerfile: Dockerfile
     container_name: ms-patient
     restart: always
+    ports:
+      - "8081:8081"
     depends_on:
       - ms-config-server
       - ms-registry-server
