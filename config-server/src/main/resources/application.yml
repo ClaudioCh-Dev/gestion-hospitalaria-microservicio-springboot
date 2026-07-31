@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${CONFIG_GIT_URI:https://github.com/ClaudioCh-Dev/config-gestion-hospitalaria.git}
+          default-label: main
+          clone-on-start: true
+          username: ${CONFIG_GIT_USERNAME:ClaudioCh-Dev}
+          password: ${CONFIG_GIT_TOKEN}
+
+server:
+  port: 7777
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
