@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: auth-server
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
+  datasource:
+    url: jdbc:h2:mem:users;
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+server:
+  port: 3000
+  servlet:
+    context-path: /auth-server
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}

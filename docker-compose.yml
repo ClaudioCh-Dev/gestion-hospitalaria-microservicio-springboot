@@ -18,16 +18,16 @@ services:
     ports:
       - '5434:5432'
 
-  mongo-db:
-    image: mongo:7.0.5-rc0
-    container_name: mongo-hospital
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: sa
-      MONGO_INITDB_ROOT_PASSWORD: sa
-      MONGO_INITDB_DATABASE: medical_records
-    ports:
-      - '27017:27017'
+#  mongo-db:
+#    image: mongo:7.0.5-rc0
+#    container_name: mongo-hospital
+#    restart: always
+#    environment:
+#      MONGO_INITDB_ROOT_USERNAME: sa
+#      MONGO_INITDB_ROOT_PASSWORD: sa
+#      MONGO_INITDB_DATABASE: medical_records
+#    ports:
+#      - '27017:27017'
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.3
@@ -59,55 +59,55 @@ services:
   # =================== OBSERVABILIDAD ===================
   # (idéntico a tu proyecto de referencia)
 
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.82.0
-    restart: always
-    container_name: otel-collector
-    command: ["--config=/etc/otelcol-contrib/otel-collector.yml"]
-    volumes:
-      - ./metric_files/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
-    ports:
-      - "4317:4317"
-      - "4318:4318"
-    depends_on:
-      - jaeger-all-in-one
+#  otel-collector:
+#    image: otel/opentelemetry-collector-contrib:0.82.0
+#    restart: always
+#    container_name: otel-collector
+#    command: ["--config=/etc/otelcol-contrib/otel-collector.yml"]
+#    volumes:
+#      - ./metric_files/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
+#    ports:
+#      - "4317:4317"
+#      - "4318:4318"
+#    depends_on:
+#      - jaeger-all-in-one
 
-  prometheus:
-    container_name: prometheus
-    image: prom/prometheus
-    command: ["--config.file=/etc/prometheus/prometheus.yml"]
-    volumes:
-      - ./metric_files/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
+#  prometheus:
+#    container_name: prometheus
+#    image: prom/prometheus
+#    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+#    volumes:
+#      - ./metric_files/prometheus.yml:/etc/prometheus/prometheus.yml
+#    ports:
+#      - "9090:9090"
 
-  loki:
-    image: grafana/loki:latest
-    command: -config.file=/etc/loki/local-config.yaml
-    ports:
-      - "3100:3100"
+#  loki:
+#    image: grafana/loki:latest
+#    command: -config.file=/etc/loki/local-config.yaml
+#    ports:
+#      - "3100:3100"
 
-  tempo:
-    image: grafana/tempo:latest
-    command: ["-config.file=/etc/tempo.yml"]
-    volumes:
-      - ./metric_files/tempo.yml:/etc/tempo.yml
-    ports:
-      - "3200:3200"
+#  tempo:
+#    image: grafana/tempo:latest
+#    command: ["-config.file=/etc/tempo.yml"]
+#    volumes:
+#      - ./metric_files/tempo.yml:/etc/tempo.yml
+#    ports:
+#      - "3200:3200"
 
-  grafana:
-    container_name: grafana
-    image: grafana/grafana
-    volumes:
-      - ./metric_files/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
-    ports:
-      - "3001:3000"
+#  grafana:
+#    container_name: grafana 
+#    image: grafana/grafana
+#    volumes:
+#      - ./metric_files/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+#    ports:
+#      - "3001:3000"
 
-  jaeger-all-in-one:
-    image: jaegertracing/all-in-one:latest
-    restart: always
-    ports:
-      - "16686:16686"
+#  jaeger-all-in-one:
+#    image: jaegertracing/all-in-one:latest
+#    restart: always
+#    ports:
+#      - "16686:16686"
 
   ms-registry-server:
     image: ms-hospital-registry:latest
@@ -150,7 +150,7 @@ services:
       - ms-registry-server
       - db
       - kafka
-      - otel-collector
+#      - otel-collector
     environment:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_SERVER_HOST: http://ms-config-server:7777
@@ -169,3 +169,31 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: hospital-kafka
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-hospital:29092
+  ms-gateway:
+    image: ms-gateway:latest
+    container_name: ms-gateway
+    restart: always
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "4040:4040"
+    depends_on:
+      - ms-registry-server
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      AUTH_VALIDATE_URI: http://ms-auth-server:3000/auth-server/auth/jwt
+  auth-server:
+    image: ms-auth-server:latest
+    build:
+      context: ./auth-server
+      dockerfile: Dockerfile
+    container_name: auth-server
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ms-registry-server
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      CONFIG_SERVER_HOST: http://ms-config-server:7777
