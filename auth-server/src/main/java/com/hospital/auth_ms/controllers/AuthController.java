@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hospital.auth_ms.dtos.ClainsDto;
+import com.hospital.auth_ms.dtos.ClaimsDto;
 import com.hospital.auth_ms.dtos.UserDto;
 import com.hospital.auth_ms.dtos.TokenDto;
 import com.hospital.auth_ms.services.AuthService;
@@ -25,9 +25,10 @@ public class AuthController {
     public ResponseEntity<TokenDto> jwtCreate(@RequestBody UserDto user) {
         return ResponseEntity.ok(this.authService.login(user));
     }
-    
-    @PostMapping("/jwt")
-    public ResponseEntity<ClainsDto> jwtValidate(@RequestHeader String accessToken) {
+
+    @PostMapping("/validate-jwt")
+    public ResponseEntity<ClaimsDto> jwtValidate(
+            @RequestHeader(value = "access-token") String accessToken) {
         return ResponseEntity.ok(this.authService.validateToken(accessToken));
     }
 }

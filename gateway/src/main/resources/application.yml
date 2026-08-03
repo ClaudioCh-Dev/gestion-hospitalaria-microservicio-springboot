@@ -3,7 +3,6 @@ spring:
     name: gateway
   profiles:
     default: oauth2   # o eureka-on-cb, eureka-on, eureka-off
-
 server:
   port: 4040
 
@@ -11,4 +10,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
-  fetch-registry: true
+    fetch-registry: true
+
+gateway:
+  auth:
+    validate-uri: ${AUTH_VALIDATE_URI}
+  

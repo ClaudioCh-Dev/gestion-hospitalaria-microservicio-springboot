@@ -182,7 +182,7 @@ services:
       - ms-registry-server
     environment:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
-      AUTH_VALIDATE_URI: http://ms-auth-server:3000/auth-server/auth/jwt
+      AUTH_VALIDATE_URI: http://auth-server:3000/auth-server/auth/validate-jwt
   auth-server:
     image: ms-auth-server:latest
     build:

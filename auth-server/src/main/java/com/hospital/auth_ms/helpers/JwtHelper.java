@@ -11,7 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.hospital.auth_ms.dtos.ClainsDto;
+import com.hospital.auth_ms.dtos.ClaimsDto;
+import com.hospital.auth_ms.exceptions.InvalidTokenException;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -26,7 +27,7 @@ public class JwtHelper {
     @Value("${application.jwt.secret}")
     private String jwtSecret;
 
-    public String createToken(ClainsDto claims) {
+    public String createToken(ClaimsDto claims) {
         final var now = new Date();
         var expirationDate = new Date(now.getTime() + 3600 * 1000);
         return Jwts.builder()
@@ -61,7 +62,7 @@ public class JwtHelper {
             return !isTokenExpired(token);
         } catch (Exception e) {
             log.error("Invalid JWT token: {}", e.getMessage());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid JWT token");
+            throw new InvalidTokenException();
         }
     }
 
