@@ -102,8 +102,6 @@ public class AuthFilter implements GatewayFilter {
 
         String token = chunks[1];
 
-        log.info("Token extraído: {}", token);
-
 
         log.info("Token recibido longitud: {}", token.length());
 
