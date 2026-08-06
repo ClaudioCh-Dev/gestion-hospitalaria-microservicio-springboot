@@ -1,4 +1,3 @@
-```markdown
 # 🏥 Sistema de Gestión Hospitalaria — Microservicios
 
 <p align="center">
@@ -130,5 +129,3 @@ Próximas etapas:
 - [ ] Observabilidad completa
 - [ ] Dockerización
 - [ ] Despliegue en Kubernetes
-
-```
