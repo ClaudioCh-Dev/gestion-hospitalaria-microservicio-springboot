@@ -1,0 +1,109 @@
+# Configuración del servidor HTTP interno de Tempo
+server:
+  # Puerto donde Tempo expone su API HTTP
+  # Grafana usa este puerto para consultar trazas
+  http_listen_port: 3200
+
+
+# Recibe las trazas que vienen de tus aplicaciones
+# (Spring Boot, Node, etc.)
+distributor:
+  receivers:
+
+    # OpenTelemetry Protocol (OTLP)
+    # Este es el más usado actualmente
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+
+# Servicio que recibe los bloques de trazas
+# y los prepara para almacenarlos
+ingester:
+  # Cada cuánto tiempo crea un bloque nuevo de trazas
+  # En este caso cada 5 minutos
+  max_block_duration: 5m
+
+
+
+# Servicio que compacta bloques antiguos
+# Une archivos pequeños de trazas para optimizar espacio
+compactor:
+  compaction:
+
+    # Tiempo que Tempo conserva las trazas
+    # Después de 1 hora puede eliminarlas
+    block_retention: 1h
+
+
+
+# Generador de métricas a partir de trazas
+# Ejemplo:
+# "cuántas llamadas hubo entre microservicios"
+metrics_generator:
+
+  registry:
+    # Etiquetas que se agregan a las métricas
+    external_labels:
+      source: tempo
+      cluster: docker-compose
+
+
+  storage:
+    # Lugar donde guarda temporalmente métricas generadas
+    path: /tmp/tempo/generator/wal
+
+    # Envía esas métricas a Prometheus
+    remote_write:
+
+      # Prometheus recibe las métricas aquí
+      - url: http://prometheus:9090/api/v1/write
+
+        # Permite enviar ejemplos asociados a métricas
+        send_exemplars: true
+
+
+
+# Configuración donde Tempo guarda las trazas
+storage:
+
+  trace:
+
+    # Tipo de almacenamiento
+    # local = disco del contenedor
+    backend: local
+
+
+    # Write Ahead Log
+    # Guarda temporalmente las trazas antes de procesarlas
+    wal:
+      path: /tmp/tempo/wal
+
+
+    # Carpeta final donde guarda los bloques de trazas
+    local:
+      path: /tmp/tempo/blocks
+
+
+
+# Configuraciones especiales
+overrides:
+
+  # Procesadores que generan métricas desde las trazas
+  metrics_generator_processors:
+
+    # Crea un mapa de comunicación entre servicios
+    # Ejemplo:
+    # ms-gateway -> ms-companies -> ms-report
+    - service-graphs
+
+
+    # Genera métricas como:
+    # cantidad de requests
+    # latencia
+    # errores
+    - span-metrics
