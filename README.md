@@ -6,9 +6,10 @@
 
 
 <p align="center">
-https://github.com/user-attachments/assets/2c98c0e5-7b08-4437-b0e5-708a3a8cd42d
+  <a href="https://github.com/user-attachments/assets/2c98c0e5-7b08-4437-b0e5-708a3a8cd42d">
+    <img src="https://github.com/user-attachments/assets/2c98c0e5-7b08-4437-b0e5-708a3a8cd42d" width="800">
+  </a>
 </p>
-
 
 # 🚧 Proyecto en construcción
 
