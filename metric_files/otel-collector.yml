@@ -17,9 +17,9 @@ exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
     const_labels:
-      label1: value1
+      project: "gestion-hospitalaria"
 
-  otlp:
+  tempo:
     endpoint: tempo:4317
     tls:
       insecure: true
@@ -41,7 +41,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp]
+      exporters: [tempo]
 
     logs:
       receivers: [otlp]
