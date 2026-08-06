@@ -119,6 +119,7 @@
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
 		</dependency>
 	</dependencies>
+	
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
