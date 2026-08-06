@@ -4,13 +4,6 @@
   <img src="https://github.com/user-attachments/assets/0a92bd98-71d1-4093-84d4-e45a4616e505" width="800"/>
 </p>
 
-
-<p align="center">
-  <a href="https://github.com/user-attachments/assets/2c98c0e5-7b08-4437-b0e5-708a3a8cd42d">
-    <img src="https://github.com/user-attachments/assets/2c98c0e5-7b08-4437-b0e5-708a3a8cd42d" width="800">
-  </a>
-</p>
-
 # 🚧 Proyecto en construcción
 
 Sistema de gestión hospitalaria desarrollado con una arquitectura basada en microservicios utilizando **Spring Boot** y tecnologías del ecosistema **Spring Cloud**.
