@@ -1,0 +1,79 @@
+# ==========================
+# Java / Maven
+# ==========================
+**/target/
+**/*.class
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# ==========================
+# IDEs
+# ==========================
+.idea/
+*.iml
+*.ipr
+*.iws
+
+.vscode/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# ==========================
+# Logs
+# ==========================
+**/*.log
+logs/
+
+# ==========================
+# Spring Boot
+# ==========================
+**/application-local.yml
+**/application-local.properties
+**/application-dev.yml
+**/application-dev.properties
+
+# Environment variables
+.env
+.env.*
+
+# ==========================
+# Docker
+# ==========================
+docker-compose.override.yml
+
+# Volúmenes Docker
+**/data/
+**/postgres-data/
+**/mongo-data/
+
+# ==========================
+# OS
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Node (si tienes frontend)
+# ==========================
+node_modules/
+.next/
+out/
+dist/
+
+# ==========================
+# Temporales
+# ==========================
+*.tmp
+*.temp
+*.swp
+
+# ==========================
+# Archivos de configuración sensibles
+# ==========================
+**/secret*.yml
+**/*password*
+**/*credentials*
