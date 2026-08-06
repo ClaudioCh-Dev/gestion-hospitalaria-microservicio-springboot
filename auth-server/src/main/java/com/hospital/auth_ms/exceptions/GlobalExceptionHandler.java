@@ -6,8 +6,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
 
@@ -16,6 +18,12 @@ public class GlobalExceptionHandler {
             InvalidCredentialsException ex,
             HttpServletRequest request
     ) {
+
+        log.warn(
+                "Authentication failed path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNAUTHORIZED,
@@ -35,6 +43,12 @@ public class GlobalExceptionHandler {
             InvalidTokenException ex,
             HttpServletRequest request
     ) {
+
+        log.warn(
+                "Invalid token path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
 
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNAUTHORIZED,

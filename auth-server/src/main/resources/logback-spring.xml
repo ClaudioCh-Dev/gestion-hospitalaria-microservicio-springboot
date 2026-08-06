@@ -12,6 +12,7 @@
                   %clr([%15.15t]){faint} 
                   %clr(%-40.40logger{39}){cyan} : %m%n"/>
 
+
         <appender name="CONSOLE"
                   class="ch.qos.logback.core.ConsoleAppender">
 
@@ -22,9 +23,16 @@
         </appender>
 
 
+        <!-- Enviar logs a OpenTelemetry -->
+        <appender name="OTEL"
+                  class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender"/>
+
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="OTEL"/>
         </root>
+
 
     </springProfile>
 
