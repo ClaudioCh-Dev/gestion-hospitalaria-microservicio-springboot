@@ -38,9 +38,6 @@ public class AuthFilter implements GatewayFilter {
 
                 log.info("AuthFilter iniciado");
                 log.info("Auth validate URI: {}", authValidateUri);
-
-                System.out.println("######## AUTH FILTER CONSTRUCTOR ########");
-                System.out.println("Auth validate URI: " + authValidateUri);
         }
 
         @Override
