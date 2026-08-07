@@ -127,6 +127,7 @@ public class GatewayBeans {
                  * )
                  */
 
+                
                 .route(route -> route
                         .path("/patient-ms/**")
                         .filters(filter -> filter

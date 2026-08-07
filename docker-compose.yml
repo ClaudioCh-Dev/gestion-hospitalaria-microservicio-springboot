@@ -151,9 +151,14 @@ services:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_SERVER_HOST: http://ms-config-server:7777
       KAFKA_BROKER: kafka-hospital:29092
-      OTLP_TRACING_URL: http://otel-collector:4318/v1/traces
-      OTLP_LOGGING_URL: http://otel-collector:4318/v1/logs
-      OTLP_METRICS_URL: http://otel-collector:4318/v1/metrics
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: patient-ms
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+
+      
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -180,6 +185,12 @@ services:
     environment:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       AUTH_VALIDATE_URI: http://auth-server:3000/auth-server/auth/validate-jwt
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
   auth-server:
     image: ms-auth-server:latest
     build:
