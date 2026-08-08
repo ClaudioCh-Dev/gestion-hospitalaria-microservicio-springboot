@@ -16,6 +16,7 @@ import personal.appointment_ms.entities.Appointment;
 import personal.appointment_ms.entities.AppointmentStatus;
 import personal.appointment_ms.exceptions.AppointmentNotFoundException;
 import personal.appointment_ms.repositories.AppointmentRepository;
+import personal.appointment_ms.streams.AppointmentPublisher;
 
 @Service
 @RequiredArgsConstructor
@@ -24,16 +25,15 @@ public class AppointmentServiceImpl implements IAppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final PatientClient patientClient;
     private final DoctorClient doctorClient;
+    private final AppointmentPublisher appointmentPublisher;
 
     @Override
     public AppointmentResponse createAppointment(
             CreateAppointmentRequest request
     ) {
 
-        // Validar paciente mediante Feign
         patientClient.findById(request.patientId());
 
-        // Validar doctor mediante Feign
         doctorClient.findById(request.doctorId());
 
         Appointment appointment = Appointment.builder()
@@ -53,6 +53,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Appointment savedAppointment =
                 appointmentRepository.save(appointment);
 
+        appointmentPublisher.publishAppointmentCreated(savedAppointment);
+                
         return toResponse(savedAppointment);
     }
 
@@ -121,6 +123,14 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Appointment updatedAppointment =
                 appointmentRepository.save(appointment);
 
+        if (request.status() == AppointmentStatus.COMPLETED) {
+            appointmentPublisher.publishAppointmentCompleted(updatedAppointment);
+        }
+
+        if(request.status() == AppointmentStatus.CANCELLED) {
+            appointmentPublisher.publishAppointmentCanceled(updatedAppointment);
+        }
+
         return toResponse(updatedAppointment);
     }
 
@@ -136,6 +146,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         appointment.setStatus(AppointmentStatus.CANCELLED);
 
         appointmentRepository.save(appointment);
+        
+        appointmentPublisher.publishAppointmentCanceled(appointment);
     }
 
     private AppointmentResponse toResponse(
