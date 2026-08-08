@@ -225,7 +225,7 @@ services:
     container_name: ms-doctor
     restart: always
     ports:
-      - "8081:8081"
+      - "8082:8081"
     depends_on:
       - ms-config-server
       - ms-registry-server
@@ -238,6 +238,32 @@ services:
       KAFKA_BROKER: kafka-hospital:29092
       # OpenTelemetry
       OTEL_SERVICE_NAME: doctor-ms
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+
+  ms-appointment:
+    image: ms-hospital-appointment:latest
+    build:
+      context: ./appointment-ms
+      dockerfile: Dockerfile
+    container_name: ms-appointment
+    restart: always
+    ports:
+      - "8083:8081"
+    depends_on:
+      - ms-config-server
+      - ms-registry-server
+      - db
+      - kafka
+      - otel-collector
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      CONFIG_SERVER_HOST: http://ms-config-server:7777
+      KAFKA_BROKER: kafka-hospital:29092
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: appointment-ms
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp

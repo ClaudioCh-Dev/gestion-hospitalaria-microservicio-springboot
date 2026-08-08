@@ -138,13 +138,12 @@ public class GatewayBeans {
                                                 .filters(filter -> filter.filter(this.authFilter))
                                                 .uri("lb://doctor-ms"))
 
+                                .route(route -> route
+                                                .path("/appointment-ms/**")
+                                                .filters(filter -> filter.filter(this.authFilter))
+                                                .uri("lb://appointment-ms"))
+
                                 /*
-                                 * .route(route -> route
-                                 * .path("/appointment-ms/**")
-                                 * .filters(filter -> filter.filter(this.authFilter))
-                                 * .uri("lb://appointment-ms")
-                                 * )
-                                 * 
                                  * .route(route -> route
                                  * .path("/billing-ms/**")
                                  * .filters(filter -> filter.filter(this.authFilter))

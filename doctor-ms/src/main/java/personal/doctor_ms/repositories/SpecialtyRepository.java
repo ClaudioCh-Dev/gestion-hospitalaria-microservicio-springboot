@@ -1,4 +1,4 @@
-package personal.doctor_ms.repository;
+package personal.doctor_ms.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

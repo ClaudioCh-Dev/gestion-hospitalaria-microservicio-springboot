@@ -1,3 +1,16 @@
+
+CREATE TYPE appointment_status AS ENUM (
+    'SCHEDULED',
+    'CONFIRMED',
+    'COMPLETED',
+    'CANCELLED'
+);
+
+CREATE TYPE billing_status AS ENUM (
+    'PENDING',
+    'PAID',
+    'CANCELLED'
+);
 -- ============================================
 -- TABLA: patients  (patient-ms)
 -- ============================================
@@ -48,16 +61,15 @@ CREATE TABLE IF NOT EXISTS doctors (
 -- TABLA: appointments  (appointment-ms)
 -- ============================================
 CREATE TABLE IF NOT EXISTS appointments (
-    id               BIGSERIAL   PRIMARY KEY,
-    patient_id       BIGINT      NOT NULL,
-    doctor_id        BIGINT      NOT NULL,
-    scheduled_at     TIMESTAMP   NOT NULL,
-    duration_minutes INT         DEFAULT 30,
+    id               BIGSERIAL PRIMARY KEY,
+    patient_id       BIGINT NOT NULL,
+    doctor_id        BIGINT NOT NULL,
+    scheduled_at     TIMESTAMP NOT NULL,
+    duration_minutes INT DEFAULT 30,
     reason           TEXT,
-    status           VARCHAR(20) DEFAULT 'SCHEDULED',
-    -- SCHEDULED | CONFIRMED | COMPLETED | CANCELLED
+    status           appointment_status DEFAULT 'SCHEDULED',
     notes            TEXT,
-    created_at       TIMESTAMP   DEFAULT NOW()
+    created_at       TIMESTAMP DEFAULT NOW()
 );
 
 -- ============================================
@@ -69,7 +81,7 @@ CREATE TABLE IF NOT EXISTS billing_records (
     patient_id     BIGINT         NOT NULL,
     amount         DECIMAL(10, 2) NOT NULL,
     currency       VARCHAR(5)     DEFAULT 'PEN',
-    status         VARCHAR(20)    DEFAULT 'PENDING',
+    status billing_status DEFAULT 'PENDING',
     -- PENDING | PAID | CANCELLED
     issued_at      TIMESTAMP      DEFAULT NOW(),
     paid_at        TIMESTAMP
