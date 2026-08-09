@@ -78,3 +78,9 @@ dist/
 **/secret*.yml
 **/*password*
 **/*credentials*
+
+# ==========================
+# Documentos
+# ==========================
+docs/hospital-ms-concepto.md
+docs/hospital-ms-guide.md
