@@ -130,19 +130,32 @@ public class GatewayBeans {
                                 .route(route -> route
                                                 .path("/patient-ms/**")
                                                 .filters(filter -> filter
-                                                                .filter(this.authFilter))
+                                                                .filter(this.authFilter)
+                                                                .circuitBreaker(config -> config
+                                                                                .setName("patient-circuitbreaker")
+                                                                                .setStatusCodes(Set.of("500"))
+                                                                                .setFallbackUri("forward:/fallback?service=patient-ms")))
                                                 .uri("lb://patient-ms"))
 
                                 .route(route -> route
                                                 .path("/doctor-ms/**")
-                                                .filters(filter -> filter.filter(this.authFilter))
+                                                .filters(filter -> filter
+                                                                .filter(this.authFilter)
+                                                                .circuitBreaker(config -> config
+                                                                                .setName("doctor-circuitbreaker")
+                                                                                .setStatusCodes(Set.of("500"))
+                                                                                .setFallbackUri("forward:/fallback?service=doctor-ms")))
                                                 .uri("lb://doctor-ms"))
 
                                 .route(route -> route
                                                 .path("/appointment-ms/**")
-                                                .filters(filter -> filter.filter(this.authFilter))
+                                                .filters(filter -> filter
+                                                                .filter(this.authFilter)
+                                                                .circuitBreaker(config -> config
+                                                                                .setName("appointment-circuitbreaker")
+                                                                                .setStatusCodes(Set.of("500"))
+                                                                                .setFallbackUri("forward:/fallback?service=appointment-ms")))
                                                 .uri("lb://appointment-ms"))
-
                                 /*
                                  * .route(route -> route
                                  * .path("/billing-ms/**")
