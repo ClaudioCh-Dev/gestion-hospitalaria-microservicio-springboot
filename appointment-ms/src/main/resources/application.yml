@@ -19,6 +19,9 @@ spring:
           destination: appointment-created
           content-type: application/json
 
+        appointment-confirmed-out-0:
+          destination: appointment-confirmed
+          content-type: application/json
         appointment-completed-out-0:
           destination: appointment-completed
           content-type: application/json

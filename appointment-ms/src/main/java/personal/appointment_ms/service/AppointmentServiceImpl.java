@@ -1,6 +1,7 @@
 package personal.appointment_ms.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,159 +12,203 @@ import personal.appointment_ms.client.DoctorClient;
 import personal.appointment_ms.client.PatientClient;
 import personal.appointment_ms.dto.AppointmentResponse;
 import personal.appointment_ms.dto.CreateAppointmentRequest;
+import personal.appointment_ms.dto.DoctorResponse;
+import personal.appointment_ms.dto.PatientResponse;
 import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.entities.Appointment;
 import personal.appointment_ms.entities.AppointmentStatus;
 import personal.appointment_ms.exceptions.AppointmentNotFoundException;
 import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.streams.AppointmentPublisher;
+import personal.shared.event.AppointmentEvent;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppointmentServiceImpl implements IAppointmentService {
 
-    private final AppointmentRepository appointmentRepository;
-    private final PatientClient patientClient;
-    private final DoctorClient doctorClient;
-    private final AppointmentPublisher appointmentPublisher;
+        private final AppointmentRepository appointmentRepository;
+        private final PatientClient patientClient;
+        private final DoctorClient doctorClient;
+        private final AppointmentPublisher appointmentPublisher;
 
-    @Override
-    public AppointmentResponse createAppointment(
-            CreateAppointmentRequest request
-    ) {
+        @Override
+        public AppointmentResponse createAppointment(
+                        CreateAppointmentRequest request) {
 
-        patientClient.findById(request.patientId());
+                patientClient.findById(request.patientId()).orElseThrow();
+                doctorClient.findById(request.doctorId()).orElseThrow();
 
-        doctorClient.findById(request.doctorId());
+                Appointment appointment = Appointment.builder()
+                                .patientId(request.patientId())
+                                .doctorId(request.doctorId())
+                                .scheduledAt(request.scheduledAt())
+                                .durationMinutes(
+                                                request.durationMinutes() != null
+                                                                ? request.durationMinutes()
+                                                                : 30)
+                                .reason(request.reason())
+                                .status(AppointmentStatus.SCHEDULED)
+                                .notes(request.notes())
+                                .build();
 
-        Appointment appointment = Appointment.builder()
-                .patientId(request.patientId())
-                .doctorId(request.doctorId())
-                .scheduledAt(request.scheduledAt())
-                .durationMinutes(
-                        request.durationMinutes() != null
-                                ? request.durationMinutes()
-                                : 30
-                )
-                .reason(request.reason())
-                .status(AppointmentStatus.SCHEDULED)
-                .notes(request.notes())
-                .build();
+                Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        Appointment savedAppointment =
-                appointmentRepository.save(appointment);
+                // Construir evento
+                AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
 
-        appointmentPublisher.publishAppointmentCreated(savedAppointment);
-                
-        return toResponse(savedAppointment);
-    }
+                // Publicar evento según el estado
+                publishAppointmentEvent(savedAppointment.getStatus(), appointmentEvent);
 
-    @Override
-    public Page<AppointmentResponse> getAppointments(
-            Pageable pageable
-    ) {
-
-        return appointmentRepository
-                .findAll(pageable)
-                .map(this::toResponse);
-    }
-
-    @Override
-    public AppointmentResponse getAppointmentById(
-            Long id
-    ) {
-
-        Appointment appointment = appointmentRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new AppointmentNotFoundException(id)
-                );
-
-        return toResponse(appointment);
-    }
-
-    @Override
-    public List<AppointmentResponse> getAppointmentsByPatient(
-            Long patientId
-    ) {
-
-        return appointmentRepository
-                .findByPatientId(patientId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    @Override
-    public List<AppointmentResponse> getAppointmentsByDoctor(
-            Long doctorId
-    ) {
-
-        return appointmentRepository
-                .findByDoctorId(doctorId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    @Override
-    public AppointmentResponse updateStatus(
-            Long id,
-            UpdateAppointmentStatusRequest request
-    ) {
-
-        Appointment appointment = appointmentRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new AppointmentNotFoundException(id)
-                );
-
-        appointment.setStatus(request.status());
-
-        Appointment updatedAppointment =
-                appointmentRepository.save(appointment);
-
-        if (request.status() == AppointmentStatus.COMPLETED) {
-            appointmentPublisher.publishAppointmentCompleted(updatedAppointment);
+                return toResponse(savedAppointment);
         }
 
-        if(request.status() == AppointmentStatus.CANCELLED) {
-            appointmentPublisher.publishAppointmentCanceled(updatedAppointment);
+        @Override
+        public Page<AppointmentResponse> getAppointments(
+                        Pageable pageable) {
+
+                return appointmentRepository
+                                .findAll(pageable)
+                                .map(this::toResponse);
         }
 
-        return toResponse(updatedAppointment);
-    }
+        @Override
+        public AppointmentResponse getAppointmentById(
+                        Long id) {
 
-    @Override
-    public void cancelAppointment(Long id) {
+                Appointment appointment = appointmentRepository
+                                .findById(id)
+                                .orElseThrow(() -> new AppointmentNotFoundException(id));
 
-        Appointment appointment = appointmentRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new AppointmentNotFoundException(id)
-                );
+                return toResponse(appointment);
+        }
 
-        appointment.setStatus(AppointmentStatus.CANCELLED);
+        @Override
+        public List<AppointmentResponse> getAppointmentsByPatient(
+                        Long patientId) {
 
-        appointmentRepository.save(appointment);
-        
-        appointmentPublisher.publishAppointmentCanceled(appointment);
-    }
+                return appointmentRepository
+                                .findByPatientId(patientId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
 
-    private AppointmentResponse toResponse(
-            Appointment appointment
-    ) {
+        @Override
+        public List<AppointmentResponse> getAppointmentsByDoctor(
+                        Long doctorId) {
 
-        return new AppointmentResponse(
-                appointment.getId(),
-                appointment.getPatientId(),
-                appointment.getDoctorId(),
-                appointment.getScheduledAt(),
-                appointment.getDurationMinutes(),
-                appointment.getReason(),
-                appointment.getStatus(),
-                appointment.getNotes(),
-                appointment.getCreatedAt()
-        );
-    }
+                return appointmentRepository
+                                .findByDoctorId(doctorId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
+
+        @Override
+        public AppointmentResponse updateStatus(
+                        Long id,
+                        UpdateAppointmentStatusRequest request) {
+
+                Appointment appointment = appointmentRepository
+                                .findById(id)
+                                .orElseThrow(() -> new AppointmentNotFoundException(id));
+
+                appointment.setStatus(request.status());
+
+                Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+                // Construir evento
+                AppointmentEvent appointmentEvent = buildAppointmentEvent(updatedAppointment);
+
+                // Publicar evento según el estado
+                publishAppointmentEvent(updatedAppointment.getStatus(), appointmentEvent);
+
+                return toResponse(updatedAppointment);
+        }
+
+        @Override
+        public void cancelAppointment(Long id) {
+
+                Appointment appointment = appointmentRepository
+                                .findById(id)
+                                .orElseThrow(() -> new AppointmentNotFoundException(id));
+
+                appointment.setStatus(AppointmentStatus.CANCELLED);
+
+                Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+                // Construir evento
+                AppointmentEvent appointmentEvent = buildAppointmentEvent(updatedAppointment);
+
+                // Publicar evento según el estado
+                publishAppointmentEvent(updatedAppointment.getStatus(), appointmentEvent);
+        }
+
+        private AppointmentResponse toResponse(
+                        Appointment appointment) {
+
+                return new AppointmentResponse(
+                                appointment.getId(),
+                                appointment.getPatientId(),
+                                appointment.getDoctorId(),
+                                appointment.getScheduledAt(),
+                                appointment.getDurationMinutes(),
+                                appointment.getReason(),
+                                appointment.getStatus(),
+                                appointment.getNotes(),
+                                appointment.getCreatedAt());
+        }
+
+        // TODO: Implementar Outbox Pattern para garantizar la publicación del AppointmentEvent en Kafka.
+        private AppointmentEvent buildAppointmentEvent(
+                        Appointment appointment) {
+
+                String eventType = switch (appointment.getStatus()) {
+                        case SCHEDULED -> "appointment-created";
+                        case CONFIRMED -> "appointment-confirmed";
+                        case COMPLETED -> "appointment-completed";
+                        case CANCELLED -> "appointment-cancelled";
+                };
+
+                return new AppointmentEvent(
+                                appointment.getId(),
+                                appointment.getPatientId(),
+                                "TODO",
+                                appointment.getDoctorId(),
+                                "TODO",
+                                "TODO",
+                                appointment.getScheduledAt().toString(),
+                                appointment.getReason(),
+                                appointment.getStatus().name(),
+                                eventType);
+        }
+
+        private void publishAppointmentEvent(
+                        AppointmentStatus status,
+                        AppointmentEvent appointmentEvent) {
+
+                switch (status) {
+
+                        case SCHEDULED -> {
+                                appointmentPublisher.publishAppointmentScheduled(
+                                                appointmentEvent);
+                        }
+
+                        case CONFIRMED -> {
+                                appointmentPublisher.publishAppointmentConfirmed(
+                                                appointmentEvent);
+                        }
+
+                        case COMPLETED ->
+                                appointmentPublisher.publishAppointmentCompleted(
+                                                appointmentEvent);
+
+                        case CANCELLED ->
+                                appointmentPublisher.publishAppointmentCanceled(
+                                                appointmentEvent);
+                }
+        }
 }
