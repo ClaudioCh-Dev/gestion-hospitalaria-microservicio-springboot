@@ -109,6 +109,13 @@
 			<artifactId>opentelemetry-api</artifactId>
 		</dependency>
 		
+		<!-- Shared events -->
+		<dependency>
+			<groupId>personal</groupId>
+			<artifactId>hospital-shared</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>

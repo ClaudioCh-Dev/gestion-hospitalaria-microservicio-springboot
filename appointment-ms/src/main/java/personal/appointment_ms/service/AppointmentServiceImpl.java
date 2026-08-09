@@ -1,7 +1,6 @@
 package personal.appointment_ms.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,8 +11,6 @@ import personal.appointment_ms.client.DoctorClient;
 import personal.appointment_ms.client.PatientClient;
 import personal.appointment_ms.dto.AppointmentResponse;
 import personal.appointment_ms.dto.CreateAppointmentRequest;
-import personal.appointment_ms.dto.DoctorResponse;
-import personal.appointment_ms.dto.PatientResponse;
 import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.entities.Appointment;
 import personal.appointment_ms.entities.AppointmentStatus;

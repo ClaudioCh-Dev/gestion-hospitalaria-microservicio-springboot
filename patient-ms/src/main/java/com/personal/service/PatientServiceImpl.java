@@ -7,6 +7,8 @@ import com.personal.exceptions.PatientNotFoundException;
 import com.personal.repository.IPatientRepository;
 import com.personal.streams.PatientPublisher;
 
+import personal.shared.event.PatientCreatedEvent;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -61,7 +63,14 @@ public class PatientServiceImpl implements IPatientService {
 
         Patient savedPatient = patientRepository.save(patient);
 
-        patientPublisher.publishPatientCreated(savedPatient);
+        PatientCreatedEvent event = new PatientCreatedEvent(
+            savedPatient.getId(),
+            savedPatient.getFirstName(),
+            savedPatient.getLastName(),
+            savedPatient.getEmail()
+        );
+
+        patientPublisher.publishPatientCreated(event);
 
         return mapToResponse(savedPatient);
     }
