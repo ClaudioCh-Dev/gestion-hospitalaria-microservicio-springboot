@@ -87,6 +87,14 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Shared events -->
+		<dependency>
+			<groupId>personal</groupId>
+			<artifactId>hospital-shared</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
 	</dependencies>
 	<dependencyManagement>
 		<dependencies>
