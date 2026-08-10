@@ -2,6 +2,7 @@ package personal.billing_ms.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,7 +14,46 @@ import feign.FeignException;
 @Slf4j
 public class GlobalExceptionHandler {
 
-       
+        @ExceptionHandler(AppointmentNotFoundException.class)
+        public ProblemDetail handleAppointmentNotFound(
+                        AppointmentNotFoundException ex,
+                        HttpServletRequest request) {
+
+                log.warn(
+                                "Appointment not found path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage());
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.NOT_FOUND,
+                                ex.getMessage());
+
+                problem.setTitle("Appointment not found");
+                problem.setProperty("code", "APPOINTMENT_NOT_FOUND");
+
+                return problem;
+        }
+
+        @ExceptionHandler(BillingRecordNotFoundException.class)
+        public ProblemDetail handleBillingRecordNotFound(
+                        BillingRecordNotFoundException ex,
+                        HttpServletRequest request) {
+
+                log.warn(
+                                "Billing record not found path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage());
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.NOT_FOUND,
+                                ex.getMessage());
+
+                problem.setTitle("Billing record not found");
+                problem.setProperty("code", "BILLING_RECORD_NOT_FOUND");
+
+                return problem;
+        }
+
         @ExceptionHandler(FeignException.class)
         public ProblemDetail handleFeignException(
                         FeignException ex,
@@ -25,12 +65,18 @@ public class GlobalExceptionHandler {
                                 ex.status(),
                                 ex);
 
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.SERVICE_UNAVAILABLE,
-                                "A required service is currently unavailable");
+                HttpStatus status = HttpStatus.resolve(ex.status());
 
-                problem.setTitle("Service unavailable");
-                problem.setProperty("code", "SERVICE_UNAVAILABLE");
+                if (status == null) {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                status,
+                                "Error calling appointment service");
+
+                problem.setTitle("Appointment service error");
+                problem.setProperty("code", "APPOINTMENT_SERVICE_ERROR");
 
                 return problem;
         }
