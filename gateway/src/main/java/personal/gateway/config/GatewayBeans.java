@@ -157,15 +157,6 @@ public class GatewayBeans {
                                                                                 .setFallbackUri("forward:/fallback?service=appointment-ms")))
                                                 .uri("lb://appointment-ms"))
                                 .route(route -> route
-                                                .path("/notification-ms/**")
-                                                .filters(filter -> filter
-                                                                .filter(this.authFilter)
-                                                                .circuitBreaker(config -> config
-                                                                                .setName("notification-circuitbreaker")
-                                                                                .setStatusCodes(Set.of("500"))
-                                                                                .setFallbackUri("forward:/fallback?service=notification-ms")))
-                                                .uri("lb://notification-ms"))
-                                .route(route -> route
                                                 .path("/billing-ms/**")
                                                 .filters(filter -> filter
                                                                 .filter(this.authFilter)
