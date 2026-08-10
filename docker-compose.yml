@@ -295,3 +295,28 @@ services:
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
+
+  ms-notification:
+    image: ms-hospital-notification:latest
+    build:
+      context: .
+      dockerfile: notification-ms/Dockerfile
+    container_name: ms-notification
+    restart: always
+    ports:
+      - "8084:8081"
+    depends_on:
+      - ms-config-server
+      - ms-registry-server
+      - db
+      - kafka
+      - otel-collector
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      KAFKA_BROKER: kafka-hospital:29092
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: notification-ms
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp    

@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: notification-ms
+
+  cloud:
+    function:
+      definition: appointmentCreatedConsumer;appointmentConfirmedConsumer;appointmentCompletedConsumer;appointmentCanceledConsumer;patientCreatedConsumer
+
+    stream:
+      kafka:
+        binder:
+          brokers: ${KAFKA_BROKER:kafka-hospital:29092}
+
+      bindings:
+
+        appointmentCreatedConsumer-in-0:
+          destination: appointment-created
+          group: notification-group
+          content-type: application/json
+
+        appointmentConfirmedConsumer-in-0:
+          destination: appointment-confirmed
+          group: notification-group
+          content-type: application/json
+
+        appointmentCompletedConsumer-in-0:
+          destination: appointment-completed
+          group: notification-group
+          content-type: application/json
+
+        appointmentCanceledConsumer-in-0:
+          destination: appointment-canceled
+          group: notification-group
+          content-type: application/json
+
+        patientCreatedConsumer-in-0:
+          destination: patient-created
+          group: notification-group
+          content-type: application/json
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
