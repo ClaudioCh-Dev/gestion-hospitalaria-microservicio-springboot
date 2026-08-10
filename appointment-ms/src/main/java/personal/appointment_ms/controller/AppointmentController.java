@@ -24,7 +24,7 @@ import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.service.IAppointmentService;
 
 @RestController
-@RequestMapping("/appointment-ms/appointments")
+@RequestMapping("/appointments")
 @RequiredArgsConstructor
 public class AppointmentController {
 

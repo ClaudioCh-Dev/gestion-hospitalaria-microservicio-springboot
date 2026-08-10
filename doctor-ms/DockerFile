@@ -1,14 +1,14 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
-RUN mvn clean package -DskipTests
+COPY doctor-ms/pom.xml doctor-ms/pom.xml
+COPY doctor-ms/src doctor-ms/src
+RUN mvn -f /app/doctor-ms/pom.xml clean package -DskipTests
 
 
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-COPY opentelemetry-javaagent.jar opentelemetry-javaagent.jar
+COPY --from=build /app/doctor-ms/target/*.jar app.jar
+COPY doctor-ms/opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 ENV EUREKA_SERVER_URL=null
 ENV CONFIG_SERVER_HOST=null
 ENV KAFKA_BROKER=null

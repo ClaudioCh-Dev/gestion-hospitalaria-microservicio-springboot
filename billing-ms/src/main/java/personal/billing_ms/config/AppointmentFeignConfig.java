@@ -7,7 +7,7 @@ import feign.codec.ErrorDecoder;
 import personal.billing_ms.exceptions.AppointmentNotFoundException;
 
 @Configuration
-public class AppoinmentFeignConfig {
+public class AppointmentFeignConfig {
 
     @Bean
     public ErrorDecoder appointmentErrorDecoder() {

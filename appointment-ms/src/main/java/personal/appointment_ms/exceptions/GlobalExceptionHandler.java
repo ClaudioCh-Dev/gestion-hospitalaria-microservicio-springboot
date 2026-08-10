@@ -84,12 +84,18 @@ public class GlobalExceptionHandler {
                                 ex.status(),
                                 ex);
 
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.SERVICE_UNAVAILABLE,
-                                "A required service is currently unavailable");
+                HttpStatus status = HttpStatus.resolve(ex.status());
 
-                problem.setTitle("Service unavailable");
-                problem.setProperty("code", "SERVICE_UNAVAILABLE");
+                if (status == null) {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                status,
+                                "Error calling appointment service");
+
+                problem.setTitle("Appointment service error");
+                problem.setProperty("code", "APPOINTMENT_SERVICE_ERROR");
 
                 return problem;
         }

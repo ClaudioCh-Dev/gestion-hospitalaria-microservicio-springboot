@@ -1,6 +1,5 @@
 package personal.billing_ms.service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import personal.billing_ms.client.AppointmentClient;
+import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.dto.AppointmentResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
@@ -24,6 +24,7 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
     private final BillingRepository billingRepository;
     private final AppointmentClient appointmentClient;
 
+    // TODO: Mejorar la lógica para crear factura desde request. El monto debería venir del servicio de citas.
     @Override
     @Transactional
     public BillingRecord createBilling(CreateBillingRequest request) {
@@ -61,16 +62,15 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
         return billingRepository.save(billingRecord);
     }
 
-    // TODO: Mejorar la lógica para crear factura desde evento de cita
     @Override
     @Transactional
-    public BillingRecord createBillingFromAppointment(AppointmentEvent event) {
+    public BillingRecord createBillingFromAppointment(AppointmentEventRequest event) {
 
         BillingRecord billingRecord = new BillingRecord();
 
         billingRecord.setAppointmentId(event.appointmentId());
         billingRecord.setPatientId(event.patientId());
-        billingRecord.setAmount(BigDecimal.valueOf(100.0));
+        billingRecord.setAmount(event.amount());
         billingRecord.setStatus(BillingStatus.PENDING);
         billingRecord.setIssuedAt(LocalDateTime.now());
 

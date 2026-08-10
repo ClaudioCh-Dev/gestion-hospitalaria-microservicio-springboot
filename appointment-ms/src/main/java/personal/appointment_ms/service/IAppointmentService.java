@@ -1,12 +1,12 @@
 package personal.appointment_ms.service;
 
-
 import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import personal.appointment_ms.dto.AppointmentResponse;
+import personal.appointment_ms.dto.AppointmentTypeResponse;
 import personal.appointment_ms.dto.CreateAppointmentRequest;
 import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 

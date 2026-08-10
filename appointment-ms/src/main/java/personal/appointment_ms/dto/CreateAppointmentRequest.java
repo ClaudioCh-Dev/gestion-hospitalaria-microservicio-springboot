@@ -14,6 +14,9 @@ public record CreateAppointmentRequest(
         Long doctorId,
 
         @NotNull
+        Long appointmentTypeId,
+
+        @NotNull
         LocalDateTime scheduledAt,
 
         @Min(1)
