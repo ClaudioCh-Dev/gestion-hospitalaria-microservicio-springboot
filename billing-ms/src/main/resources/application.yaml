@@ -32,7 +32,7 @@ spring:
       maximum-pool-size: ${db.maximum-pool-size:10}
 
 server:
-  port: 7090
+  port: 8081
 
 eureka:
   instance:
@@ -49,5 +49,6 @@ management:
         include: health,info,metrics
 
 scalar:
+  enabled: true
   darkMode: true
   theme: deepSpace

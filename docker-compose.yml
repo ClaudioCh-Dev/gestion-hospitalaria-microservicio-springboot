@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # =================== INFRAESTRUCTURA ===================
@@ -18,16 +16,16 @@ services:
     ports:
       - '5434:5432'
 
-#  mongo-db:
-#    image: mongo:7.0.5-rc0
-#    container_name: mongo-hospital
-#    restart: always
-#    environment:
-#      MONGO_INITDB_ROOT_USERNAME: sa
-#      MONGO_INITDB_ROOT_PASSWORD: sa
-#      MONGO_INITDB_DATABASE: medical_records
-#    ports:
-#      - '27017:27017'
+  # mongo-db:
+  #   image: mongo:7.0.5-rc0
+  #   container_name: mongo-hospital
+  #   restart: always
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: sa
+  #     MONGO_INITDB_ROOT_PASSWORD: sa
+  #     MONGO_INITDB_DATABASE: medical_records
+  #   ports:
+  #     - '27017:27017'
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.3
@@ -56,7 +54,9 @@ services:
     ports:
       - '9092:9092'
 
+
   # =================== OBSERVABILIDAD ===================
+
   # (idéntico a tu proyecto de referencia)
 
   otel-collector:
@@ -98,12 +98,15 @@ services:
       - "3100:3100"
 
   grafana:
-    container_name: grafana 
+    container_name: grafana
     image: grafana/grafana
     volumes:
       - ./metric_files/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
     ports:
       - "3001:3000"
+
+
+  # =================== CONFIGURACIÓN Y REGISTRO ===================
 
   ms-registry-server:
     image: ms-hospital-registry:latest
@@ -114,6 +117,8 @@ services:
     restart: always
     ports:
       - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: default
 
   ms-config-server:
     image: ms-hospital-config:latest
@@ -127,11 +132,14 @@ services:
     depends_on:
       - ms-registry-server
     environment:
-      SPRING_PROFILES_ACTIVE: prod   # <--- AGREGA ESTO
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_GIT_URI: ${CONFIG_GIT_URI}
       CONFIG_GIT_USERNAME: ${CONFIG_GIT_USERNAME}
       CONFIG_GIT_TOKEN: ${CONFIG_GIT_TOKEN}
+      SPRING_PROFILES_ACTIVE: default
+
+  # =================== MICROSERVICIOS ===================
+
   ms-patient:
     image: ms-hospital-patient:latest
     build:
@@ -151,6 +159,7 @@ services:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_SERVER_HOST: http://ms-config-server:7777
       KAFKA_BROKER: kafka-hospital:29092
+
       # OpenTelemetry
       OTEL_SERVICE_NAME: patient-ms
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -158,64 +167,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    restart: always
-    depends_on:
-      - kafka
-    ports:
-      - "8085:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: hospital-kafka
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-hospital:29092
-  ms-gateway:
-    image: ms-gateway:latest
-    container_name: ms-gateway
-    restart: always
-    build:
-      context: .
-      dockerfile: gateway/Dockerfile
-    ports:
-      - "4040:4040"
-    depends_on:
-      - ms-registry-server
-      - otel-collector
-    environment:
-      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
-      AUTH_VALIDATE_URI: http://auth-server:3000/auth-server/auth/validate-jwt
-      # OpenTelemetry
-      OTEL_SERVICE_NAME: gateway
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-      OTEL_LOGS_EXPORTER: otlp
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: otlp
-  auth-server:
-    image: ms-auth-server:latest
-    build:
-      context: .
-      dockerfile: auth-server/Dockerfile
-    container_name: auth-server
-    restart: always
-
-    ports:
-      - "3000:3000"
-
-    depends_on:
-      - ms-registry-server
-      - ms-config-server
-      - otel-collector
-
-    environment:
-      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
-      CONFIG_SERVER_HOST: http://ms-config-server:7777
-      # OpenTelemetry
-      OTEL_SERVICE_NAME: auth-server
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
-      OTEL_LOGS_EXPORTER: otlp
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: otlp
+      SPRING_PROFILES_ACTIVE: default
 
   ms-doctor:
     image: ms-hospital-doctor:latest
@@ -236,12 +188,15 @@ services:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_SERVER_HOST: http://ms-config-server:7777
       KAFKA_BROKER: kafka-hospital:29092
+
       # OpenTelemetry
       OTEL_SERVICE_NAME: doctor-ms
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
+
+      SPRING_PROFILES_ACTIVE: default
 
   ms-appointment:
     image: ms-hospital-appointment:latest
@@ -262,6 +217,7 @@ services:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_SERVER_HOST: http://ms-config-server:7777
       KAFKA_BROKER: kafka-hospital:29092
+
       # OpenTelemetry
       OTEL_SERVICE_NAME: appointment-ms
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
@@ -269,6 +225,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
+      SPRING_PROFILES_ACTIVE: default
 
   ms-billing:
     image: ms-hospital-billing:latest
@@ -289,12 +246,15 @@ services:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       CONFIG_SERVER_HOST: http://ms-config-server:7777
       KAFKA_BROKER: kafka-hospital:29092
+
       # OpenTelemetry
       OTEL_SERVICE_NAME: billing-ms
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
+
+      SPRING_PROFILES_ACTIVE: default
 
   ms-notification:
     image: ms-hospital-notification:latest
@@ -304,7 +264,7 @@ services:
     container_name: ms-notification
     restart: always
     ports:
-      - "8084:8081"
+      - "8085:8081"
     depends_on:
       - ms-config-server
       - ms-registry-server
@@ -314,9 +274,84 @@ services:
     environment:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
       KAFKA_BROKER: kafka-hospital:29092
+
       # OpenTelemetry
       OTEL_SERVICE_NAME: notification-ms
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: otlp    
+      OTEL_METRICS_EXPORTER: otlp
+
+      SPRING_PROFILES_ACTIVE: default
+
+
+  # =================== GATEWAY ===================
+
+  ms-gateway:
+    image: ms-gateway:latest
+    container_name: ms-gateway
+    restart: always
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "4040:4040"
+    depends_on:
+      - ms-registry-server
+      - otel-collector
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      AUTH_VALIDATE_URI: http://auth-server:3000/auth-server/auth/validate-jwt
+
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: gateway
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+
+      SPRING_PROFILES_ACTIVE: oauth2
+
+
+  # =================== AUTH ===================
+
+  auth-server:
+    image: ms-auth-server:latest
+    build:
+      context: .
+      dockerfile: auth-server/Dockerfile
+    container_name: auth-server
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - ms-registry-server
+      - ms-config-server
+      - otel-collector
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      CONFIG_SERVER_HOST: http://ms-config-server:7777
+
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: auth-server
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
+
+      SPRING_PROFILES_ACTIVE: default
+
+
+  # =================== KAFKA UI ===================
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: always
+    depends_on:
+      - kafka
+    ports:
+      - "8086:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: hospital-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-hospital:29092
