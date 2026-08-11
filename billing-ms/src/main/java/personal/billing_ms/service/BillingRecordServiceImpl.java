@@ -15,7 +15,6 @@ import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.entities.BillingStatus;
 import personal.billing_ms.exceptions.BillingRecordNotFoundException;
 import personal.billing_ms.repositories.BillingRepository;
-import personal.shared.event.AppointmentEvent;
 
 @Service
 @RequiredArgsConstructor

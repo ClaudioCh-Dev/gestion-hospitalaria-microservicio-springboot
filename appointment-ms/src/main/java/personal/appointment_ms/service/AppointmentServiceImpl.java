@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import personal.appointment_ms.client.DoctorClient;
 import personal.appointment_ms.client.PatientClient;
 import personal.appointment_ms.dto.AppointmentResponse;
-import personal.appointment_ms.dto.AppointmentTypeResponse;
 import personal.appointment_ms.dto.CreateAppointmentRequest;
 import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.entities.Appointment;
