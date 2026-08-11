@@ -50,6 +50,6 @@ management:
 
 
 scalar:
-  enabled: true
+  enabled: false
   darkMode: true
   theme: deepSpace

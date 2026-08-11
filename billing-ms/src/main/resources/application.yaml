@@ -49,6 +49,6 @@ management:
         include: health,info,metrics
 
 scalar:
-  enabled: true
+  enabled: false
   darkMode: true
   theme: deepSpace
