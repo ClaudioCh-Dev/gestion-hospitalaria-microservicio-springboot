@@ -8,12 +8,12 @@ import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import com.hospital.auth_ms.dtos.ClaimsDto;
 import com.hospital.auth_ms.exceptions.InvalidTokenException;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,27 +26,34 @@ public class JwtHelper {
 
     public String createToken(ClaimsDto claims) {
         final var now = new Date();
-        var expirationDate = new Date(now.getTime() + 3600 * 1000);
+        final var expirationDate = new Date(now.getTime() + 3600 * 1000);
+
         return Jwts.builder()
-                .setSubject(claims.getUsername())
+                .subject(claims.getUsername())
                 .claim("role", claims.getRole())
                 .claim("userId", claims.getUserId())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(expirationDate)
-                .signWith(this.getSecretKey(), SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expirationDate)
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
     public String getUsernameFromToken(String token) {
-        return getClaimsFromToken(token, Claims::getSubject);
+        return getClaimsFromToken(token, claims -> claims.getSubject());
     }
 
     public String getRoleFromToken(String token) {
-        return getClaimsFromToken(token, claims -> claims.get("role", String.class));
+        return getClaimsFromToken(
+                token,
+                claims -> claims.get("role", String.class)
+        );
     }
 
     public Long getUserIdFromToken(String token) {
-        return getClaimsFromToken(token, claims -> claims.get("userId", Long.class));
+        return getClaimsFromToken(
+                token,
+                claims -> claims.get("userId", Long.class)
+        );
     }
 
     public boolean isTokenExpired(String token) {
@@ -64,15 +71,17 @@ public class JwtHelper {
     }
 
     private Date getExpirationDate(String token) {
-        return getClaimsFromToken(token, Claims::getExpiration);
+        return getClaimsFromToken(token, claims -> claims.getExpiration());
     }
 
-    private <T> T getClaimsFromToken(String token, Function<Claims, T> resolver) {
+    private <T> T getClaimsFromToken(
+            String token,
+            Function<Claims, T> resolver
+    ) {
         return resolver.apply(parseToken(token));
     }
 
     private Claims parseToken(String token) {
-
         return Jwts.parser()
                 .verifyWith(getSecretKey())
                 .build()
@@ -81,6 +90,8 @@ public class JwtHelper {
     }
 
     private SecretKey getSecretKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(
+                jwtSecret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 }
