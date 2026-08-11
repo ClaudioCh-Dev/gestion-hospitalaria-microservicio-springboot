@@ -16,16 +16,16 @@ services:
     ports:
       - '5434:5432'
 
-  # mongo-db:
-  #   image: mongo:7.0.5-rc0
-  #   container_name: mongo-hospital
-  #   restart: always
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: sa
-  #     MONGO_INITDB_ROOT_PASSWORD: sa
-  #     MONGO_INITDB_DATABASE: medical_records
-  #   ports:
-  #     - '27017:27017'
+  mongo-db:
+    image: mongo:7.0.5-rc0
+    container_name: mongo-hospital
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: sa
+      MONGO_INITDB_ROOT_PASSWORD: sa
+      MONGO_INITDB_DATABASE: medical_records
+    ports:
+      - '27017:27017'
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.3
