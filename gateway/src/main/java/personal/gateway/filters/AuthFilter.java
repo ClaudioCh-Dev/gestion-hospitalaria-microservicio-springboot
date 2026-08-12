@@ -2,130 +2,110 @@ package personal.gateway.filters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.http.HttpStatus;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
+
 import org.springframework.web.server.ServerWebExchange;
-import personal.gateway.dto.UserInfoDto;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+
 import reactor.core.publisher.Mono;
 
 @Component
-public class AuthFilter implements GatewayFilter {
+public class AuthFilter implements WebFilter {
 
-        private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(AuthFilter.class);
 
-        private final WebClient webClient;
+    private static final String USER_ID_HEADER =
+            "X-User-Id";
 
-        private final String authValidateUri;
+    private static final String ROLE_HEADER =
+            "X-Role";
 
-        private static final String ACCESS_TOKEN_HEADER = "access-token";
+    @Override
+    public Mono<Void> filter(
+            ServerWebExchange exchange,
+            WebFilterChain chain
+    ) {
 
-        private static final String USER_ID_HEADER = "X-User-Id";
+        return exchange.getPrincipal()
+                .cast(Authentication.class)
+                .flatMap(authentication -> {
 
-        private static final String USERNAME_HEADER = "X-Username";
+                    /*
+                     * Spring Security ya validó el JWT.
+                     */
+                    if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
 
-        private static final String ROLE_HEADER = "X-Role";
+                        log.warn(
+                                "Authentication no es JwtAuthenticationToken"
+                        );
 
-        public AuthFilter(
-                        WebClient.Builder webClientBuilder,
-                        @Value("${gateway.auth.validate-uri:http://localhost:3000/auth-server/auth/validate-jwt}") String authValidateUri) {
+                        return chain.filter(exchange);
+                    }
 
-                this.webClient = webClientBuilder.build();
-                this.authValidateUri = authValidateUri;
+                    var jwt = jwtAuth.getToken();
 
-                log.info("AuthFilter iniciado");
-                log.info("Auth validate URI: {}", authValidateUri);
-        }
+                    /*
+                     * Claims obtenidos del JWT VALIDADO.
+                     */
+                    String userId =
+                            jwt.getClaimAsString("userId");
 
-        @Override
-        public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+                    String username =
+                            jwt.getSubject();
 
-                String path = exchange.getRequest().getURI().getPath();
+                    String role =
+                            jwt.getClaimAsString("role");
 
-                log.info("=================================");
-                log.info("AuthFilter ejecutando");
-                log.info("Request path: {}", path);
+                    log.info("=================================");
+                    log.info("JWT autenticado correctamente");
+                    log.info("UserId: {}", userId);
+                    log.info("Username: {}", username);
+                    log.info("Role: {}", role);
 
-                String tokenHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
+                    /*
+                     * Eliminamos headers enviados por el cliente.
+                     */
+                    ServerWebExchange mutatedExchange =
+                            exchange.mutate()
+                                    .request(request ->
+                                            request.headers(headers -> {
 
-                log.info("Authorization header existe: {}", tokenHeader != null);
+                                                headers.remove(
+                                                        USER_ID_HEADER
+                                                );
 
-                if (tokenHeader == null) {
+                                                headers.remove(
+                                                        ROLE_HEADER
+                                                );
 
-                        log.error("No existe header Authorization");
+                                                /*
+                                                 * Colocamos nuestros
+                                                 * valores confiables.
+                                                 */
+                                                if (userId != null) {
+                                                    headers.set(
+                                                            USER_ID_HEADER,
+                                                            userId
+                                                    );
+                                                }
 
-                        return onError(exchange);
-                }
+                                                if (role != null) {
+                                                    headers.set(
+                                                            ROLE_HEADER,
+                                                            role
+                                                    );
+                                                }
+                                            })
+                                    )
+                                    .build();
 
-                log.info(
-                                "Authorization recibido: {}",
-                                tokenHeader.substring(0, Math.min(tokenHeader.length(), 20)));
-
-                String[] chunks = tokenHeader.split(" ");
-
-                if (chunks.length != 2 || !"Bearer".equals(chunks[0])) {
-
-                        log.error("Formato Authorization incorrecto");
-
-                        return onError(exchange);
-                }
-
-                String token = chunks[1];
-
-                log.info("Token recibido longitud: {}", token.length());
-
-                log.info("Validando token contra auth-server: {}", authValidateUri);
-
-                return webClient
-                                .post()
-                                .uri(authValidateUri)
-
-                                // manda JWT al auth-ms
-                                .header(ACCESS_TOKEN_HEADER, token)
-                                .retrieve()
-                                .bodyToMono(UserInfoDto.class)
-                                .doOnNext(
-                                                user -> {
-                                                        log.info("Token válido");
-                                                        log.info("Usuario autenticado:");
-                                                        log.info("UserId: {}", user.getUserId());
-                                                        log.info("Username: {}", user.getUsername());
-                                                        log.info("Role: {}", user.getRole());
-                                                })
-                                .map(
-                                                user -> exchange
-                                                                .mutate()
-                                                                .request(
-                                                                                request -> request
-                                                                                                .header(USER_ID_HEADER,
-                                                                                                                user.getUserId().toString())
-                                                                                                .header(USERNAME_HEADER,
-                                                                                                                user.getUsername())
-                                                                                                .header(ROLE_HEADER,
-                                                                                                                user.getRole()))
-                                                                .build())
-                                .flatMap(chain::filter)
-                                .doOnError(
-                                                error -> {
-                                                        log.error("Error validando JWT");
-                                                        log.error("Tipo: {}", error.getClass().getName());
-                                                        log.error("Mensaje: {}", error.getMessage());
-                                                })
-                                .onErrorResume(
-                                                error -> {
-                                                        return onError(exchange);
-                                                });
-        }
-
-        private Mono<Void> onError(ServerWebExchange exchange) {
-
-                log.error("Acceso rechazado -> 401");
-
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-
-                return exchange.getResponse().setComplete();
-        }
+                    return chain.filter(mutatedExchange);
+                });
+    }
 }

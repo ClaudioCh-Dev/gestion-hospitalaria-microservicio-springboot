@@ -4,6 +4,7 @@ import java.util.Set;
 
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -25,7 +26,9 @@ public class GatewayBeans {
 
     @Bean
     @Profile("eureka-off")
-    public RouteLocator routeLocatorEurekaOff(RouteLocatorBuilder builder) {
+    public RouteLocator routeLocatorEurekaOff(
+            RouteLocatorBuilder builder
+    ) {
 
         return builder.routes()
 
@@ -58,7 +61,9 @@ public class GatewayBeans {
 
     @Bean
     @Profile("eureka-on")
-    public RouteLocator routeLocatorEurekaOn(RouteLocatorBuilder builder) {
+    public RouteLocator routeLocatorEurekaOn(
+            RouteLocatorBuilder builder
+    ) {
 
         return builder.routes()
 
@@ -91,7 +96,9 @@ public class GatewayBeans {
 
     @Bean
     @Profile("eureka-on-cb")
-    public RouteLocator routeLocatorEurekaOnCB(RouteLocatorBuilder builder) {
+    public RouteLocator routeLocatorEurekaOnCB(
+            RouteLocatorBuilder builder
+    ) {
 
         return builder.routes()
 
@@ -99,40 +106,68 @@ public class GatewayBeans {
                         .path("/patient-ms/**")
                         .filters(filter -> filter
                                 .circuitBreaker(config -> config
-                                        .setName("patient-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
+                                        .setName(
+                                                "patient-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
                                         .setFallbackUri(
-                                                "forward:/fallback?service=patient-ms")))
+                                                "forward:/fallback?service=patient-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://patient-ms"))
 
                 .route(route -> route
                         .path("/doctor-ms/**")
                         .filters(filter -> filter
                                 .circuitBreaker(config -> config
-                                        .setName("doctor-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
+                                        .setName(
+                                                "doctor-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
                                         .setFallbackUri(
-                                                "forward:/fallback?service=doctor-ms")))
+                                                "forward:/fallback?service=doctor-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://doctor-ms"))
 
                 .route(route -> route
                         .path("/appointment-ms/**")
                         .filters(filter -> filter
                                 .circuitBreaker(config -> config
-                                        .setName("appointment-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
+                                        .setName(
+                                                "appointment-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
                                         .setFallbackUri(
-                                                "forward:/fallback?service=appointment-ms")))
+                                                "forward:/fallback?service=appointment-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://appointment-ms"))
 
                 .route(route -> route
                         .path("/billing-ms/**")
                         .filters(filter -> filter
                                 .circuitBreaker(config -> config
-                                        .setName("billing-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
+                                        .setName(
+                                                "billing-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
                                         .setFallbackUri(
-                                                "forward:/fallback?service=billing-ms")))
+                                                "forward:/fallback?service=billing-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://billing-ms"))
 
                 .route(route -> route
@@ -147,104 +182,142 @@ public class GatewayBeans {
     // ============================================================
 
     @Bean
-    @Profile(value = "oauth2")
-    public RouteLocator routeLocatorOAuth2(RouteLocatorBuilder builder) {
+    @Profile("oauth2")
+    public RouteLocator routeLocatorOAuth2(
+            RouteLocatorBuilder builder
+    ) {
 
-        System.out.println("========== PERFIL OAUTH2 ACTIVO ==========");
+        System.out.println(
+                "========== PERFIL OAUTH2 ACTIVO =========="
+        );
 
         return builder.routes()
 
-                /*
-                 * .route(route -> route
-                 * .path("/patient-ms/**")
-                 * .filters(filter -> filter
-                 * .circuitBreaker(config -> config
-                 * .setName("patient-circuitbreaker")
-                 * .setStatusCodes(Set.of("500"))
-                 * .setFallbackUri("forward:/patient-ms-fallback/**")
-                 * )
-                 * .filter(this.authFilter)
-                 * )
-                 * .uri("lb://patient-ms")
-                 * )
-                 */
+                // ------------------------------------------------
+                // PATIENT
+                // ------------------------------------------------
 
                 .route(route -> route
                         .path("/patient-ms/**")
                         .filters(filter -> filter
-                                .filter(this.authFilter)
                                 .circuitBreaker(config -> config
-                                        .setName("patient-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
-                                        .setFallbackUri("forward:/fallback?service=patient-ms")))
+                                        .setName(
+                                                "patient-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
+                                        .setFallbackUri(
+                                                "forward:/fallback?service=patient-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://patient-ms"))
+
+                // ------------------------------------------------
+                // DOCTOR
+                // ------------------------------------------------
 
                 .route(route -> route
                         .path("/doctor-ms/**")
                         .filters(filter -> filter
-                                .filter(this.authFilter)
                                 .circuitBreaker(config -> config
-                                        .setName("doctor-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
-                                        .setFallbackUri("forward:/fallback?service=doctor-ms")))
+                                        .setName(
+                                                "doctor-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
+                                        .setFallbackUri(
+                                                "forward:/fallback?service=doctor-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://doctor-ms"))
+
+                // ------------------------------------------------
+                // APPOINTMENT
+                // ------------------------------------------------
 
                 .route(route -> route
                         .path("/appointment-ms/**")
                         .filters(filter -> filter
-                                .filter(this.authFilter)
                                 .circuitBreaker(config -> config
-                                        .setName("appointment-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
-                                        .setFallbackUri("forward:/fallback?service=appointment-ms")))
+                                        .setName(
+                                                "appointment-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
+                                        .setFallbackUri(
+                                                "forward:/fallback?service=appointment-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://appointment-ms"))
+
+                // ------------------------------------------------
+                // BILLING
+                // ------------------------------------------------
 
                 .route(route -> route
                         .path("/billing-ms/**")
                         .filters(filter -> filter
-                                .filter(this.authFilter)
                                 .circuitBreaker(config -> config
-                                        .setName("billing-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
-                                        .setFallbackUri("forward:/fallback?service=billing-ms")))
+                                        .setName(
+                                                "billing-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
+                                        .setFallbackUri(
+                                                "forward:/fallback?service=billing-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://billing-ms"))
+
+                // ------------------------------------------------
+                // NOTIFICATION
+                // ------------------------------------------------
 
                 .route(route -> route
                         .path("/notification-ms/**")
                         .filters(filter -> filter
                                 .circuitBreaker(config -> config
-                                        .setName("notification-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
+                                        .setName(
+                                                "notification-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
                                         .setFallbackUri(
-                                                "forward:/fallback?service=notification-ms")))
+                                                "forward:/fallback?service=notification-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://notification-ms"))
+
+                // ------------------------------------------------
+                // MEDICAL RECORD LISTENER
+                // ------------------------------------------------
 
                 .route(route -> route
                         .path("/medical-record-listener-ms/**")
                         .filters(filter -> filter
                                 .circuitBreaker(config -> config
-                                        .setName("medical-record-listener-circuitbreaker")
-                                        .setStatusCodes(Set.of("500"))
+                                        .setName(
+                                                "medical-record-listener-circuitbreaker"
+                                        )
+                                        .setStatusCodes(
+                                                Set.of("500")
+                                        )
                                         .setFallbackUri(
-                                                "forward:/fallback?service=medical-record-listener-ms")))
+                                                "forward:/fallback?service=medical-record-listener-ms"
+                                        )
+                                )
+                        )
                         .uri("lb://medical-record-listener-ms"))
-                /*
-                 * .route(route -> route
-                 * .path("/billing-ms/**")
-                 * .filters(filter -> filter.filter(this.authFilter))
-                 * .uri("lb://billing-ms")
-                 * )
-                 *
-                 * .route(route -> route
-                 * .path("/patient-ms-fallback/**")
-                 * .uri("lb://patient-ms-fallback")
-                 * )
-                 *
-                 * .route(route -> route
-                 * .path("/auth-server/**")
-                 * .uri("lb://auth-server")
-                 * )
-                 */
 
                 .build();
     }

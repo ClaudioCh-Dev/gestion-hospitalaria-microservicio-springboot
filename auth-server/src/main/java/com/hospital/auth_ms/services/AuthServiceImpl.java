@@ -24,24 +24,33 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtHelper jwtHelper;
 
-
     @Override
     public TokenDto login(UserDto userDto) {
 
-        final var userFromDb = this.userRepository.findByUsername(userDto.getUsername())
-                .orElseThrow(() -> new InvalidCredentialsException());
+        final var userFromDb =
+                this.userRepository
+                        .findByUsername(userDto.getUsername())
+                        .orElseThrow(
+                                InvalidCredentialsException::new
+                        );
 
-        this.validPassword(userDto, userFromDb);
+        this.validPassword(
+                userDto,
+                userFromDb
+        );
 
         return TokenDto.builder()
-                .accessToken(this.jwtHelper.createToken(ClaimsDto.builder()
-                        .userId(userFromDb.getId())
-                        .username(userFromDb.getUsername())
-                        .role(userFromDb.getRole())
-                        .build()))
+                .accessToken(
+                        this.jwtHelper.createToken(
+                                ClaimsDto.builder()
+                                        .userId(userFromDb.getId())
+                                        .username(userFromDb.getUsername())
+                                        .role(userFromDb.getRole())
+                                        .build()
+                        )
+                )
                 .build();
     }
-
 
     @Override
     public ClaimsDto validateToken(String accessToken) {
@@ -51,19 +60,31 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return ClaimsDto.builder()
-                .userId(this.jwtHelper.getUserIdFromToken(accessToken))
-                .username(this.jwtHelper.getUsernameFromToken(accessToken))
-                .role(this.jwtHelper.getRoleFromToken(accessToken))
+                .userId(
+                        this.jwtHelper
+                                .getUserIdFromToken(accessToken)
+                )
+                .username(
+                        this.jwtHelper
+                                .getUsernameFromToken(accessToken)
+                )
+                .role(
+                        this.jwtHelper
+                                .getRoleFromToken(accessToken)
+                )
                 .build();
     }
 
-
-    private void validPassword(UserDto userDto, UserEntity userEntity) {
+    private void validPassword(
+            UserDto userDto,
+            UserEntity userEntity
+    ) {
 
         if (!this.passwordEncoder.matches(
                 userDto.getPassword(),
                 userEntity.getPassword()
         )) {
+
             throw new InvalidCredentialsException();
         }
     }

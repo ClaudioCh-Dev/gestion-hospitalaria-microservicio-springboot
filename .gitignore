@@ -84,3 +84,7 @@ dist/
 # ==========================
 docs/hospital-ms-concepto.md
 docs/hospital-ms-guide.md
+
+
+*.pem
+*.key
