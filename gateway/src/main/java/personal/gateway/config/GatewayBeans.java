@@ -9,16 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-import personal.gateway.filters.AuthFilter;
-
 @Configuration
 public class GatewayBeans {
-
-    private final AuthFilter authFilter;
-
-    public GatewayBeans(AuthFilter authFilter) {
-        this.authFilter = authFilter;
-    }
 
     // ============================================================
     // EUREKA OFF

@@ -50,7 +50,7 @@ public class JwtHelper {
 
         return getClaimsFromToken(
                 token,
-                Claims::getSubject
+                claims -> claims.getSubject()
         );
     }
 
@@ -99,7 +99,7 @@ public class JwtHelper {
 
         return getClaimsFromToken(
                 token,
-                Claims::getExpiration
+                claims -> claims.getExpiration()
         );
     }
 
