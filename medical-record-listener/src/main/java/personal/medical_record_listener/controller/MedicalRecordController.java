@@ -1,6 +1,7 @@
 package personal.medical_record_listener.controller;
-    
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import personal.medical_record_listener.dto.MedicalRecordResponse;
@@ -16,13 +17,18 @@ public class MedicalRecordController {
     private final MedicalRecordService service;
 
     @GetMapping("/patient/{patientId}")
-    public List<MedicalRecordResponse> findByPatientId(
-            @PathVariable Long patientId) {
-        return service.findByPatientId(patientId);
+    public ResponseEntity<List<MedicalRecordResponse>> findByPatientId(
+            @PathVariable Long patientId
+    ) {
+        return ResponseEntity.ok(
+                service.findByPatientId(patientId)
+        );
     }
 
     @GetMapping
-    public List<MedicalRecordResponse> findAll() {
-        return service.findAll();
+    public ResponseEntity<List<MedicalRecordResponse>> findAll() {
+        return ResponseEntity.ok(
+                service.findAll()
+        );
     }
 }
