@@ -19,6 +19,7 @@ COPY --from=build /app/notification-ms/target/*.jar app.jar
 COPY notification-ms/opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 ENV EUREKA_SERVER_URL=null
 ENV KAFKA_BROKER=null
+ENV CONFIG_SERVER_HOST=null
 ENV OTEL_SERVICE_NAME=notification-ms
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
 ENV OTEL_LOGS_EXPORTER=otlp

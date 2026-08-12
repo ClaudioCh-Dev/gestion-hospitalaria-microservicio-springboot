@@ -1,7 +1,16 @@
 spring:
   application:
     name: notification-ms
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
 
+  datasource:
+    username: ${db.username:root}
+    password: ${db.password:123456}
+    url: ${db.url:jdbc:mysql://db-notification:3306/notification_db}
+    hikari:
+      connection-timeout: ${db.connection-timeout:30000}
+      maximum-pool-size: ${db.maximum-pool-size:10}
   cloud:
     function:
       definition: appointmentCreatedConsumer;appointmentConfirmedConsumer;appointmentCompletedConsumer;appointmentCanceledConsumer;patientCreatedConsumer
@@ -44,3 +53,10 @@ eureka:
       defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
     register-with-eureka: true
     fetch-registry: true
+server:
+  port: 8081
+
+scalar:
+  enabled: false
+  darkMode: true
+  theme: deepSpace
