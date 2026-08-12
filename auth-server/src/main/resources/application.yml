@@ -25,6 +25,11 @@ server:
   servlet:
     context-path: /auth-server
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
 
 eureka:
   client:

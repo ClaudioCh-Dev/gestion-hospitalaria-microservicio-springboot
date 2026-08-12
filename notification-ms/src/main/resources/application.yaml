@@ -53,6 +53,12 @@ eureka:
       defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
     register-with-eureka: true
     fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
 server:
   port: 8081
 
