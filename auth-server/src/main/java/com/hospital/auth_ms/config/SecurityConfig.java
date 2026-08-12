@@ -1,4 +1,4 @@
-package com.hospital.auth_ms.beans;
+package com.hospital.auth_ms.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

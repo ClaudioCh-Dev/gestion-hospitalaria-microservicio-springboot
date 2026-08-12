@@ -341,7 +341,7 @@ services:
       - otel-collector
     environment:
       EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
-      AUTH_VALIDATE_URI: http://auth-server:3000/auth-server/auth/validate-jwt
+      AUTH_SERVER_JWKS_URI: http://auth-server:3000/auth-server/.well-known/jwks.json
 
       # OpenTelemetry
       OTEL_SERVICE_NAME: gateway

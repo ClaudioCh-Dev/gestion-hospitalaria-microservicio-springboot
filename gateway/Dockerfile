@@ -10,7 +10,7 @@ WORKDIR /app
 COPY --from=build /app/gateway/target/*.jar app.jar
 COPY gateway/opentelemetry-javaagent.jar opentelemetry-javaagent.jar
 ENV EUREKA_SERVER_URL=null
-ENV AUTH_VALIDATE_URI=null
+ENV AUTH_SERVER_JWKS_URI=null
 ENV OTEL_SERVICE_NAME=gateway
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
 ENV OTEL_LOGS_EXPORTER=otlp
