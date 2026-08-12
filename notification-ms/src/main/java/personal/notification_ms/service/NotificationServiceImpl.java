@@ -11,6 +11,7 @@ import personal.notification_ms.repository.NotificationRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// TODO: Add scheduled notification cleanup and retention policy
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements INotificationService {
