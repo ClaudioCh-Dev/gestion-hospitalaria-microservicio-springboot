@@ -44,42 +44,31 @@ spring:
 
 resilience4j:
   circuitbreaker:
-    instances:
-      patient-ms:
-        # Configuración del sliding window para tipo COUNT_BASED
+
+    configs:
+      default:
         slidingWindowType: COUNT_BASED
-        # Tamaño del sliding window que es la cantidad de calls que se consideran para evaluar el circuit breaker
         slidingWindowSize: 5
-        # Mínimo número de calls para evaluar el circuit breaker
         minimumNumberOfCalls: 5
-        # Threshold de fallos para abrir el circuito
         failureRateThreshold: 50
-        # Duración en estado abierto antes de pasar a half-open
         waitDurationInOpenState: 10s
-        # Número de calls permitidos en estado half-open
         permittedNumberOfCallsInHalfOpenState: 2
+
+    instances:
+
+      patient-ms:
+        baseConfig: default
         ignoreExceptions:
           - personal.appointment_ms.exceptions.PatientNotFoundException
-          - feign.FeignException.BadRequest      # 400
-          - feign.FeignException.UnprocessableEntity  # 422
+          - feign.FeignException.BadRequest
+          - feign.FeignException.UnprocessableEntity
+
       doctor-ms:
-        # Configuración del sliding window para tipo COUNT_BASED
-        slidingWindowType: COUNT_BASED
-        # Tamaño del sliding window que es la cantidad de calls que se consideran para evaluar el circuit breaker
-        slidingWindowSize: 5
-        # Mínimo número de calls para evaluar el circuit breaker
-        minimumNumberOfCalls: 5
-        # Threshold de fallos para abrir el circuito
-        failureRateThreshold: 50
-        # Duración en estado abierto antes de pasar a half-open
-        waitDurationInOpenState: 10s
-        # Número de calls permitidos en estado half-open
-        permittedNumberOfCallsInHalfOpenState: 2
+        baseConfig: default
         ignoreExceptions:
           - personal.appointment_ms.exceptions.DoctorNotFoundException
-          - feign.FeignException.BadRequest      # 400
-          - feign.FeignException.UnprocessableEntity  # 422
-
+          - feign.FeignException.BadRequest
+          - feign.FeignException.UnprocessableEntity
 server:
   port: 8081
 
