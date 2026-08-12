@@ -1,4 +1,4 @@
-package personal.notification_ms.exeptions;
+package personal.notification_ms.exceptions;
 
 public class NotificationNotFoundException extends RuntimeException {
 

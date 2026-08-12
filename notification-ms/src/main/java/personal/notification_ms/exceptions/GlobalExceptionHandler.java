@@ -1,4 +1,4 @@
-package personal.notification_ms.exeptions;
+package personal.notification_ms.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
