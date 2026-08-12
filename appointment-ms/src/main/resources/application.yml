@@ -58,6 +58,8 @@ resilience4j:
         waitDurationInOpenState: 10s
         # Número de calls permitidos en estado half-open
         permittedNumberOfCallsInHalfOpenState: 2
+        ignoreExceptions:
+          - personal.appointment_ms.exceptions.PatientNotFoundException
       doctor-ms:
         # Configuración del sliding window para tipo COUNT_BASED
         slidingWindowType: COUNT_BASED
@@ -71,6 +73,8 @@ resilience4j:
         waitDurationInOpenState: 10s
         # Número de calls permitidos en estado half-open
         permittedNumberOfCallsInHalfOpenState: 2
+        ignoreExceptions:
+          - personal.appointment_ms.exceptions.DoctorNotFoundException
 
 server:
   port: 8081
