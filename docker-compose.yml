@@ -15,14 +15,13 @@ services:
       POSTGRES_PASSWORD: '123456'
     ports:
       - '5434:5432'
-      
+
   db-notification:
     image: mysql:8.4
     container_name: db-notification
     restart: always
     volumes:
       - ./sql/notification-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./sql/notification-data.sql:/docker-entrypoint-initdb.d/02-data.sql
     environment:
       MYSQL_DATABASE: notification_db
       MYSQL_ROOT_PASSWORD: '123456'
