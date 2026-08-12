@@ -60,6 +60,8 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 2
         ignoreExceptions:
           - personal.appointment_ms.exceptions.PatientNotFoundException
+          - feign.FeignException.BadRequest      # 400
+          - feign.FeignException.UnprocessableEntity  # 422
       doctor-ms:
         # Configuración del sliding window para tipo COUNT_BASED
         slidingWindowType: COUNT_BASED
@@ -75,6 +77,8 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 2
         ignoreExceptions:
           - personal.appointment_ms.exceptions.DoctorNotFoundException
+          - feign.FeignException.BadRequest      # 400
+          - feign.FeignException.UnprocessableEntity  # 422
 
 server:
   port: 8081
