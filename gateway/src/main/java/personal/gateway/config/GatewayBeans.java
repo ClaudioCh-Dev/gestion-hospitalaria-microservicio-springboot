@@ -209,6 +209,25 @@ public class GatewayBeans {
                                         .setFallbackUri("forward:/fallback?service=billing-ms")))
                         .uri("lb://billing-ms"))
 
+                .route(route -> route
+                        .path("/notification-ms/**")
+                        .filters(filter -> filter
+                                .circuitBreaker(config -> config
+                                        .setName("notification-circuitbreaker")
+                                        .setStatusCodes(Set.of("500"))
+                                        .setFallbackUri(
+                                                "forward:/fallback?service=notification-ms")))
+                        .uri("lb://notification-ms"))
+
+                .route(route -> route
+                        .path("/medical-record-listener-ms/**")
+                        .filters(filter -> filter
+                                .circuitBreaker(config -> config
+                                        .setName("medical-record-listener-circuitbreaker")
+                                        .setStatusCodes(Set.of("500"))
+                                        .setFallbackUri(
+                                                "forward:/fallback?service=medical-record-listener-ms")))
+                        .uri("lb://medical-record-listener-ms"))
                 /*
                  * .route(route -> route
                  * .path("/billing-ms/**")
