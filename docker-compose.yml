@@ -284,7 +284,34 @@ services:
 
       SPRING_PROFILES_ACTIVE: dev
 
+  ms-medical-record-listener:
+    image: ms-hospital-medical-record-listener:latest
+    build:
+      context: .
+      dockerfile: medical-record-listener/Dockerfile
+    container_name: ms-medical-record-listener
+    restart: always
+    ports:
+      - "8085:8081"
+    depends_on:
+      - ms-config-server
+      - ms-registry-server
+      - db
+      - kafka
+      - otel-collector
+      - mongo-db
+    environment:
+      EUREKA_SERVER_URL: http://ms-registry-server:8761/eureka
+      KAFKA_BROKER: kafka-hospital:29092
+      CONFIG_SERVER_HOST: http://ms-config-server:7777
+      # OpenTelemetry
+      OTEL_SERVICE_NAME: medical-record-listener-ms
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_LOGS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: otlp
 
+      SPRING_PROFILES_ACTIVE: dev
   # =================== GATEWAY ===================
 
   ms-gateway:

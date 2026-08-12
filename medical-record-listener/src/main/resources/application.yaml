@@ -1,3 +1,50 @@
+server:
+  port: ${SERVER_PORT:8085}
+
 spring:
   application:
     name: medical-record-listener
+
+  profiles:
+    default: prod
+
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
+
+  mongodb:
+    uri: ${db.url:mongodb://sa:sa@localhost:27017/medical_records}
+  cloud:
+    function:
+      definition: appointmentCompletedConsumer
+
+    stream:
+      kafka:
+        binder:
+          brokers: ${KAFKA_BROKER:kafka-hospital:29092}
+
+      bindings:
+        appointmentCompletedConsumer-in-0:
+          destination: appointment-completed
+          group: medical-record-listener-group
+          content-type: application/json
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${random.value}
+
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+scalar:
+  enabled: false
+  darkMode: true
+  theme: deepSpace
