@@ -9,7 +9,8 @@ import personal.appointment_ms.dto.DoctorResponse;
 
 @FeignClient(
         name = "doctor-ms",
-        configuration = DoctorFeignConfig.class
+        configuration = DoctorFeignConfig.class,
+        fallback = DoctorClientFallback.class
 )
 public interface DoctorClient {
 

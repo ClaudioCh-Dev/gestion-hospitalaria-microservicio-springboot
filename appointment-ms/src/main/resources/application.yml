@@ -29,6 +29,9 @@ spring:
         appointment-canceled-out-0:
           destination: appointment-canceled
           content-type: application/json
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 
   datasource:
@@ -39,6 +42,35 @@ spring:
       connection-timeout: ${db.connection-timeout:30000}
       maximum-pool-size: ${db.maximum-pool-size:10}
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      patient-ms:
+        # Configuración del sliding window para tipo COUNT_BASED
+        slidingWindowType: COUNT_BASED
+        # Tamaño del sliding window que es la cantidad de calls que se consideran para evaluar el circuit breaker
+        slidingWindowSize: 5
+        # Mínimo número de calls para evaluar el circuit breaker
+        minimumNumberOfCalls: 5
+        # Threshold de fallos para abrir el circuito
+        failureRateThreshold: 50
+        # Duración en estado abierto antes de pasar a half-open
+        waitDurationInOpenState: 10s
+        # Número de calls permitidos en estado half-open
+        permittedNumberOfCallsInHalfOpenState: 2
+      doctor-ms:
+        # Configuración del sliding window para tipo COUNT_BASED
+        slidingWindowType: COUNT_BASED
+        # Tamaño del sliding window que es la cantidad de calls que se consideran para evaluar el circuit breaker
+        slidingWindowSize: 5
+        # Mínimo número de calls para evaluar el circuit breaker
+        minimumNumberOfCalls: 5
+        # Threshold de fallos para abrir el circuito
+        failureRateThreshold: 50
+        # Duración en estado abierto antes de pasar a half-open
+        waitDurationInOpenState: 10s
+        # Número de calls permitidos en estado half-open
+        permittedNumberOfCallsInHalfOpenState: 2
 
 server:
   port: 8081

@@ -38,6 +38,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
     public AppointmentResponse createAppointment(
             CreateAppointmentRequest request) {
 
+        //Feign client call
         patientClient.findById(request.patientId());
         doctorClient.findById(request.doctorId());
 

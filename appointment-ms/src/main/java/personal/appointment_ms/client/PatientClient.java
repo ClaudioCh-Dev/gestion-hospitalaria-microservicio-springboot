@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import personal.appointment_ms.config.PatientFeignConfig;
 import personal.appointment_ms.dto.PatientResponse;
 
-@FeignClient(name = "patient-ms" , configuration = PatientFeignConfig.class)
+@FeignClient(name = "patient-ms" , configuration = PatientFeignConfig.class, fallback = PatientClientFallback.class)
 public interface PatientClient {
 
     @GetMapping(path = "/patients/{id}")
