@@ -17,95 +17,78 @@ import reactor.core.publisher.Mono;
 @Component
 public class AuthFilter implements WebFilter {
 
-    private static final Logger log =
-            LoggerFactory.getLogger(AuthFilter.class);
+        private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
 
-    private static final String USER_ID_HEADER =
-            "X-User-Id";
+        private static final String USER_ID_HEADER = "X-User-Id";
+        private static final String ROLE_HEADER = "X-Role";
 
-    private static final String ROLE_HEADER =
-            "X-Role";
+        @Override
+        public Mono<Void> filter(
+                        ServerWebExchange exchange,
+                        WebFilterChain chain) {
 
-    @Override
-    public Mono<Void> filter(
-            ServerWebExchange exchange,
-            WebFilterChain chain
-    ) {
+                log.info(
+                                "🔥 AUTH FILTER: {}",
+                                exchange.getRequest().getPath());
 
-        return exchange.getPrincipal()
-                .cast(Authentication.class)
-                .flatMap(authentication -> {
+                return exchange.getPrincipal()
+                                .cast(Authentication.class)
 
-                    /*
-                     * Spring Security ya validó el JWT.
-                     */
-                    if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
+                                .flatMap(authentication -> {
 
-                        log.warn(
-                                "Authentication no es JwtAuthenticationToken"
-                        );
+                                        log.info(
+                                                        "🔥 AUTHENTICATION: {}",
+                                                        authentication);
 
-                        return chain.filter(exchange);
-                    }
+                                        if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
 
-                    var jwt = jwtAuth.getToken();
+                                                log.warn("Authentication no es JwtAuthenticationToken");
 
-                    /*
-                     * Claims obtenidos del JWT VALIDADO.
-                     */
-                    String userId =
-                            jwt.getClaimAsString("userId");
+                                                return chain.filter(exchange);
+                                        }
 
-                    String username =
-                            jwt.getSubject();
+                                        var jwt = jwtAuth.getToken();
 
-                    String role =
-                            jwt.getClaimAsString("role");
+                                        String userId = jwt.getClaimAsString("userId");
 
-                    log.info("=================================");
-                    log.info("JWT autenticado correctamente");
-                    log.info("UserId: {}", userId);
-                    log.info("Username: {}", username);
-                    log.info("Role: {}", role);
+                                        String username = jwt.getSubject();
 
-                    /*
-                     * Eliminamos headers enviados por el cliente.
-                     */
-                    ServerWebExchange mutatedExchange =
-                            exchange.mutate()
-                                    .request(request ->
-                                            request.headers(headers -> {
+                                        String role = jwt.getClaimAsString("role");
 
-                                                headers.remove(
-                                                        USER_ID_HEADER
-                                                );
+                                        log.info("=================================");
+                                        log.info("JWT autenticado correctamente");
+                                        log.info("UserId: {}", userId);
+                                        log.info("Username: {}", username);
+                                        log.info("Role: {}", role);
 
-                                                headers.remove(
-                                                        ROLE_HEADER
-                                                );
+                                        ServerWebExchange mutatedExchange = exchange.mutate()
+                                                        .request(request -> request.headers(headers -> {
 
-                                                /*
-                                                 * Colocamos nuestros
-                                                 * valores confiables.
-                                                 */
-                                                if (userId != null) {
-                                                    headers.set(
-                                                            USER_ID_HEADER,
-                                                            userId
-                                                    );
-                                                }
+                                                                headers.remove(
+                                                                                USER_ID_HEADER);
 
-                                                if (role != null) {
-                                                    headers.set(
-                                                            ROLE_HEADER,
-                                                            role
-                                                    );
-                                                }
-                                            })
-                                    )
-                                    .build();
+                                                                headers.remove(
+                                                                                ROLE_HEADER);
 
-                    return chain.filter(mutatedExchange);
-                });
-    }
+                                                                if (userId != null) {
+                                                                        headers.set(
+                                                                                        USER_ID_HEADER,
+                                                                                        userId);
+                                                                }
+
+                                                                if (role != null) {
+                                                                        headers.set(
+                                                                                        ROLE_HEADER,
+                                                                                        role);
+                                                                }
+                                                        }))
+                                                        .build();
+
+                                        return chain.filter(mutatedExchange);
+                                })
+                                .switchIfEmpty(
+                                                // NO hay JWT → dejamos que Spring Security
+                                                // se encargue de rechazar la petición
+                                                chain.filter(exchange));
+        }
 }

@@ -1,5 +1,7 @@
 package com.hospital.auth_ms.controllers;
 
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,8 +17,7 @@ public class JwksController {
     }
 
     @GetMapping("/.well-known/jwks.json")
-    public String jwks() throws Exception {
-
-        return jwkSet.toJSONObject().toString();
+    public Map<String, Object> jwks() {
+        return jwkSet.toJSONObject();
     }
 }

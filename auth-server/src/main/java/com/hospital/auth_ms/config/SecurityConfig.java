@@ -14,40 +14,29 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Bean
-    SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+        @Bean
+        SecurityFilterChain securityFilterChain(
+                        HttpSecurity http) throws Exception {
 
-        return http
+                return http
 
-                .csrf(csrf ->
-                        csrf.disable()
-                )
+                                .csrf(csrf -> csrf.disable())
 
-                .headers(headers ->
-                        headers.frameOptions(
-                                frame -> frame.sameOrigin()
-                        )
-                )
+                                .headers(headers -> headers.frameOptions(
+                                                frame -> frame.sameOrigin()))
 
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
-                )
+                                .sessionManagement(session -> session.sessionCreationPolicy(
+                                                SessionCreationPolicy.STATELESS))
 
-                .authorizeHttpRequests(auth ->
-                        auth.requestMatchers(
-                                "/auth/login",
-                                "/auth/validate-jwt",
-                                "/h2-console/**"
-                        ).permitAll()
+                                .authorizeHttpRequests(auth -> auth.requestMatchers(
+                                                "/auth/login",
+                                                "/auth/validate-jwt",
+                                                "/.well-known/jwks.json",
+                                                "/h2-console/**").permitAll()
 
-                        .anyRequest()
-                        .authenticated()
-                )
+                                                .anyRequest()
+                                                .authenticated())
 
-                .build();
-    }
+                                .build();
+        }
 }

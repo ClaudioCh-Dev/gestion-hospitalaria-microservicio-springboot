@@ -179,7 +179,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: default
 
   ms-doctor:
     image: ms-hospital-doctor:latest
@@ -208,7 +208,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: default
 
   ms-appointment:
     image: ms-hospital-appointment:latest
@@ -266,7 +266,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: default
 
   ms-notification:
     image: ms-hospital-notification:latest
@@ -295,7 +295,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: default
 
   ms-medical-record-listener:
     image: ms-hospital-medical-record-listener:latest
@@ -324,7 +324,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: default
   # =================== GATEWAY ===================
 
   ms-gateway:
@@ -379,13 +379,13 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: default
 
 
   # =================== KAFKA UI ===================
 
   kafka-ui:
-    image: kafbat/kafka-ui:1.5.0
+    image: kafbat/kafka-ui:latest
     container_name: kafka-ui
     restart: always
     depends_on:

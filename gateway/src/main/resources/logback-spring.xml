@@ -35,13 +35,17 @@
 
 
     <!-- Gateway con seguridad OAuth2/JWT -->
-    <springProfile name="oauth2">
+<springProfile name="oauth2">
 
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
 
-    </springProfile>
+    <logger name="org.springframework.cloud.gateway" level="DEBUG"/>
+    <logger name="org.springframework.security" level="DEBUG"/>
+    <logger name="reactor.netty.http.client" level="DEBUG"/>
+
+</springProfile>
 
 
     <!-- Producción -->
@@ -53,5 +57,13 @@
 
     </springProfile>
 
+    <!-- Desarrollo -->
+<springProfile name="dev">
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</springProfile>
 
 </configuration>

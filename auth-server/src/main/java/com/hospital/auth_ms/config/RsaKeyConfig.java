@@ -1,7 +1,7 @@
 package com.hospital.auth_ms.config;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
@@ -18,10 +18,21 @@ public class RsaKeyConfig {
     @Bean
     public RSAPrivateCrtKey privateKey() throws Exception {
 
-        String pem = Files.readString(
-                Path.of(
-                        "src/main/resources/keys/private-key-pkcs8.pem"
-                )
+        InputStream inputStream = getClass()
+                .getClassLoader()
+                .getResourceAsStream(
+                        "keys/private-key-pkcs8.pem"
+                );
+
+        if (inputStream == null) {
+            throw new IllegalStateException(
+                    "No se encontró private-key-pkcs8.pem"
+            );
+        }
+
+        String pem = new String(
+                inputStream.readAllBytes(),
+                StandardCharsets.UTF_8
         );
 
         String key = pem
