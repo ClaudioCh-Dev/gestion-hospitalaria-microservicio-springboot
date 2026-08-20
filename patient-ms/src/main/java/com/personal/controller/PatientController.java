@@ -1,5 +1,6 @@
 package com.personal.controller;
 
+import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
 import com.personal.service.IPatientService;
@@ -28,8 +29,8 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PatientResponse> findById(@PathVariable Long id) {
-        PatientResponse patient = patientService.findById(id);
+    public ResponseEntity<PatientDetailResponse> findById(@PathVariable Long id) {
+        PatientDetailResponse patient = patientService.findById(id);
         return ResponseEntity.ok(patient);
     }
 

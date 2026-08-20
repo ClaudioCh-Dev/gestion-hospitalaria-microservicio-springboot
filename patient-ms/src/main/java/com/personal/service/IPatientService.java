@@ -1,5 +1,6 @@
 package com.personal.service;
 
+import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
 import org.springframework.data.domain.Page;
@@ -9,7 +10,7 @@ public interface IPatientService {
 
     Page<PatientResponse> findAll(Pageable pageable);
 
-    PatientResponse findById(Long id);
+    PatientDetailResponse findById(Long id);
 
     PatientResponse findByDocumentNumber(String documentNumber);
 

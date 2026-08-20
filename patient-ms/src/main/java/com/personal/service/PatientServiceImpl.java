@@ -1,5 +1,6 @@
 package com.personal.service;
 
+import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
 import com.personal.entities.Patient;
@@ -37,12 +38,12 @@ public class PatientServiceImpl implements IPatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public PatientResponse findById(Long id) {
+    public PatientDetailResponse findById(Long id) {
 
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new PatientNotFoundException(id));
 
-        return mapToResponse(patient);
+        return mapToDetailResponse(patient);
     }
 
     @Override
@@ -64,11 +65,10 @@ public class PatientServiceImpl implements IPatientService {
         Patient savedPatient = patientRepository.save(patient);
 
         PatientCreatedEvent event = new PatientCreatedEvent(
-            savedPatient.getId(),
-            savedPatient.getFirstName(),
-            savedPatient.getLastName(),
-            savedPatient.getEmail()
-        );
+                savedPatient.getId(),
+                savedPatient.getFirstName(),
+                savedPatient.getLastName(),
+                savedPatient.getEmail());
 
         patientPublisher.publishPatientCreated(event);
 
@@ -106,6 +106,19 @@ public class PatientServiceImpl implements IPatientService {
     private PatientResponse mapToResponse(Patient patient) {
 
         return new PatientResponse(
+                patient.getId(),
+                patient.getDocumentNumber(),
+                patient.getFirstName(),
+                patient.getLastName(),
+                patient.getBirthDate(),
+                patient.getPhone(),
+                patient.getEmail(),
+                patient.getActive());
+    }
+
+    private PatientDetailResponse mapToDetailResponse(Patient patient) {
+
+        return new PatientDetailResponse(
                 patient.getId(),
                 patient.getDocumentNumber(),
                 patient.getFirstName(),
