@@ -4,11 +4,13 @@ import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
 import com.personal.entities.Patient;
-import com.personal.exceptions.PatientNotFoundException;
+import com.personal.exceptions.ErrorCode;
+import com.personal.mapper.PatientMapper;
 import com.personal.repository.IPatientRepository;
 import com.personal.streams.PatientPublisher;
 
 import personal.shared.event.PatientCreatedEvent;
+import personal.shared.exception.BusinessException;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,47 +22,63 @@ public class PatientServiceImpl implements IPatientService {
 
     private final IPatientRepository patientRepository;
     private final PatientPublisher patientPublisher;
+    private final PatientMapper patientMapper;
 
     public PatientServiceImpl(
             IPatientRepository patientRepository,
-            PatientPublisher patientPublisher) {
+            PatientPublisher patientPublisher,
+            PatientMapper patientMapper) {
         this.patientRepository = patientRepository;
         this.patientPublisher = patientPublisher;
+        this.patientMapper = patientMapper;
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<PatientResponse> findAll(Pageable pageable) {
-
-        return patientRepository.findAll(pageable)
-                .map(this::mapToResponse);
+        return patientRepository.findAllResponses(pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PatientDetailResponse findById(Long id) {
-
         Patient patient = patientRepository.findById(id)
-                .orElseThrow(() -> new PatientNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.PATIENT_NOT_FOUND,
+                        "Paciente no encontrado"));
 
-        return mapToDetailResponse(patient);
+        return patientMapper.toDetailResponse(patient);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PatientResponse findByDocumentNumber(String documentNumber) {
+        Patient patient = patientRepository
+                .findByDocumentNumber(documentNumber)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.PATIENT_NOT_FOUND,
+                        "Paciente no encontrado"));
 
-        Patient patient = patientRepository.findByDocumentNumber(documentNumber)
-                .orElseThrow(() -> new PatientNotFoundException(documentNumber));
-
-        return mapToResponse(patient);
+        return patientMapper.toResponse(patient);
     }
 
     @Override
     @Transactional
     public PatientResponse create(PatientRequest request) {
 
-        Patient patient = mapToEntity(request);
+        if (patientRepository.existsByDocumentNumber(request.documentNumber())) {
+            throw new BusinessException(
+                    ErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS,
+                    "El número de documento ya está registrado");
+        }
+
+        if (patientRepository.existsByEmail(request.email())) {
+            throw new BusinessException(
+                    ErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
+                    "El correo electrónico ya está registrado");
+        }
+
+        Patient patient = patientMapper.toEntity(request);
 
         Patient savedPatient = patientRepository.save(patient);
 
@@ -72,7 +90,7 @@ public class PatientServiceImpl implements IPatientService {
 
         patientPublisher.publishPatientCreated(event);
 
-        return mapToResponse(savedPatient);
+        return patientMapper.toResponse(savedPatient);
     }
 
     @Override
@@ -82,13 +100,31 @@ public class PatientServiceImpl implements IPatientService {
             PatientRequest request) {
 
         Patient patient = patientRepository.findById(id)
-                .orElseThrow(() -> new PatientNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.PATIENT_NOT_FOUND,
+                        "Paciente no encontrado"));
 
-        updatePatientFields(patient, request);
+        if (patientRepository.existsByDocumentNumberAndIdNot(
+                request.documentNumber(),
+                id)) {
+            throw new BusinessException(
+                    ErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS,
+                    "El número de documento ya está registrado");
+        }
+
+        if (patientRepository.existsByEmailAndIdNot(
+                request.email(),
+                id)) {
+            throw new BusinessException(
+                    ErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
+                    "El correo electrónico ya está registrado");
+        }
+
+        patientMapper.updateEntity(request, patient);
 
         Patient updatedPatient = patientRepository.save(patient);
 
-        return mapToResponse(updatedPatient);
+        return patientMapper.toResponse(updatedPatient);
     }
 
     @Override
@@ -96,105 +132,11 @@ public class PatientServiceImpl implements IPatientService {
     public void delete(Long id) {
 
         if (!patientRepository.existsById(id)) {
-
-            throw new PatientNotFoundException(id);
+            throw new BusinessException(
+                    ErrorCode.PATIENT_NOT_FOUND,
+                    "Paciente no encontrado");
         }
 
         patientRepository.deleteById(id);
-    }
-
-    private PatientResponse mapToResponse(Patient patient) {
-
-        return new PatientResponse(
-                patient.getId(),
-                patient.getDocumentNumber(),
-                patient.getFirstName(),
-                patient.getLastName(),
-                patient.getBirthDate(),
-                patient.getPhone(),
-                patient.getEmail(),
-                patient.getActive());
-    }
-
-    private PatientDetailResponse mapToDetailResponse(Patient patient) {
-
-        return new PatientDetailResponse(
-                patient.getId(),
-                patient.getDocumentNumber(),
-                patient.getFirstName(),
-                patient.getLastName(),
-                patient.getBirthDate(),
-                patient.getGender(),
-                patient.getPhone(),
-                patient.getEmail(),
-                patient.getAddress(),
-                patient.getBloodType(),
-                patient.getAllergies(),
-                patient.getActive(),
-                patient.getCreatedAt(),
-                patient.getUpdatedAt());
-    }
-
-    private Patient mapToEntity(PatientRequest request) {
-
-        Patient patient = new Patient();
-
-        patient.setFirstName(request.firstName());
-        patient.setLastName(request.lastName());
-        patient.setDocumentNumber(request.documentNumber());
-        patient.setBirthDate(request.birthDate());
-        patient.setGender(request.gender());
-        patient.setPhone(request.phone());
-        patient.setEmail(request.email());
-        patient.setAddress(request.address());
-        patient.setBloodType(request.bloodType());
-        patient.setAllergies(request.allergies());
-
-        return patient;
-    }
-
-    private void updatePatientFields(
-            Patient patient,
-            PatientRequest request) {
-
-        if (request.firstName() != null) {
-            patient.setFirstName(request.firstName());
-        }
-
-        if (request.lastName() != null) {
-            patient.setLastName(request.lastName());
-        }
-
-        if (request.documentNumber() != null) {
-            patient.setDocumentNumber(request.documentNumber());
-        }
-
-        if (request.phone() != null) {
-            patient.setPhone(request.phone());
-        }
-
-        if (request.email() != null) {
-            patient.setEmail(request.email());
-        }
-
-        if (request.address() != null) {
-            patient.setAddress(request.address());
-        }
-
-        if (request.bloodType() != null) {
-            patient.setBloodType(request.bloodType());
-        }
-
-        if (request.allergies() != null) {
-            patient.setAllergies(request.allergies());
-        }
-
-        if (request.birthDate() != null) {
-            patient.setBirthDate(request.birthDate());
-        }
-
-        if (request.gender() != null) {
-            patient.setGender(request.gender());
-        }
     }
 }

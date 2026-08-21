@@ -1,10 +1,10 @@
 package com.personal.entities;
 
+import com.personal.enums.BloodType;
+import com.personal.enums.Gender;
+
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,7 +33,8 @@ public class Patient {
     @Column(nullable = false)
     private LocalDate birthDate;
 
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     private String phone;
 
@@ -42,7 +43,8 @@ public class Patient {
 
     private String address;
 
-    private String bloodType;
+    @Enumerated(EnumType.STRING)
+    private BloodType bloodType;
 
     private String allergies;
 

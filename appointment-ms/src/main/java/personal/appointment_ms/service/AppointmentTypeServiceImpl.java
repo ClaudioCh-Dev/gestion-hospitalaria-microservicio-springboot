@@ -6,13 +6,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+
 import personal.appointment_ms.dto.AppointmentTypeResponse;
 import personal.appointment_ms.dto.CreateAppointmentTypeRequest;
 import personal.appointment_ms.dto.UpdateAppointmentTypeRequest;
 import personal.appointment_ms.entities.AppointmentType;
-import personal.appointment_ms.exceptions.AppointmentTypeAlreadyInactiveException;
-import personal.appointment_ms.exceptions.AppointmentTypeNotFoundException;
+import personal.appointment_ms.exceptions.ErrorCode;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
+import personal.shared.exception.BusinessException;
 
 @Service
 @RequiredArgsConstructor
@@ -54,8 +55,10 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
 
         AppointmentType appointmentType =
                 appointmentTypeRepository.findById(id)
-                        .orElseThrow(
-                                () -> new AppointmentTypeNotFoundException(id));
+                        .orElseThrow(() -> new BusinessException(
+                                ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                "Tipo de cita no encontrado"
+                        ));
 
         return toResponse(appointmentType);
     }
@@ -68,8 +71,10 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
 
         AppointmentType appointmentType =
                 appointmentTypeRepository.findById(id)
-                        .orElseThrow(
-                                () -> new AppointmentTypeNotFoundException(id));
+                        .orElseThrow(() -> new BusinessException(
+                                ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                "Tipo de cita no encontrado"
+                        ));
 
         appointmentType.setTitle(request.title());
         appointmentType.setDescription(request.description());
@@ -87,11 +92,16 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
 
         AppointmentType appointmentType =
                 appointmentTypeRepository.findById(id)
-                        .orElseThrow(
-                                () -> new AppointmentTypeNotFoundException(id));
+                        .orElseThrow(() -> new BusinessException(
+                                ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                "Tipo de cita no encontrado"
+                        ));
 
         if (!appointmentType.getActive()) {
-            throw new AppointmentTypeAlreadyInactiveException(id);
+            throw new BusinessException(
+                    ErrorCode.APPOINTMENT_TYPE_ALREADY_INACTIVE,
+                    "El tipo de cita ya está inactivo"
+            );
         }
 
         appointmentType.setActive(false);
@@ -107,6 +117,7 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
                 appointmentType.getTitle(),
                 appointmentType.getDescription(),
                 appointmentType.getPrice(),
-                appointmentType.getActive());
+                appointmentType.getActive()
+        );
     }
 }

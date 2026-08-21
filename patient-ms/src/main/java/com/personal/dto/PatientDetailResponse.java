@@ -1,10 +1,12 @@
 package com.personal.dto;
 
+import com.personal.enums.BloodType;
+import com.personal.enums.Gender;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
-public record PatientDetailResponse (
+public record PatientDetailResponse(
 
         Long id,
 
@@ -16,7 +18,7 @@ public record PatientDetailResponse (
 
         LocalDate birthDate,
 
-        String gender,
+        Gender gender,
 
         String phone,
 
@@ -24,7 +26,7 @@ public record PatientDetailResponse (
 
         String address,
 
-        String bloodType,
+        BloodType bloodType,
 
         String allergies,
 

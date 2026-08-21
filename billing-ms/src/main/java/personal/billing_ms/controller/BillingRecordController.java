@@ -13,7 +13,6 @@ import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.service.IBillingRecordService;
 
 @RestController
-@RequestMapping("/billing")
 @RequiredArgsConstructor
 public class BillingRecordController {
 
@@ -44,5 +43,10 @@ public class BillingRecordController {
         return ResponseEntity.ok(
                 billingRecordService.payBilling(id)
         );
+    }
+    
+    @GetMapping
+    public ResponseEntity<List<BillingRecord>> getBillings() {
+        return ResponseEntity.ok(billingRecordService.getBillings());
     }
 }

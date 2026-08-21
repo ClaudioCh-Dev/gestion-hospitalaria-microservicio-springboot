@@ -1,27 +1,27 @@
 package personal.doctor_ms.service;
-
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import personal.doctor_ms.dtos.*;
 import personal.doctor_ms.entities.Doctor;
 import personal.doctor_ms.entities.Specialty;
-import personal.doctor_ms.exceptions.DoctorNotFoundException;
-import personal.doctor_ms.exceptions.SpecialtyNotFoundException;
+import personal.doctor_ms.exceptions.ErrorCode;
 import personal.doctor_ms.mapper.DoctorMapper;
 import personal.doctor_ms.mapper.SpecialtyMapper;
 import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
 
+import personal.shared.exception.BusinessException;
+
 @Service
 @RequiredArgsConstructor
-
 public class DoctorServiceImpl implements IDoctorService {
 
     private final DoctorRepository doctorRepository;
     private final SpecialtyRepository specialtyRepository;
-
     private final DoctorMapper doctorMapper;
     private final SpecialtyMapper specialtyMapper;
 
@@ -36,13 +36,19 @@ public class DoctorServiceImpl implements IDoctorService {
     public DoctorResponse findById(Long id) {
 
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new DoctorNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.DOCTOR_NOT_FOUND,
+                        "Doctor no encontrado"
+                ));
 
         return doctorMapper.toResponse(doctor);
     }
 
     @Override
-    public Page<DoctorResponse> findBySpecialty(Long specialtyId, Pageable pageable) {
+    public Page<DoctorResponse> findBySpecialty(
+            Long specialtyId,
+            Pageable pageable
+    ) {
 
         return doctorRepository.findBySpecialtyId(specialtyId, pageable)
                 .map(doctorMapper::toResponse);
@@ -52,7 +58,10 @@ public class DoctorServiceImpl implements IDoctorService {
     public DoctorResponse create(CreateDoctorRequest request) {
 
         Specialty specialty = specialtyRepository.findById(request.specialtyId())
-                .orElseThrow(() -> new SpecialtyNotFoundException(request.specialtyId()));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.SPECIALTY_NOT_FOUND,
+                        "Especialidad no encontrada"
+                ));
 
         Doctor doctor = Doctor.builder()
                 .licenseNumber(request.licenseNumber())
@@ -66,7 +75,8 @@ public class DoctorServiceImpl implements IDoctorService {
                 .build();
 
         return doctorMapper.toResponse(
-                doctorRepository.save(doctor));
+                doctorRepository.save(doctor)
+        );
     }
 
     @Override
@@ -77,7 +87,9 @@ public class DoctorServiceImpl implements IDoctorService {
     }
 
     @Override
-    public SpecialtyResponse createSpecialty(CreateSpecialtyRequest request) {
+    public SpecialtyResponse createSpecialty(
+            CreateSpecialtyRequest request
+    ) {
 
         Specialty specialty = Specialty.builder()
                 .name(request.name())
@@ -85,17 +97,27 @@ public class DoctorServiceImpl implements IDoctorService {
                 .build();
 
         return specialtyMapper.toResponse(
-                specialtyRepository.save(specialty));
+                specialtyRepository.save(specialty)
+        );
     }
 
     @Override
-    public DoctorResponse update(Long id, UpdateDoctorRequest request) {
+    public DoctorResponse update(
+            Long id,
+            UpdateDoctorRequest request
+    ) {
 
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new DoctorNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.DOCTOR_NOT_FOUND,
+                        "Doctor no encontrado"
+                ));
 
         Specialty specialty = specialtyRepository.findById(request.specialtyId())
-                .orElseThrow(() -> new SpecialtyNotFoundException(request.specialtyId()));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.SPECIALTY_NOT_FOUND,
+                        "Especialidad no encontrada"
+                ));
 
         doctor.setFirstName(request.firstName());
         doctor.setLastName(request.lastName());
@@ -107,6 +129,7 @@ public class DoctorServiceImpl implements IDoctorService {
         doctor.setActive(request.active());
 
         return doctorMapper.toResponse(
-                doctorRepository.save(doctor));
+                doctorRepository.save(doctor)
+        );
     }
 }

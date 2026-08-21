@@ -1,5 +1,7 @@
 package personal.notification_ms.service;
 
+import personal.notification_ms.dto.AdminNotificationResponse;
+import personal.notification_ms.dto.DoctorNotificationResponse;
 import personal.notification_ms.dto.NotificationRequest;
 import personal.notification_ms.dto.NotificationResponse;
 
@@ -9,9 +11,9 @@ public interface INotificationService {
 
     NotificationResponse save(NotificationRequest request);
 
-    List<NotificationResponse> findByDoctorId(Long doctorId);
+    List<DoctorNotificationResponse> findByDoctorId(Long doctorId);
 
-    List<NotificationResponse> findForAdmin();
+    List<AdminNotificationResponse> findForAdmin();
 
     void markAsReadByDoctor(Long notificationId);
 

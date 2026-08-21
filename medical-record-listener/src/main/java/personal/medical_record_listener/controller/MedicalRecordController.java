@@ -10,7 +10,6 @@ import personal.medical_record_listener.service.MedicalRecordService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/medical-records")
 @RequiredArgsConstructor
 public class MedicalRecordController {
 

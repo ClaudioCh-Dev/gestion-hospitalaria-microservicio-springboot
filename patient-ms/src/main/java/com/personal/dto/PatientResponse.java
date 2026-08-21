@@ -19,4 +19,5 @@ public record PatientResponse(
         String email,
 
         Boolean active
+
 ) {}

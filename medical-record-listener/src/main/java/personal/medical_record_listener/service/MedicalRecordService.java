@@ -1,12 +1,16 @@
 package personal.medical_record_listener.service;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
+
 import personal.medical_record_listener.dto.MedicalRecordResponse;
-import personal.medical_record_listener.exceptions.MedicalRecordNotFoundException;
+import personal.medical_record_listener.exceptions.ErrorCode;
 import personal.medical_record_listener.model.MedicalRecord;
 import personal.medical_record_listener.repository.MedicalRecordRepository;
+
 import personal.shared.event.AppointmentEvent;
+import personal.shared.exception.BusinessException;
 
 import java.util.List;
 
@@ -16,7 +20,7 @@ public class MedicalRecordService {
 
     private final MedicalRecordRepository repository;
 
-    // Para guardar un registro médico cuando se crea una cita por el evento
+    // Guardar registro médico cuando se crea una cita
     public void save(AppointmentEvent event) {
 
         MedicalRecord record = MedicalRecord.builder()
@@ -35,13 +39,16 @@ public class MedicalRecordService {
         repository.save(record);
     }
 
-    // Para obtener todos los registros médicos de un paciente
+    // Obtener todos los registros médicos de un paciente
     public List<MedicalRecordResponse> findByPatientId(Long patientId) {
 
         List<MedicalRecord> records = repository.findByPatientId(patientId);
 
         if (records.isEmpty()) {
-            throw new MedicalRecordNotFoundException(patientId);
+            throw new BusinessException(
+                    ErrorCode.MEDICAL_RECORD_NOT_FOUND,
+                    "Historial médico no encontrado para el paciente"
+            );
         }
 
         return records.stream()
@@ -49,7 +56,7 @@ public class MedicalRecordService {
                 .toList();
     }
 
-    // Para obtener todos los registros médicos
+    // Obtener todos los registros médicos
     public List<MedicalRecordResponse> findAll() {
 
         return repository.findAll()
@@ -58,7 +65,6 @@ public class MedicalRecordService {
                 .toList();
     }
 
-    // Para convertir un registro médico a una respuesta
     private MedicalRecordResponse toResponse(MedicalRecord record) {
 
         return new MedicalRecordResponse(

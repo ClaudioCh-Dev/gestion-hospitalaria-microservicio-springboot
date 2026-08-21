@@ -11,14 +11,13 @@ import personal.doctor_ms.dtos.*;
 import personal.doctor_ms.service.IDoctorService;
 
 @RestController
-@RequestMapping("/doctor-ms")
 @RequiredArgsConstructor
 public class DoctorController {
 
     private final IDoctorService doctorService;
 
 
-    @GetMapping("/doctors")
+    @GetMapping()
     public ResponseEntity<Page<DoctorResponse>> findAll(
             Pageable pageable
     ) {
@@ -28,7 +27,7 @@ public class DoctorController {
     }
 
 
-    @GetMapping("/doctors/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<DoctorResponse> findById(
             @PathVariable Long id
     ) {
@@ -38,7 +37,7 @@ public class DoctorController {
     }
 
 
-    @GetMapping("/doctors/specialty/{specialtyId}")
+    @GetMapping("/specialty/{specialtyId}")
     public ResponseEntity<Page<DoctorResponse>> findBySpecialty(
             @PathVariable Long specialtyId,
             Pageable pageable
@@ -49,7 +48,7 @@ public class DoctorController {
     }
 
 
-    @PostMapping("/doctors")
+    @PostMapping()
     public ResponseEntity<DoctorResponse> create(
             @Valid @RequestBody CreateDoctorRequest request
     ) {
@@ -58,7 +57,7 @@ public class DoctorController {
     }
 
 
-    @PutMapping("/doctors/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<DoctorResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateDoctorRequest request

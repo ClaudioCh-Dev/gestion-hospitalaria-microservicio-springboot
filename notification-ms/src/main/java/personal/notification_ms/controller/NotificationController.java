@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import personal.notification_ms.dto.AdminNotificationResponse;
+import personal.notification_ms.dto.DoctorNotificationResponse;
 import personal.notification_ms.dto.NotificationRequest;
 import personal.notification_ms.dto.NotificationResponse;
 import personal.notification_ms.service.INotificationService;
@@ -11,7 +13,6 @@ import personal.notification_ms.service.INotificationService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
 
@@ -28,7 +29,7 @@ public class NotificationController {
     }
 
     @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<NotificationResponse>> findByDoctorId(
+    public ResponseEntity<List<DoctorNotificationResponse>> findByDoctorId(
             @PathVariable Long doctorId
     ) {
 
@@ -38,7 +39,7 @@ public class NotificationController {
     }
 
     @GetMapping("/admin")
-    public ResponseEntity<List<NotificationResponse>> findForAdmin() {
+    public ResponseEntity<List<AdminNotificationResponse>> findForAdmin() {
 
         return ResponseEntity.ok(
                 service.findForAdmin()

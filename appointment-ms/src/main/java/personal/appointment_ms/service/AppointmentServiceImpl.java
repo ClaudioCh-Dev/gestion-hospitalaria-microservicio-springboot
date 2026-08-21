@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import personal.appointment_ms.client.DoctorClient;
 import personal.appointment_ms.client.PatientClient;
 import personal.appointment_ms.dto.AppointmentResponse;
@@ -16,11 +17,12 @@ import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.entities.Appointment;
 import personal.appointment_ms.entities.AppointmentStatus;
 import personal.appointment_ms.entities.AppointmentType;
-import personal.appointment_ms.exceptions.AppointmentNotFoundException;
+import personal.appointment_ms.exceptions.ErrorCode;
 import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentEvent;
+import personal.shared.exception.BusinessException;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +31,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
     private final AppointmentRepository appointmentRepository;
     private final AppointmentTypeRepository appointmentTypeRepository;
-
     private final PatientClient patientClient;
     private final DoctorClient doctorClient;
     private final AppointmentPublisher appointmentPublisher;
@@ -38,14 +39,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
     public AppointmentResponse createAppointment(
             CreateAppointmentRequest request) {
 
-        //Feign client call
+        // Feign client call
         patientClient.findById(request.patientId());
         doctorClient.findById(request.doctorId());
 
         AppointmentType appointmentType = appointmentTypeRepository
                 .findById(request.appointmentTypeId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Appointment type not found: " + request.appointmentTypeId()));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                        "Tipo de cita no encontrado"
+                ));
 
         Appointment appointment = Appointment.builder()
                 .patientId(request.patientId())
@@ -61,7 +64,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 .notes(request.notes())
                 .build();
 
-        Appointment savedAppointment = appointmentRepository.save(appointment);
+        Appointment savedAppointment =
+                appointmentRepository.save(appointment);
 
         AppointmentEvent appointmentEvent =
                 buildAppointmentEvent(savedAppointment);
@@ -87,7 +91,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         Appointment appointment = appointmentRepository
                 .findById(id)
-                .orElseThrow(() -> new AppointmentNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        "Cita no encontrada"
+                ));
 
         return toResponse(appointment);
     }
@@ -121,7 +128,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         Appointment appointment = appointmentRepository
                 .findById(id)
-                .orElseThrow(() -> new AppointmentNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        "Cita no encontrada"
+                ));
 
         appointment.setStatus(request.status());
 
@@ -143,7 +153,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         Appointment appointment = appointmentRepository
                 .findById(id)
-                .orElseThrow(() -> new AppointmentNotFoundException(id));
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        "Cita no encontrada"
+                ));
 
         appointment.setStatus(AppointmentStatus.CANCELLED);
 
@@ -170,7 +183,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 appointment.getReason(),
                 appointment.getStatus(),
                 appointment.getNotes(),
-                appointment.getCreatedAt());
+                appointment.getCreatedAt()
+        );
     }
 
     // TODO: Implementar Outbox Pattern para garantizar
@@ -196,7 +210,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 appointment.getReason(),
                 appointment.getStatus().name(),
                 appointment.getAppointmentType().getPrice(),
-                eventType);
+                eventType
+        );
     }
 
     private void publishAppointmentEvent(
@@ -204,7 +219,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
             AppointmentEvent appointmentEvent) {
 
         switch (status) {
-
             case SCHEDULED ->
                     appointmentPublisher.publishAppointmentScheduled(
                             appointmentEvent);

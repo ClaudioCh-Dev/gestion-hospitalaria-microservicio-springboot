@@ -1,104 +1,220 @@
 package personal.billing_ms.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 
+import lombok.extern.slf4j.Slf4j;
+import personal.shared.exception.BusinessException;
+import personal.shared.exception.GenericErrorCode;
+
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import feign.FeignException;
-
-@RestControllerAdvice
 @Slf4j
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
-        @ExceptionHandler(AppointmentNotFoundException.class)
-        public ProblemDetail handleAppointmentNotFound(
-                        AppointmentNotFoundException ex,
-                        HttpServletRequest request) {
+    // =========================================================
+    // 409 - BUSINESS EXCEPTION
+    // =========================================================
 
-                log.warn(
-                                "Appointment not found path={} message={}",
-                                request.getRequestURI(),
-                                ex.getMessage());
+    @ExceptionHandler(BusinessException.class)
+    public ProblemDetail handleBusinessException(
+            BusinessException ex
+    ) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                ex.getMessage()
+        );
 
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.NOT_FOUND,
-                                ex.getMessage());
+        problem.setProperty("code", ex.getCode());
 
-                problem.setTitle("Appointment not found");
-                problem.setProperty("code", "APPOINTMENT_NOT_FOUND");
+        return problem;
+    }
 
-                return problem;
-        }
+    // =========================================================
+    // 409 - DATA INTEGRITY
+    // =========================================================
 
-        @ExceptionHandler(BillingRecordNotFoundException.class)
-        public ProblemDetail handleBillingRecordNotFound(
-                        BillingRecordNotFoundException ex,
-                        HttpServletRequest request) {
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Data integrity violation path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
 
-                log.warn(
-                                "Billing record not found path={} message={}",
-                                request.getRequestURI(),
-                                ex.getMessage());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                "No se pudo completar la operación debido a una restricción de datos"
+        );
 
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.NOT_FOUND,
-                                ex.getMessage());
+        problem.setProperty(
+                "code",
+                GenericErrorCode.DATA_INTEGRITY_ERROR.name()
+        );
 
-                problem.setTitle("Billing record not found");
-                problem.setProperty("code", "BILLING_RECORD_NOT_FOUND");
+        return problem;
+    }
 
-                return problem;
-        }
+    // =========================================================
+    // 400 - VALIDATION
+    // =========================================================
 
-        @ExceptionHandler(FeignException.class)
-        public ProblemDetail handleFeignException(
-                        FeignException ex,
-                        HttpServletRequest request) {
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Validation error path={}",
+                request.getRequestURI()
+        );
 
-                log.error(
-                                "Feign communication error path={} status={}",
-                                request.getRequestURI(),
-                                ex.status(),
-                                ex);
+        String detail = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error ->
+                        error.getField() + ": " + error.getDefaultMessage()
+                )
+                .findFirst()
+                .orElse("Los datos enviados no son válidos");
 
-                HttpStatus status = HttpStatus.resolve(ex.status());
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                detail
+        );
 
-                if (status == null) {
-                        status = HttpStatus.INTERNAL_SERVER_ERROR;
-                }
+        problem.setProperty(
+                "code",
+                GenericErrorCode.VALIDATION_ERROR.name()
+        );
 
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                status,
-                                "Error calling appointment service");
+        return problem;
+    }
 
-                problem.setTitle("Appointment service error");
-                problem.setProperty("code", "APPOINTMENT_SERVICE_ERROR");
+    // =========================================================
+    // 400 - JSON MAL FORMADO
+    // =========================================================
 
-                return problem;
-        }
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleInvalidRequestBody(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Invalid request body path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
 
-        @ExceptionHandler(Exception.class)
-        public ProblemDetail handleGenericException(
-                        Exception ex,
-                        HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "El cuerpo de la petición no tiene un formato válido"
+        );
 
-                log.error(
-                                "Unexpected error path={} message={}",
-                                request.getRequestURI(),
-                                ex.getMessage(),
-                                ex);
+        problem.setProperty(
+                "code",
+                GenericErrorCode.INVALID_REQUEST_BODY.name()
+        );
 
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.INTERNAL_SERVER_ERROR,
-                                "An unexpected error occurred");
+        return problem;
+    }
 
-                problem.setTitle("Internal server error");
-                problem.setProperty("code", "INTERNAL_ERROR");
+    // =========================================================
+    // 400 - TIPO DE PARAMETRO INCORRECTO
+    // =========================================================
 
-                return problem;
-        }
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Parameter type mismatch path={} parameter={}",
+                request.getRequestURI(),
+                ex.getName()
+        );
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "El parámetro '" + ex.getName() + "' tiene un formato inválido"
+        );
+
+        problem.setProperty(
+                "code",
+                GenericErrorCode.INVALID_PARAMETER.name()
+        );
+
+        return problem;
+    }
+
+    // =========================================================
+    // 400 - ARGUMENTO INVÁLIDO
+    // =========================================================
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ) {
+        log.warn(
+                "Illegal argument path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
+
+        String detail = ex.getMessage() != null
+                ? ex.getMessage()
+                : "Los datos enviados no son válidos";
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                detail
+        );
+
+        problem.setProperty(
+                "code",
+                GenericErrorCode.INVALID_ARGUMENT.name()
+        );
+
+        return problem;
+    }
+
+    // =========================================================
+    // 500 - ÚLTIMO RECURSO
+    // =========================================================
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGenericException(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        log.error(
+                "Unexpected error path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage(),
+                ex
+        );
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Ocurrió un error interno en el servidor"
+        );
+
+        problem.setProperty(
+                "code",
+                GenericErrorCode.INTERNAL_ERROR.name()
+        );
+
+        return problem;
+    }
 }
