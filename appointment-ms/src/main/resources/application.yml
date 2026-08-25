@@ -59,15 +59,17 @@ resilience4j:
       patient-ms:
         baseConfig: default
         ignoreExceptions:
-          - personal.appointment_ms.exceptions.PatientNotFoundException
+          - personal.shared.exception.BusinessException
           - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
           - feign.FeignException.UnprocessableEntity
 
       doctor-ms:
         baseConfig: default
         ignoreExceptions:
-          - personal.appointment_ms.exceptions.DoctorNotFoundException
+          - personal.shared.exception.BusinessException
           - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
           - feign.FeignException.UnprocessableEntity
 server:
   port: 8081

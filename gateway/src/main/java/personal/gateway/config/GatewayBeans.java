@@ -260,7 +260,7 @@ public class GatewayBeans {
                                 // ------------------------------------------------
 
                                 .route(route -> route
-                                                .path("/medical-record-listener/**")
+                                                .path("/medical-records/**")
                                                 .filters(filter -> filter
                                                                 .addRequestHeader(
                                                                                 "X-Fallback-Service",

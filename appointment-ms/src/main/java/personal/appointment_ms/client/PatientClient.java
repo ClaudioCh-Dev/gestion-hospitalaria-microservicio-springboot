@@ -10,7 +10,7 @@ import personal.appointment_ms.dto.PatientResponse;
 @FeignClient(name = "patient-ms" , configuration = PatientFeignConfig.class, fallback = PatientClientFallback.class)
 public interface PatientClient {
 
-    @GetMapping(path = "/patients/{id}")
+    @GetMapping(path = "/patients/crud/{id}")
     PatientResponse findById(@PathVariable("id") Long id);
 
 }

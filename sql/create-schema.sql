@@ -98,23 +98,39 @@ CREATE TABLE IF NOT EXISTS doctors (
     created_at     TIMESTAMP DEFAULT NOW()
 );
 
+-- ============================================
+-- TABLA: appointment_types
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS appointment_types (
+    id          BIGSERIAL PRIMARY KEY,
+    title       VARCHAR(150) NOT NULL,
+    description TEXT,
+    price       DECIMAL(10, 2) NOT NULL,
+    active      BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 
 -- ============================================
 -- TABLA: appointments
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS appointments (
-    id               BIGSERIAL PRIMARY KEY,
-    patient_id       BIGINT NOT NULL,
-    doctor_id        BIGINT NOT NULL,
-    scheduled_at     TIMESTAMP NOT NULL,
-    duration_minutes INT DEFAULT 30,
-    reason           TEXT,
-    status           appointment_status DEFAULT 'SCHEDULED',
-    notes            TEXT,
-    created_at       TIMESTAMP DEFAULT NOW()
-);
+    id                  BIGSERIAL PRIMARY KEY,
+    patient_id          BIGINT NOT NULL,
+    doctor_id           BIGINT NOT NULL,
+    scheduled_at        TIMESTAMP NOT NULL,
+    duration_minutes   INT DEFAULT 30,
+    reason              TEXT,
+    status              appointment_status DEFAULT 'SCHEDULED',
+    notes               TEXT,
+    appointment_type_id BIGINT NOT NULL,
+    created_at          TIMESTAMP DEFAULT NOW(),
 
+    CONSTRAINT fk_appointment_type
+        FOREIGN KEY (appointment_type_id)
+        REFERENCES appointment_types(id)
+);
 
 -- ============================================
 -- TABLA: billing_records

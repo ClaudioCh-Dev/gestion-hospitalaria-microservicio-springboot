@@ -11,16 +11,21 @@ spring:
   cloud:
     function:
       definition: appointmentCompletedConsumer
+
     stream:
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
+          configuration:
+            "[enable.auto.commit]": false
 
       bindings:
         appointmentCompletedConsumer-in-0:
           destination: appointment-completed
           group: billing-ms
           content-type: application/json
+          consumer:
+            max-attempts: 3
           
 
   datasource:

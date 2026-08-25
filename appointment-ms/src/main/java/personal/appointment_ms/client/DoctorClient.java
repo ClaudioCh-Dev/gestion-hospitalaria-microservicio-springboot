@@ -14,6 +14,6 @@ import personal.appointment_ms.dto.DoctorResponse;
 )
 public interface DoctorClient {
 
-    @GetMapping(path = "/doctors/{id}")
+    @GetMapping(path = "/doctors/crud/{id}")
     DoctorResponse findById(@PathVariable("id") Long id);
 }

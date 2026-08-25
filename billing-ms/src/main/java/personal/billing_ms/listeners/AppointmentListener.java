@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.service.IBillingRecordService;
 import personal.shared.event.AppointmentEvent;
 
@@ -19,17 +20,21 @@ public class AppointmentListener {
 
     @Bean
     public Consumer<AppointmentEvent> appointmentCompletedConsumer() {
+
         return event -> {
+
             log.info("Appointment completed: {}", event);
-            
-            // Convertir AppointmentEvent a AppointmentEventRequest
-            var request = new personal.billing_ms.dto.AppointmentEventRequest(
-                event.appointmentId(),
-                event.patientId(),
-                event.amount()
-            );
-            
+
+            var request = new AppointmentEventRequest(
+                    event.appointmentId(),
+                    event.patientId(),
+                    event.amount());
+
             billingRecordService.createBillingFromAppointment(request);
+
+            log.info(
+                    "Billing created successfully for appointment {}",
+                    event.appointmentId());
         };
     }
 }

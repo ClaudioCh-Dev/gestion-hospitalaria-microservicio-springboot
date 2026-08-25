@@ -28,6 +28,7 @@ public interface IPatientRepository extends JpaRepository<Patient, Long> {
             p.documentNumber,
             p.firstName,
             p.lastName,
+            p.gender,
             p.birthDate,
             p.phone,
             p.email,
