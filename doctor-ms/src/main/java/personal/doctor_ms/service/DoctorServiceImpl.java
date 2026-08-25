@@ -8,13 +8,14 @@ import org.springframework.stereotype.Service;
 import personal.doctor_ms.dtos.*;
 import personal.doctor_ms.entities.Doctor;
 import personal.doctor_ms.entities.Specialty;
-import personal.doctor_ms.exceptions.ErrorCode;
+import personal.doctor_ms.exceptions.DoctorErrorCode;
 import personal.doctor_ms.mapper.DoctorMapper;
 import personal.doctor_ms.mapper.SpecialtyMapper;
 import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
 
 import personal.shared.exception.BusinessException;
+import personal.shared.exception.ErrorCode;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.DOCTOR_NOT_FOUND,
+                        DoctorErrorCode.DOCTOR_NOT_FOUND,
                         "Doctor no encontrado"
                 ));
 
@@ -59,7 +60,7 @@ public class DoctorServiceImpl implements IDoctorService {
 
         Specialty specialty = specialtyRepository.findById(request.specialtyId())
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.SPECIALTY_NOT_FOUND,
+                        DoctorErrorCode.SPECIALTY_NOT_FOUND,
                         "Especialidad no encontrada"
                 ));
 
@@ -109,13 +110,13 @@ public class DoctorServiceImpl implements IDoctorService {
 
         Doctor doctor = doctorRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.DOCTOR_NOT_FOUND,
+                        DoctorErrorCode.DOCTOR_NOT_FOUND,
                         "Doctor no encontrado"
                 ));
 
         Specialty specialty = specialtyRepository.findById(request.specialtyId())
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.SPECIALTY_NOT_FOUND,
+                        DoctorErrorCode.SPECIALTY_NOT_FOUND,
                         "Especialidad no encontrada"
                 ));
 

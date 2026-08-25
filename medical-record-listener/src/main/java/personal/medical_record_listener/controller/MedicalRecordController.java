@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/crud")
 public class MedicalRecordController {
 
     private final MedicalRecordService service;

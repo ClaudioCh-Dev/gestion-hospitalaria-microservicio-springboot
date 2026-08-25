@@ -3,13 +3,21 @@ package personal.shared.exception;
 public class BusinessException extends RuntimeException {
 
     private final String code;
+    private final int status;
 
-    public BusinessException(Enum<?> code, String message) {
+    public BusinessException(ErrorCode code, String message) {
+
         super(message);
-        this.code = code.name();
+
+        this.code = code.toString();
+        this.status = code.status();
     }
 
     public String getCode() {
         return code;
+    }
+
+    public int getStatus() {
+        return status;
     }
 }

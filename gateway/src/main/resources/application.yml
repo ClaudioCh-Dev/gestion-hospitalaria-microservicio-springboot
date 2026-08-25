@@ -18,3 +18,23 @@ eureka:
       defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
     fetch-registry: true
   
+resilience4j:
+  timelimiter:
+    instances:
+      patient-circuitbreaker:
+        timeoutDuration: 3s
+
+      doctor-circuitbreaker:
+        timeoutDuration: 3s
+
+      appointment-circuitbreaker:
+        timeoutDuration: 3s
+
+      billing-circuitbreaker:
+        timeoutDuration: 3s
+
+      notification-circuitbreaker:
+        timeoutDuration: 3s
+
+      medical-record-listener-circuitbreaker:
+        timeoutDuration: 3s

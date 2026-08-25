@@ -1,8 +1,17 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+# Copiar hospital-shared 
+COPY hospital-shared/pom.xml hospital-shared/pom.xml 
+COPY hospital-shared/src hospital-shared/src 
+# Copiar auth-server 
 COPY auth-server/pom.xml auth-server/pom.xml
 COPY auth-server/src auth-server/src
-RUN mvn -f /app/auth-server/pom.xml clean package -DskipTests
+# Instalar hospital-shared en el repositorio Maven 
+# del contenedor 
+RUN mvn -f /app/hospital-shared/pom.xml clean install -DskipTests 
+# Compilar auth-server 
+WORKDIR /app/auth-server 
+RUN mvn clean package -DskipTests 
 
 
 FROM eclipse-temurin:17-jdk-alpine

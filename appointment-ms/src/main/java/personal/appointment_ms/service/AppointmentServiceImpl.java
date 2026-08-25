@@ -17,7 +17,7 @@ import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.entities.Appointment;
 import personal.appointment_ms.entities.AppointmentStatus;
 import personal.appointment_ms.entities.AppointmentType;
-import personal.appointment_ms.exceptions.ErrorCode;
+import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.streams.AppointmentPublisher;
@@ -46,7 +46,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         AppointmentType appointmentType = appointmentTypeRepository
                 .findById(request.appointmentTypeId())
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                        AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
                         "Tipo de cita no encontrado"
                 ));
 
@@ -92,7 +92,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Appointment appointment = appointmentRepository
                 .findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
                         "Cita no encontrada"
                 ));
 
@@ -129,7 +129,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Appointment appointment = appointmentRepository
                 .findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
                         "Cita no encontrada"
                 ));
 
@@ -154,7 +154,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         Appointment appointment = appointmentRepository
                 .findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
                         "Cita no encontrada"
                 ));
 

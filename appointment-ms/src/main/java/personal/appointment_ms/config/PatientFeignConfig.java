@@ -4,8 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import feign.codec.ErrorDecoder;
-
-import personal.appointment_ms.exceptions.ErrorCode;
+import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.shared.exception.BusinessException;
 
 @Configuration
@@ -18,7 +17,7 @@ public class PatientFeignConfig {
 
             if (response.status() == 404) {
                 return new BusinessException(
-                        ErrorCode.PATIENT_NOT_FOUND,
+                        AppointmentErrorCode.PATIENT_NOT_FOUND,
                         "Paciente no encontrado"
                 );
             }

@@ -14,6 +14,7 @@ import personal.billing_ms.service.IBillingRecordService;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/crud")
 public class BillingRecordController {
 
     private final IBillingRecordService billingRecordService;

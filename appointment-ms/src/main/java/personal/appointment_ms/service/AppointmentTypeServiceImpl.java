@@ -11,7 +11,7 @@ import personal.appointment_ms.dto.AppointmentTypeResponse;
 import personal.appointment_ms.dto.CreateAppointmentTypeRequest;
 import personal.appointment_ms.dto.UpdateAppointmentTypeRequest;
 import personal.appointment_ms.entities.AppointmentType;
-import personal.appointment_ms.exceptions.ErrorCode;
+import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.shared.exception.BusinessException;
 
@@ -56,7 +56,7 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         AppointmentType appointmentType =
                 appointmentTypeRepository.findById(id)
                         .orElseThrow(() -> new BusinessException(
-                                ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
                                 "Tipo de cita no encontrado"
                         ));
 
@@ -72,7 +72,7 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         AppointmentType appointmentType =
                 appointmentTypeRepository.findById(id)
                         .orElseThrow(() -> new BusinessException(
-                                ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
                                 "Tipo de cita no encontrado"
                         ));
 
@@ -93,13 +93,13 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         AppointmentType appointmentType =
                 appointmentTypeRepository.findById(id)
                         .orElseThrow(() -> new BusinessException(
-                                ErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
                                 "Tipo de cita no encontrado"
                         ));
 
         if (!appointmentType.getActive()) {
             throw new BusinessException(
-                    ErrorCode.APPOINTMENT_TYPE_ALREADY_INACTIVE,
+                    AppointmentErrorCode.APPOINTMENT_TYPE_ALREADY_INACTIVE,
                     "El tipo de cita ya está inactivo"
             );
         }

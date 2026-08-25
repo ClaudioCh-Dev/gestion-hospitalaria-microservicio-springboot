@@ -1,18 +1,19 @@
-package personal.notification_ms.exceptions;
-
-import jakarta.servlet.http.HttpServletRequest;
+package personal.gateway.exceptions;
 
 import lombok.extern.slf4j.Slf4j;
+
 import personal.shared.exception.BusinessException;
 import personal.shared.exception.GenericErrorCode;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
@@ -37,40 +38,17 @@ public class GlobalExceptionHandler {
         }
 
         // =========================================================
-        // 409 - DATA INTEGRITY
-        // =========================================================
-
-        @ExceptionHandler(DataIntegrityViolationException.class)
-        public ProblemDetail handleDataIntegrityViolation(
-                        DataIntegrityViolationException ex,
-                        HttpServletRequest request) {
-                log.warn(
-                                "Data integrity violation path={} message={}",
-                                request.getRequestURI(),
-                                ex.getMessage());
-
-                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.CONFLICT,
-                                "No se pudo completar la operación debido a una restricción de datos");
-
-                problem.setProperty(
-                                "code",
-                                GenericErrorCode.DATA_INTEGRITY_ERROR.name());
-
-                return problem;
-        }
-
-        // =========================================================
         // 400 - VALIDATION
         // =========================================================
 
         @ExceptionHandler(MethodArgumentNotValidException.class)
         public ProblemDetail handleValidation(
                         MethodArgumentNotValidException ex,
-                        HttpServletRequest request) {
+                        ServerHttpRequest request) {
+
                 log.warn(
                                 "Validation error path={}",
-                                request.getRequestURI());
+                                request.getPath().value());
 
                 String detail = ex.getBindingResult()
                                 .getFieldErrors()
@@ -97,10 +75,11 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(HttpMessageNotReadableException.class)
         public ProblemDetail handleInvalidRequestBody(
                         HttpMessageNotReadableException ex,
-                        HttpServletRequest request) {
+                        ServerHttpRequest request) {
+
                 log.warn(
                                 "Invalid request body path={} message={}",
-                                request.getRequestURI(),
+                                request.getPath().value(),
                                 ex.getMessage());
 
                 ProblemDetail problem = ProblemDetail.forStatusAndDetail(
@@ -121,10 +100,11 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(MethodArgumentTypeMismatchException.class)
         public ProblemDetail handleTypeMismatch(
                         MethodArgumentTypeMismatchException ex,
-                        HttpServletRequest request) {
+                        ServerHttpRequest request) {
+
                 log.warn(
                                 "Parameter type mismatch path={} parameter={}",
-                                request.getRequestURI(),
+                                request.getPath().value(),
                                 ex.getName());
 
                 ProblemDetail problem = ProblemDetail.forStatusAndDetail(
@@ -145,10 +125,11 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(IllegalArgumentException.class)
         public ProblemDetail handleIllegalArgument(
                         IllegalArgumentException ex,
-                        HttpServletRequest request) {
+                        ServerHttpRequest request) {
+
                 log.warn(
                                 "Illegal argument path={} message={}",
-                                request.getRequestURI(),
+                                request.getPath().value(),
                                 ex.getMessage());
 
                 String detail = ex.getMessage() != null
@@ -173,10 +154,11 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(Exception.class)
         public ProblemDetail handleGenericException(
                         Exception ex,
-                        HttpServletRequest request) {
+                        ServerHttpRequest request) {
+
                 log.error(
                                 "Unexpected error path={} message={}",
-                                request.getRequestURI(),
+                                request.getPath().value(),
                                 ex.getMessage(),
                                 ex);
 

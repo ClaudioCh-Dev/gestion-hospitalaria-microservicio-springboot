@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-//@RequestMapping("/")
+@RequestMapping("/crud")
 public class PatientController {
 
     private final IPatientService patientService;

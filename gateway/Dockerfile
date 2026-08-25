@@ -1,8 +1,17 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+# Copiar hospital-shared 
+COPY hospital-shared/pom.xml hospital-shared/pom.xml
+COPY hospital-shared/src hospital-shared/src
+# Copiar gateway
 COPY gateway/pom.xml gateway/pom.xml
 COPY gateway/src gateway/src
-RUN mvn -f /app/gateway/pom.xml clean package -DskipTests
+# Instalar hospital-shared en el repositorio Maven 
+# del contenedor 
+RUN mvn -f /app/hospital-shared/pom.xml clean install -DskipTests 
+# Compilar billing-ms 
+WORKDIR /app/gateway 
+RUN mvn clean package -DskipTests 
 
 
 FROM eclipse-temurin:17-jdk-alpine
@@ -17,3 +26,4 @@ ENV OTEL_LOGS_EXPORTER=otlp
 ENV OTEL_TRACES_EXPORTER=otlp
 ENV OTEL_METRICS_EXPORTER=otlp
 ENTRYPOINT ["java","-javaagent:/app/opentelemetry-javaagent.jar","-jar","/app/app.jar"]
+

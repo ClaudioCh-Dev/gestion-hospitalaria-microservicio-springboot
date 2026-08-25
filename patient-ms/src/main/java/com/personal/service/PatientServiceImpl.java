@@ -4,7 +4,7 @@ import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
 import com.personal.entities.Patient;
-import com.personal.exceptions.ErrorCode;
+import com.personal.exceptions.PatientErrorCode;
 import com.personal.mapper.PatientMapper;
 import com.personal.repository.IPatientRepository;
 import com.personal.streams.PatientPublisher;
@@ -44,7 +44,7 @@ public class PatientServiceImpl implements IPatientService {
     public PatientDetailResponse findById(Long id) {
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.PATIENT_NOT_FOUND,
+                        PatientErrorCode.PATIENT_NOT_FOUND,
                         "Paciente no encontrado"));
 
         return patientMapper.toDetailResponse(patient);
@@ -56,7 +56,7 @@ public class PatientServiceImpl implements IPatientService {
         Patient patient = patientRepository
                 .findByDocumentNumber(documentNumber)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.PATIENT_NOT_FOUND,
+                        PatientErrorCode.PATIENT_NOT_FOUND,
                         "Paciente no encontrado"));
 
         return patientMapper.toResponse(patient);
@@ -68,13 +68,13 @@ public class PatientServiceImpl implements IPatientService {
 
         if (patientRepository.existsByDocumentNumber(request.documentNumber())) {
             throw new BusinessException(
-                    ErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS,
+                    PatientErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS,
                     "El número de documento ya está registrado");
         }
 
         if (patientRepository.existsByEmail(request.email())) {
             throw new BusinessException(
-                    ErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
+                    PatientErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
                     "El correo electrónico ya está registrado");
         }
 
@@ -101,14 +101,14 @@ public class PatientServiceImpl implements IPatientService {
 
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.PATIENT_NOT_FOUND,
+                        PatientErrorCode.PATIENT_NOT_FOUND,
                         "Paciente no encontrado"));
 
         if (patientRepository.existsByDocumentNumberAndIdNot(
                 request.documentNumber(),
                 id)) {
             throw new BusinessException(
-                    ErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS,
+                    PatientErrorCode.PATIENT_DOCUMENT_ALREADY_EXISTS,
                     "El número de documento ya está registrado");
         }
 
@@ -116,7 +116,7 @@ public class PatientServiceImpl implements IPatientService {
                 request.email(),
                 id)) {
             throw new BusinessException(
-                    ErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
+                    PatientErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
                     "El correo electrónico ya está registrado");
         }
 
@@ -133,7 +133,7 @@ public class PatientServiceImpl implements IPatientService {
 
         if (!patientRepository.existsById(id)) {
             throw new BusinessException(
-                    ErrorCode.PATIENT_NOT_FOUND,
+                    PatientErrorCode.PATIENT_NOT_FOUND,
                     "Paciente no encontrado");
         }
 

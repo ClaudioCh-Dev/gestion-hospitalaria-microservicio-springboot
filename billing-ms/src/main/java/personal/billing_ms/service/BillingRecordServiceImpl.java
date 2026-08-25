@@ -14,7 +14,7 @@ import personal.billing_ms.dto.AppointmentResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.entities.BillingStatus;
-import personal.billing_ms.exceptions.ErrorCode;
+import personal.billing_ms.exceptions.BillingErrorCode;
 import personal.billing_ms.repositories.BillingRepository;
 import personal.shared.exception.BusinessException;
 
@@ -58,7 +58,7 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
 
         BillingRecord billingRecord = billingRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.BILLING_RECORD_NOT_FOUND,
+                        BillingErrorCode.BILLING_RECORD_NOT_FOUND,
                         "Registro de facturación no encontrado"
                 ));
 

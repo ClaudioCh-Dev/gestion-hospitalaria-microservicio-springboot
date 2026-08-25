@@ -12,6 +12,7 @@ import personal.doctor_ms.service.IDoctorService;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/crud")
 public class DoctorController {
 
     private final IDoctorService doctorService;
@@ -65,25 +66,6 @@ public class DoctorController {
         return ResponseEntity.ok(
                 doctorService.update(id, request)
         );
-    }
-
-
-    @GetMapping("/specialties")
-    public ResponseEntity<Page<SpecialtyResponse>> findAllSpecialties(
-            Pageable pageable
-    ) {
-        return ResponseEntity.ok(
-                doctorService.findAllSpecialties(pageable)
-        );
-    }
-
-
-    @PostMapping("/specialties")
-    public ResponseEntity<SpecialtyResponse> createSpecialty(
-            @Valid @RequestBody CreateSpecialtyRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(doctorService.createSpecialty(request));
     }
 
 }

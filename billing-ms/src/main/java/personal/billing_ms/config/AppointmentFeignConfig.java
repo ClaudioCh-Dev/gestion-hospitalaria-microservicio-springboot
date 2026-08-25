@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 
 import feign.codec.ErrorDecoder;
 
-import personal.billing_ms.exceptions.ErrorCode;
+import personal.billing_ms.exceptions.BillingErrorCode;
 import personal.shared.exception.BusinessException;
 
 @Configuration
@@ -18,7 +18,7 @@ public class AppointmentFeignConfig {
 
             if (response.status() == 404) {
                 return new BusinessException(
-                        ErrorCode.APPOINTMENT_NOT_FOUND,
+                        BillingErrorCode.APPOINTMENT_NOT_FOUND,
                         "Cita no encontrada"
                 );
             }

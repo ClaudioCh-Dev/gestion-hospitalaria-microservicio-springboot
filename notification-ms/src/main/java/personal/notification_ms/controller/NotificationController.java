@@ -14,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/crud")
 public class NotificationController {
 
     private final INotificationService service;

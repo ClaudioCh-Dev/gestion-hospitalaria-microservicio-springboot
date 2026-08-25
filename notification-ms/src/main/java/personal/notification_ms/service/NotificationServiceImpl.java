@@ -13,7 +13,7 @@ import personal.notification_ms.model.Notification;
 import personal.notification_ms.repository.NotificationRepository;
 
 import personal.shared.exception.BusinessException;
-import personal.notification_ms.exceptions.ErrorCode;
+import personal.notification_ms.exceptions.NotificationErrorCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -75,7 +75,7 @@ public class NotificationServiceImpl implements INotificationService {
 
         return repository.findById(notificationId)
                 .orElseThrow(() -> new BusinessException(
-                        ErrorCode.NOTIFICATION_NOT_FOUND,
+                        NotificationErrorCode.NOTIFICATION_NOT_FOUND,
                         "Notificación no encontrada"
                 ));
     }

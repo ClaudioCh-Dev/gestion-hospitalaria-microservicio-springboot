@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import personal.medical_record_listener.dto.MedicalRecordResponse;
-import personal.medical_record_listener.exceptions.ErrorCode;
+import personal.medical_record_listener.exceptions.MedicalRecordErrorCode;
 import personal.medical_record_listener.model.MedicalRecord;
 import personal.medical_record_listener.repository.MedicalRecordRepository;
 
@@ -46,7 +46,7 @@ public class MedicalRecordService {
 
         if (records.isEmpty()) {
             throw new BusinessException(
-                    ErrorCode.MEDICAL_RECORD_NOT_FOUND,
+                    MedicalRecordErrorCode.MEDICAL_RECORD_NOT_FOUND,
                     "Historial médico no encontrado para el paciente"
             );
         }

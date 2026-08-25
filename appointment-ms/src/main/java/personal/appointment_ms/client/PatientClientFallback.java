@@ -3,7 +3,7 @@ package personal.appointment_ms.client;
 import org.springframework.stereotype.Component;
 
 import personal.appointment_ms.dto.PatientResponse;
-import personal.appointment_ms.exceptions.ErrorCode;
+import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.shared.exception.BusinessException;
 
 @Component
@@ -13,7 +13,7 @@ public class PatientClientFallback implements PatientClient {
     public PatientResponse findById(Long id) {
 
         throw new BusinessException(
-                ErrorCode.PATIENT_SERVICE_UNAVAILABLE,
+                AppointmentErrorCode.PATIENT_SERVICE_UNAVAILABLE,
                 "Patient MS no está disponible"
         );
     }

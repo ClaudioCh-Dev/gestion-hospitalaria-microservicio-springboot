@@ -34,6 +34,7 @@ public class Patient {
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "gender")
     private Gender gender;
 
     private String phone;
@@ -44,6 +45,7 @@ public class Patient {
     private String address;
 
     @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "blood_type")
     private BloodType bloodType;
 
     private String allergies;

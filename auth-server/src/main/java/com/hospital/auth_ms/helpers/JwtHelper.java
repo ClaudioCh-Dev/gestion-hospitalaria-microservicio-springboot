@@ -8,11 +8,12 @@ import java.util.function.Function;
 import org.springframework.stereotype.Component;
 
 import com.hospital.auth_ms.dtos.ClaimsDto;
-import com.hospital.auth_ms.exceptions.InvalidTokenException;
+import com.hospital.auth_ms.exceptions.AuthErrorCode;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.slf4j.Slf4j;
+import personal.shared.exception.BusinessException;
 
 @Component
 @Slf4j
@@ -91,7 +92,10 @@ public class JwtHelper {
                     e.getMessage()
             );
 
-            throw new InvalidTokenException();
+           throw new BusinessException(
+                    AuthErrorCode.AUTH_INVALID_TOKEN,
+                    "Token inválido"
+            );
         }
     }
 

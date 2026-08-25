@@ -19,202 +19,175 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // =========================================================
-    // 409 - BUSINESS EXCEPTION
-    // =========================================================
+        // =========================================================
+        // 409 - BUSINESS EXCEPTION
+        // =========================================================
 
-    @ExceptionHandler(BusinessException.class)
-    public ProblemDetail handleBusinessException(
-            BusinessException ex
-    ) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONFLICT,
-                ex.getMessage()
-        );
+        @ExceptionHandler(BusinessException.class)
+        public ProblemDetail handleBusinessException(
+                        BusinessException ex) {
 
-        problem.setProperty("code", ex.getCode());
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.valueOf(ex.getStatus()),
+                                ex.getMessage());
 
-        return problem;
-    }
+                problem.setProperty("code", ex.getCode());
 
-    // =========================================================
-    // 409 - DATA INTEGRITY
-    // =========================================================
+                return problem;
+        }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ProblemDetail handleDataIntegrityViolation(
-            DataIntegrityViolationException ex,
-            HttpServletRequest request
-    ) {
-        log.warn(
-                "Data integrity violation path={} message={}",
-                request.getRequestURI(),
-                ex.getMessage()
-        );
+        // =========================================================
+        // 409 - DATA INTEGRITY
+        // =========================================================
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.CONFLICT,
-                "No se pudo completar la operación debido a una restricción de datos"
-        );
+        @ExceptionHandler(DataIntegrityViolationException.class)
+        public ProblemDetail handleDataIntegrityViolation(
+                        DataIntegrityViolationException ex,
+                        HttpServletRequest request) {
+                log.warn(
+                                "Data integrity violation path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage());
 
-        problem.setProperty(
-                "code",
-                GenericErrorCode.DATA_INTEGRITY_ERROR.name()
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.CONFLICT,
+                                "No se pudo completar la operación debido a una restricción de datos");
 
-        return problem;
-    }
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.DATA_INTEGRITY_ERROR.name());
 
-    // =========================================================
-    // 400 - VALIDATION
-    // =========================================================
+                return problem;
+        }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail handleValidation(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request
-    ) {
-        log.warn(
-                "Validation error path={}",
-                request.getRequestURI()
-        );
+        // =========================================================
+        // 400 - VALIDATION
+        // =========================================================
 
-        String detail = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error ->
-                        error.getField() + ": " + error.getDefaultMessage()
-                )
-                .findFirst()
-                .orElse("Los datos enviados no son válidos");
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ProblemDetail handleValidation(
+                        MethodArgumentNotValidException ex,
+                        HttpServletRequest request) {
+                log.warn(
+                                "Validation error path={}",
+                                request.getRequestURI());
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                detail
-        );
+                String detail = ex.getBindingResult()
+                                .getFieldErrors()
+                                .stream()
+                                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                                .findFirst()
+                                .orElse("Los datos enviados no son válidos");
 
-        problem.setProperty(
-                "code",
-                GenericErrorCode.VALIDATION_ERROR.name()
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.BAD_REQUEST,
+                                detail);
 
-        return problem;
-    }
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.VALIDATION_ERROR.name());
 
-    // =========================================================
-    // 400 - JSON MAL FORMADO
-    // =========================================================
+                return problem;
+        }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleInvalidRequestBody(
-            HttpMessageNotReadableException ex,
-            HttpServletRequest request
-    ) {
-        log.warn(
-                "Invalid request body path={} message={}",
-                request.getRequestURI(),
-                ex.getMessage()
-        );
+        // =========================================================
+        // 400 - JSON MAL FORMADO
+        // =========================================================
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "El cuerpo de la petición no tiene un formato válido"
-        );
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ProblemDetail handleInvalidRequestBody(
+                        HttpMessageNotReadableException ex,
+                        HttpServletRequest request) {
+                log.warn(
+                                "Invalid request body path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage());
 
-        problem.setProperty(
-                "code",
-                GenericErrorCode.INVALID_REQUEST_BODY.name()
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.BAD_REQUEST,
+                                "El cuerpo de la petición no tiene un formato válido");
 
-        return problem;
-    }
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.INVALID_REQUEST_BODY.name());
 
-    // =========================================================
-    // 400 - TIPO DE PARAMETRO INCORRECTO
-    // =========================================================
+                return problem;
+        }
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ProblemDetail handleTypeMismatch(
-            MethodArgumentTypeMismatchException ex,
-            HttpServletRequest request
-    ) {
-        log.warn(
-                "Parameter type mismatch path={} parameter={}",
-                request.getRequestURI(),
-                ex.getName()
-        );
+        // =========================================================
+        // 400 - TIPO DE PARAMETRO INCORRECTO
+        // =========================================================
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                "El parámetro '" + ex.getName() + "' tiene un formato inválido"
-        );
+        @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+        public ProblemDetail handleTypeMismatch(
+                        MethodArgumentTypeMismatchException ex,
+                        HttpServletRequest request) {
+                log.warn(
+                                "Parameter type mismatch path={} parameter={}",
+                                request.getRequestURI(),
+                                ex.getName());
 
-        problem.setProperty(
-                "code",
-                GenericErrorCode.INVALID_PARAMETER.name()
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.BAD_REQUEST,
+                                "El parámetro '" + ex.getName() + "' tiene un formato inválido");
 
-        return problem;
-    }
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.INVALID_PARAMETER.name());
 
-    // =========================================================
-    // 400 - ARGUMENTO INVÁLIDO
-    // =========================================================
+                return problem;
+        }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ProblemDetail handleIllegalArgument(
-            IllegalArgumentException ex,
-            HttpServletRequest request
-    ) {
-        log.warn(
-                "Illegal argument path={} message={}",
-                request.getRequestURI(),
-                ex.getMessage()
-        );
+        // =========================================================
+        // 400 - ARGUMENTO INVÁLIDO
+        // =========================================================
 
-        String detail = ex.getMessage() != null
-                ? ex.getMessage()
-                : "Los datos enviados no son válidos";
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ProblemDetail handleIllegalArgument(
+                        IllegalArgumentException ex,
+                        HttpServletRequest request) {
+                log.warn(
+                                "Illegal argument path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage());
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.BAD_REQUEST,
-                detail
-        );
+                String detail = ex.getMessage() != null
+                                ? ex.getMessage()
+                                : "Los datos enviados no son válidos";
 
-        problem.setProperty(
-                "code",
-                GenericErrorCode.INVALID_ARGUMENT.name()
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.BAD_REQUEST,
+                                detail);
 
-        return problem;
-    }
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.INVALID_ARGUMENT.name());
 
-    // =========================================================
-    // 500 - ÚLTIMO RECURSO
-    // =========================================================
+                return problem;
+        }
 
-    @ExceptionHandler(Exception.class)
-    public ProblemDetail handleGenericException(
-            Exception ex,
-            HttpServletRequest request
-    ) {
-        log.error(
-                "Unexpected error path={} message={}",
-                request.getRequestURI(),
-                ex.getMessage(),
-                ex
-        );
+        // =========================================================
+        // 500 - ÚLTIMO RECURSO
+        // =========================================================
 
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Ocurrió un error interno en el servidor"
-        );
+        @ExceptionHandler(Exception.class)
+        public ProblemDetail handleGenericException(
+                        Exception ex,
+                        HttpServletRequest request) {
+                log.error(
+                                "Unexpected error path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage(),
+                                ex);
 
-        problem.setProperty(
-                "code",
-                GenericErrorCode.INTERNAL_ERROR.name()
-        );
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.INTERNAL_SERVER_ERROR,
+                                "Ocurrió un error interno en el servidor");
 
-        return problem;
-    }
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.INTERNAL_ERROR.name());
+
+                return problem;
+        }
 }
