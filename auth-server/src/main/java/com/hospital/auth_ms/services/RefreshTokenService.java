@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.hospital.auth_ms.exceptions.AuthErrorCode;
 
 import lombok.RequiredArgsConstructor;
+
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -27,36 +28,48 @@ public class RefreshTokenService {
 
     public String createRefreshToken(Long userId) {
 
-        String refreshToken = UUID.randomUUID().toString();
+        String refreshToken =
+                UUID.randomUUID().toString();
 
-        String key = "refresh:" + hashToken(refreshToken);
+        String key =
+                "refresh:" + hashToken(refreshToken);
 
         redisTemplate.opsForValue().set(
                 key,
                 userId.toString(),
-                Duration.ofSeconds(refreshTokenExpiration));
+                Duration.ofSeconds(
+                        refreshTokenExpiration
+                )
+        );
 
         return refreshToken;
     }
 
-    public Long validateRefreshToken(String refreshToken) {
+    public Long validateRefreshToken(
+            String refreshToken) {
 
-        String key = "refresh:" + hashToken(refreshToken);
+        String key =
+                "refresh:" + hashToken(refreshToken);
 
-        String userId = redisTemplate.opsForValue().get(key);
+        String userId =
+                redisTemplate.opsForValue().get(key);
 
         if (userId == null) {
+
             throw new BusinessException(
                     AuthErrorCode.AUTH_INVALID_REFRESH_TOKEN,
-                    "Refresh token inválido o expirado");
+                    "Refresh token inválido o expirado"
+            );
         }
 
         return Long.valueOf(userId);
     }
 
-    public void revokeRefreshToken(String refreshToken) {
+    public void revokeRefreshToken(
+            String refreshToken) {
 
-        String key = "refresh:" + hashToken(refreshToken);
+        String key =
+                "refresh:" + hashToken(refreshToken);
 
         redisTemplate.delete(key);
     }
@@ -65,10 +78,15 @@ public class RefreshTokenService {
 
         try {
 
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest =
+                    MessageDigest.getInstance("SHA-256");
 
-            byte[] hash = digest.digest(
-                    token.getBytes(StandardCharsets.UTF_8));
+            byte[] hash =
+                    digest.digest(
+                            token.getBytes(
+                                    StandardCharsets.UTF_8
+                            )
+                    );
 
             return Base64.getUrlEncoder()
                     .withoutPadding()
@@ -78,7 +96,8 @@ public class RefreshTokenService {
 
             throw new IllegalStateException(
                     "SHA-256 no disponible",
-                    e);
+                    e
+            );
         }
     }
 }

@@ -3,9 +3,8 @@ package com.hospital.auth_ms.services;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.hospital.auth_ms.dtos.AuthTokenDto;
 import com.hospital.auth_ms.dtos.ClaimsDto;
-import com.hospital.auth_ms.dtos.RefreshTokenDto;
-import com.hospital.auth_ms.dtos.TokenDto;
 import com.hospital.auth_ms.dtos.UserDto;
 import com.hospital.auth_ms.entities.UserEntity;
 import com.hospital.auth_ms.exceptions.AuthErrorCode;
@@ -23,101 +22,115 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-        private final UserRepository userRepository;
-        private final PasswordEncoder passwordEncoder;
-        private final JwtHelper jwtHelper;
-        private final RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
 
-        @Override
-        public TokenDto login(UserDto userDto) {
+    private final PasswordEncoder passwordEncoder;
 
-                final var userFromDb = this.userRepository
-                                .findByUsername(userDto.getUsername())
-                                .orElseThrow(() -> new BusinessException(
-                                                AuthErrorCode.AUTH_INVALID_CREDENTIALS,
-                                                "Credenciales inválidas"));
+    private final JwtHelper jwtHelper;
 
-                this.validPassword(userDto, userFromDb);
+    private final RefreshTokenService refreshTokenService;
 
-                String accessToken = this.jwtHelper.createToken(
-                                ClaimsDto.builder()
-                                                .userId(userFromDb.getId())
-                                                .username(userFromDb.getUsername())
-                                                .role(userFromDb.getRole())
-                                                .build());
+    @Override
+    public AuthTokenDto login(UserDto userDto) {
 
-                String refreshToken = this.refreshTokenService.createRefreshToken(
-                                userFromDb.getId());
+        final var userFromDb = this.userRepository
+                .findByUsername(userDto.getUsername())
+                .orElseThrow(() -> new BusinessException(
+                        AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+                        "Credenciales inválidas"
+                ));
 
-                return TokenDto.builder()
-                                .accessToken(accessToken)
-                                .refreshToken(refreshToken)
-                                .build();
+        this.validPassword(userDto, userFromDb);
+
+        String accessToken = this.jwtHelper.createToken(
+                ClaimsDto.builder()
+                        .userId(userFromDb.getId())
+                        .username(userFromDb.getUsername())
+                        .role(userFromDb.getRole())
+                        .build()
+        );
+
+        String refreshToken = this.refreshTokenService
+                .createRefreshToken(userFromDb.getId());
+
+        return AuthTokenDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    @Override
+    public ClaimsDto validateToken(String accessToken) {
+
+        if (!this.jwtHelper.validateToken(accessToken)) {
+
+            throw new BusinessException(
+                    AuthErrorCode.AUTH_INVALID_TOKEN,
+                    "Token inválido"
+            );
         }
 
-        @Override
-        public ClaimsDto validateToken(String accessToken) {
+        return ClaimsDto.builder()
+                .userId(
+                        this.jwtHelper.getUserIdFromToken(accessToken)
+                )
+                .username(
+                        this.jwtHelper.getUsernameFromToken(accessToken)
+                )
+                .role(
+                        this.jwtHelper.getRoleFromToken(accessToken)
+                )
+                .build();
+    }
 
-                if (!this.jwtHelper.validateToken(accessToken)) {
-                        throw new BusinessException(
-                                        AuthErrorCode.AUTH_INVALID_TOKEN,
-                                        "Token inválido");
-                }
+    @Override
+    public AuthTokenDto refreshToken(String oldRefreshToken) {
 
-                return ClaimsDto.builder()
-                                .userId(
-                                                this.jwtHelper.getUserIdFromToken(accessToken))
-                                .username(
-                                                this.jwtHelper.getUsernameFromToken(accessToken))
-                                .role(
-                                                this.jwtHelper.getRoleFromToken(accessToken))
-                                .build();
+        Long userId = this.refreshTokenService
+                .validateRefreshToken(oldRefreshToken);
+
+        final var userFromDb = this.userRepository
+                .findById(userId)
+                .orElseThrow(() -> new BusinessException(
+                        AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+                        "Usuario no encontrado"
+                ));
+
+        // Revocar refresh token anterior
+        this.refreshTokenService
+                .revokeRefreshToken(oldRefreshToken);
+
+        // Crear nuevo refresh token
+        String newRefreshToken = this.refreshTokenService
+                .createRefreshToken(userId);
+
+        // Crear nuevo access token
+        String accessToken = this.jwtHelper.createToken(
+                ClaimsDto.builder()
+                        .userId(userFromDb.getId())
+                        .username(userFromDb.getUsername())
+                        .role(userFromDb.getRole())
+                        .build()
+        );
+
+        return AuthTokenDto.builder()
+                .accessToken(accessToken)
+                .refreshToken(newRefreshToken)
+                .build();
+    }
+
+    private void validPassword(
+            UserDto userDto,
+            UserEntity userEntity) {
+
+        if (!this.passwordEncoder.matches(
+                userDto.getPassword(),
+                userEntity.getPassword())) {
+
+            throw new BusinessException(
+                    AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+                    "Credenciales inválidas"
+            );
         }
-
-        private void validPassword(
-                        UserDto userDto,
-                        UserEntity userEntity) {
-
-                if (!this.passwordEncoder.matches(
-                                userDto.getPassword(),
-                                userEntity.getPassword())) {
-                        throw new BusinessException(
-                                        AuthErrorCode.AUTH_INVALID_CREDENTIALS,
-                                        "Credenciales inválidas");
-                }
-        }
-
-        @Override
-        public TokenDto refreshToken(RefreshTokenDto refreshTokenDto) {
-
-                String oldRefreshToken = refreshTokenDto.refreshToken();
-
-                Long userId = this.refreshTokenService
-                                .validateRefreshToken(oldRefreshToken);
-
-                final var userFromDb = this.userRepository
-                                .findById(userId)
-                                .orElseThrow(() -> new BusinessException(
-                                                AuthErrorCode.AUTH_INVALID_CREDENTIALS,
-                                                "Usuario no encontrado"));
-
-                // Revocar refresh token anterior
-                this.refreshTokenService.revokeRefreshToken(oldRefreshToken);
-
-                // Crear nuevo refresh token
-                String newRefreshToken = this.refreshTokenService.createRefreshToken(userId);
-
-                // Crear nuevo access token
-                String accessToken = this.jwtHelper.createToken(
-                                ClaimsDto.builder()
-                                                .userId(userFromDb.getId())
-                                                .username(userFromDb.getUsername())
-                                                .role(userFromDb.getRole())
-                                                .build());
-
-                return TokenDto.builder()
-                                .accessToken(accessToken)
-                                .refreshToken(newRefreshToken)
-                                .build();
-        }
+    }
 }

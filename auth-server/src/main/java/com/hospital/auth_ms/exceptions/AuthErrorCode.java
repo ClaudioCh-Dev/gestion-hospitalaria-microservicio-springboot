@@ -6,11 +6,14 @@ import personal.shared.exception.ErrorCode;
 
 public enum AuthErrorCode implements ErrorCode {
 
-    AUTH_INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED.value()),
+    AUTH_INVALID_CREDENTIALS(
+            HttpStatus.UNAUTHORIZED.value()),
 
-    AUTH_INVALID_TOKEN(HttpStatus.UNAUTHORIZED.value()),
+    AUTH_INVALID_TOKEN(
+            HttpStatus.UNAUTHORIZED.value()),
 
-    AUTH_INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED.value());
+    AUTH_INVALID_REFRESH_TOKEN(
+            HttpStatus.UNAUTHORIZED.value());
 
     private final int status;
 
