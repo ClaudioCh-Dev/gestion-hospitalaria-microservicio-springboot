@@ -1,17 +1,24 @@
 package personal.notification_ms.listeners;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
 import org.springframework.context.annotation.Bean;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import personal.notification_ms.dto.NotificationRequest;
+import personal.notification_ms.security.UserContext;
+import personal.notification_ms.security.UserContextHolder;
 import personal.notification_ms.service.INotificationService;
 import personal.notification_ms.service.SseService;
 import personal.shared.event.AppointmentEvent;
-
-import java.time.LocalDateTime;
-import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -22,42 +29,134 @@ public class NotificationListener {
     private final INotificationService notificationService;
 
     @Bean
-    public Consumer<AppointmentEvent> appointmentCreatedConsumer() {
-        return event -> {
-            log.info("Notification received for appointment created: {}", event);
+    public Consumer<Message<AppointmentEvent>> appointmentCreatedConsumer() {
 
-            saveAndSend(event);
+        return message -> {
+
+            try {
+
+                UserContextHolder.set(
+                        buildUserContext(message));
+
+                AppointmentEvent event = message.getPayload();
+
+                log.info(
+                        "Notification received for appointment created: {}",
+                        event);
+
+                saveAndSend(event);
+
+            } finally {
+
+                UserContextHolder.clear();
+            }
         };
     }
 
     @Bean
-    public Consumer<AppointmentEvent> appointmentConfirmedConsumer() {
-        return event -> {
-            log.info("Notification received for appointment confirmed: {}", event);
+    public Consumer<Message<AppointmentEvent>> appointmentConfirmedConsumer() {
 
-            saveAndSend(event);
+        return message -> {
+
+            try {
+
+                UserContextHolder.set(
+                        buildUserContext(message));
+
+                AppointmentEvent event = message.getPayload();
+
+                log.info(
+                        "Notification received for appointment confirmed: {}",
+                        event);
+
+                saveAndSend(event);
+
+            } finally {
+
+                UserContextHolder.clear();
+            }
         };
     }
 
     @Bean
-    public Consumer<AppointmentEvent> appointmentCompletedConsumer() {
-        return event -> {
-            log.info("Notification received for appointment completed: {}", event);
+    public Consumer<Message<AppointmentEvent>> appointmentCompletedConsumer() {
 
-            saveAndSend(event);
+        return message -> {
+
+            try {
+
+                UserContextHolder.set(
+                        buildUserContext(message));
+
+                AppointmentEvent event = message.getPayload();
+
+                log.info(
+                        "Notification received for appointment completed: {}",
+                        event);
+
+                saveAndSend(event);
+
+            } finally {
+
+                UserContextHolder.clear();
+            }
         };
     }
 
     @Bean
-    public Consumer<AppointmentEvent> appointmentCanceledConsumer() {
-        return event -> {
-            log.info("Notification received for appointment canceled: {}", event);
+    public Consumer<Message<AppointmentEvent>> appointmentCanceledConsumer() {
 
-            saveAndSend(event);
+        return message -> {
+
+            try {
+
+                UserContextHolder.set(
+                        buildUserContext(message));
+
+                AppointmentEvent event = message.getPayload();
+
+                log.info(
+                        "Notification received for appointment canceled: {}",
+                        event);
+
+                saveAndSend(event);
+
+            } finally {
+
+                UserContextHolder.clear();
+            }
         };
     }
 
-    private void saveAndSend(AppointmentEvent event) {
+    private UserContext buildUserContext(
+            Message<?> message) {
+
+        String userId = (String) message.getHeaders()
+                .get("X-User-Id");
+
+        String role = (String) message.getHeaders()
+                .get("X-Role");
+
+        String permissionsHeader = (String) message.getHeaders()
+                .get("X-Permissions");
+
+        Set<String> permissions = permissionsHeader == null
+                ? Set.of()
+                : Arrays.stream(
+                        permissionsHeader.split(","))
+                        .map(permission -> permission.trim())
+                        .collect(Collectors.toSet());
+
+        return new UserContext(
+                userId != null
+                        ? Long.valueOf(userId)
+                        : null,
+                role,
+                permissions);
+    }
+
+    private void saveAndSend(
+            AppointmentEvent event) {
 
         NotificationRequest request = new NotificationRequest(
                 event.appointmentId(),
@@ -69,9 +168,9 @@ public class NotificationListener {
                 event.eventType(),
                 event.status(),
                 event.reason(),
-                LocalDateTime.parse(event.scheduledAt()),
-                event.amount()
-        );
+                LocalDateTime.parse(
+                        event.scheduledAt()),
+                event.amount());
 
         notificationService.save(request);
 
