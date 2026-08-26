@@ -10,12 +10,14 @@ import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
 import com.hospital.auth_ms.dtos.users.UserResponse;
 import com.hospital.auth_ms.entities.RoleEntity;
 import com.hospital.auth_ms.entities.UserEntity;
+import com.hospital.auth_ms.exceptions.AuthErrorCode;
 import com.hospital.auth_ms.repositories.RoleRepository;
 import com.hospital.auth_ms.repositories.UserRepository;
 import com.hospital.auth_ms.services.IUserService;
 import com.hospital.auth_ms.services.IRefreshTokenService;
 
 import lombok.RequiredArgsConstructor;
+import personal.shared.exception.BusinessException;
 
 @Service
 @RequiredArgsConstructor
@@ -78,6 +80,12 @@ public class UserServiceImpl implements IUserService {
     public void delete(Long id) {
 
         UserEntity user = findUser(id);
+
+        if ("ADMIN".equals(user.getRole().getName())) {
+            throw new BusinessException(
+                    AuthErrorCode.USER_ADMIN_CANNOT_BE_DEACTIVATED,
+                    "No se puede desactivar un usuario con rol ADMIN");
+        }
 
         user.setActive(false);
 

@@ -16,7 +16,10 @@ public enum AuthErrorCode implements ErrorCode {
             HttpStatus.UNAUTHORIZED.value()),
 
     AUTH_USER_INACTIVE(
-            HttpStatus.UNAUTHORIZED.value());
+            HttpStatus.UNAUTHORIZED.value()),
+
+    USER_ADMIN_CANNOT_BE_DEACTIVATED(
+            HttpStatus.FORBIDDEN.value());
 
     private final int status;
 
