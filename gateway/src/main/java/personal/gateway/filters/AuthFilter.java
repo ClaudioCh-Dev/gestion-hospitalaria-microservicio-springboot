@@ -66,6 +66,7 @@ public class AuthFilter implements WebFilter {
                                         log.info("UserId: {}", userId);
                                         log.info("Username: {}", username);
                                         log.info("Role: {}", role);
+                                        log.info("Permissions: {}", permissions);
 
                                         ServerWebExchange mutatedExchange = exchange.mutate()
                                                         .request(request -> request.headers(headers -> {
