@@ -11,11 +11,10 @@ public interface INotificationService {
 
     NotificationResponse save(NotificationRequest request);
 
-    List<DoctorNotificationResponse> findByDoctorId(Long doctorId);
+    List<DoctorNotificationResponse> findMyDoctorNotifications(Long doctorId);
 
     List<AdminNotificationResponse> findForAdmin();
 
-    void markAsReadByDoctor(Long notificationId);
+    void markAsRead(Long notificationId);
 
-    void markAsReadByAdmin(Long notificationId);
 }

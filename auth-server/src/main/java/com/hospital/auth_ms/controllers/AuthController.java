@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hospital.auth_ms.dtos.AuthTokenDto;
-import com.hospital.auth_ms.dtos.ClaimsDto;
-import com.hospital.auth_ms.dtos.TokenDto;
-import com.hospital.auth_ms.dtos.UserDto;
-import com.hospital.auth_ms.services.AuthService;
+import com.hospital.auth_ms.dtos.authentication.AuthTokenDto;
+import com.hospital.auth_ms.dtos.authentication.ClaimsDto;
+import com.hospital.auth_ms.dtos.authentication.TokenDto;
+import com.hospital.auth_ms.dtos.authentication.UserDto;
+import com.hospital.auth_ms.services.IAuthService;
 
 import lombok.AllArgsConstructor;
 
@@ -25,7 +25,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<TokenDto> jwtCreate(

@@ -13,6 +13,9 @@ public enum AuthErrorCode implements ErrorCode {
             HttpStatus.UNAUTHORIZED.value()),
 
     AUTH_INVALID_REFRESH_TOKEN(
+            HttpStatus.UNAUTHORIZED.value()),
+
+    AUTH_USER_INACTIVE(
             HttpStatus.UNAUTHORIZED.value());
 
     private final int status;

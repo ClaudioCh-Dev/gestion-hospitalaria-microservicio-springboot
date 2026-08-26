@@ -1,4 +1,4 @@
-package com.hospital.auth_ms.dtos;
+package com.hospital.auth_ms.dtos.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

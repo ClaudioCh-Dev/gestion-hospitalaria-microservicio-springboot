@@ -1,4 +1,4 @@
-package com.hospital.auth_ms.dtos;
+package com.hospital.auth_ms.dtos.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserDto {
-    private String username;
-    private String password;
+public class TokenDto {
+
+    private String accessToken;
+
 }

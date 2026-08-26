@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.hospital.auth_ms.dtos.ClaimsDto;
+import com.hospital.auth_ms.dtos.authentication.ClaimsDto;
 import com.hospital.auth_ms.exceptions.AuthErrorCode;
 
 import io.jsonwebtoken.Claims;

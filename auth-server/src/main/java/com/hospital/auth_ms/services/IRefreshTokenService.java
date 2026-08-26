@@ -1,6 +1,6 @@
-package com.hospital.auth_ms.services;;
+package com.hospital.auth_ms.services;
 
-public interface RefreshTokenService {
+public interface IRefreshTokenService {
 
     String createRefreshToken(Long userId);
 
@@ -8,4 +8,5 @@ public interface RefreshTokenService {
 
     void revokeRefreshToken(String refreshToken);
 
+    void revokeAllByUserId(Long userId);
 }

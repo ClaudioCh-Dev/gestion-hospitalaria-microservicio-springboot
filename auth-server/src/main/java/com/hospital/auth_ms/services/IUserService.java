@@ -1,0 +1,22 @@
+package com.hospital.auth_ms.services;
+
+import java.util.List;
+
+import com.hospital.auth_ms.dtos.users.CreateUserRequest;
+import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
+import com.hospital.auth_ms.dtos.users.UserResponse;
+
+public interface IUserService {
+
+    List<UserResponse> findAll();
+
+    UserResponse findById(Long id);
+
+    UserResponse create(CreateUserRequest request);
+
+    UserResponse update(Long id, UpdateUserRequest request);
+
+    void delete(Long id);
+
+    void activate(Long id);
+}

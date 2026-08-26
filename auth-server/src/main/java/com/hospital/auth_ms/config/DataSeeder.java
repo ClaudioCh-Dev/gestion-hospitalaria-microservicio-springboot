@@ -192,6 +192,27 @@ public class DataSeeder {
                                         PermissionEntity.builder()
                                                         .name("NOTIFICATION_MARK_READ_ADMIN")
                                                         .build());
+                        
+                        //Users
+                        PermissionEntity userRead = permissionRepository.save(
+                                        PermissionEntity.builder()
+                                                        .name("USER_READ")
+                                                        .build());
+                        
+                        PermissionEntity userCreate = permissionRepository.save(
+                                        PermissionEntity.builder()
+                                                        .name("USER_CREATE")
+                                                        .build());
+                        
+                        PermissionEntity userUpdate = permissionRepository.save(
+                                        PermissionEntity.builder()
+                                                        .name("USER_UPDATE")
+                                                        .build());
+                        
+                        PermissionEntity userDelete = permissionRepository.save(
+                                        PermissionEntity.builder()
+                                                        .name("USER_DELETE")
+                                                        .build());
 
                         // =========================
                         // ROLES
@@ -236,7 +257,12 @@ public class DataSeeder {
 
                                                                         notificationCreate,
                                                                         notificationReadAdmin,
-                                                                        notificationMarkReadAdmin))
+                                                                        notificationMarkReadAdmin,
+                                                                        
+                                                                        userRead,
+                                                                        userCreate,
+                                                                        userUpdate,
+                                                                        userDelete))
                                                         .build());
 
                         RoleEntity doctor = roleRepository.save(

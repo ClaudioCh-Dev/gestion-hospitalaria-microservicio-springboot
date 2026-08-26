@@ -1,19 +1,20 @@
 package personal.notification_ms.service;
 
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 
 import personal.notification_ms.dto.AdminNotificationResponse;
 import personal.notification_ms.dto.DoctorNotificationResponse;
 import personal.notification_ms.dto.NotificationRequest;
 import personal.notification_ms.dto.NotificationResponse;
+import personal.notification_ms.exceptions.NotificationErrorCode;
 import personal.notification_ms.mapper.NotificationMapper;
 import personal.notification_ms.model.Notification;
+import personal.notification_ms.model.NotificationRecipient;
+import personal.notification_ms.repository.NotificationRecipientRepository;
 import personal.notification_ms.repository.NotificationRepository;
-
+import personal.notification_ms.security.UserContextHolder;
 import personal.shared.exception.BusinessException;
-import personal.notification_ms.exceptions.NotificationErrorCode;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
 public class NotificationServiceImpl implements INotificationService {
 
     private final NotificationRepository repository;
+    private final NotificationRecipientRepository recipientRepository;
     private final NotificationMapper notificationMapper;
 
     @Override
@@ -30,8 +32,6 @@ public class NotificationServiceImpl implements INotificationService {
 
         Notification notification = notificationMapper.toEntity(request);
 
-        notification.setDoctorRead(false);
-        notification.setAdminRead(false);
         notification.setCreatedAt(LocalDateTime.now());
 
         Notification saved = repository.save(notification);
@@ -40,43 +40,30 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
-    public List<DoctorNotificationResponse> findByDoctorId(Long doctorId) {
-
+    public List<DoctorNotificationResponse> findMyDoctorNotifications(Long doctorId) {
         return repository.findDoctorNotifications(doctorId);
     }
 
     @Override
     public List<AdminNotificationResponse> findForAdmin() {
-
         return repository.findAdminNotifications();
     }
 
     @Override
-    public void markAsReadByDoctor(Long notificationId) {
+    public void markAsRead(Long notificationId) {
 
-        Notification notification = findNotification(notificationId);
+        Long userId = UserContextHolder.get().userId();
 
-        notification.setDoctorRead(true);
+        NotificationRecipient recipient = recipientRepository
+                .findByNotificationIdAndUserId(notificationId, userId)
+                .orElseGet(() -> NotificationRecipient.builder()
+                        .notificationId(notificationId)
+                        .userId(userId)
+                        .build());
 
-        repository.save(notification);
-    }
+        recipient.setRead(true);
+        recipient.setReadAt(LocalDateTime.now());
 
-    @Override
-    public void markAsReadByAdmin(Long notificationId) {
-
-        Notification notification = findNotification(notificationId);
-
-        notification.setAdminRead(true);
-
-        repository.save(notification);
-    }
-
-    private Notification findNotification(Long notificationId) {
-
-        return repository.findById(notificationId)
-                .orElseThrow(() -> new BusinessException(
-                        NotificationErrorCode.NOTIFICATION_NOT_FOUND,
-                        "Notificación no encontrada"
-                ));
+        recipientRepository.save(recipient);
     }
 }

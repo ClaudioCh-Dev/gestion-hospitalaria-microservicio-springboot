@@ -25,29 +25,19 @@ public class Notification {
     private Long id;
 
     private Long appointmentId;
-
     private Long patientId;
-
     private String patientName;
 
     private Long doctorId;
-
     private String doctorName;
 
     private String specialty;
-
     private String eventType;
-
     private String status;
-
     private String reason;
 
     private LocalDateTime scheduledAt;
-
     private BigDecimal amount;
-
-    private boolean doctorRead;
-    private boolean adminRead;
 
     private LocalDateTime createdAt;
 }

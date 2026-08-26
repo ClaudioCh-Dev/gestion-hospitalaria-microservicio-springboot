@@ -1,6 +1,4 @@
-package com.hospital.auth_ms.dtos;
-
-import java.util.Set;
+package com.hospital.auth_ms.dtos.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,13 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ClaimsDto {
-
-    private Long userId;
-
+public class UserDto {
     private String username;
-
-    private String role;
-
-    private Set<String> permissions;
+    private String password;
 }
