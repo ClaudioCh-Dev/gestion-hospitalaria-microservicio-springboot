@@ -1,5 +1,8 @@
 package com.hospital.auth_ms.services;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +17,6 @@ import com.hospital.auth_ms.repositories.UserRepository;
 import personal.shared.exception.BusinessException;
 
 import jakarta.transaction.Transactional;
-
 import lombok.AllArgsConstructor;
 
 @Service
@@ -23,12 +25,9 @@ import lombok.AllArgsConstructor;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
-
     private final PasswordEncoder passwordEncoder;
-
     private final JwtHelper jwtHelper;
-
-    private final RefreshTokenService  refreshTokenService;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public AuthTokenDto login(UserDto userDto) {
@@ -46,7 +45,8 @@ public class AuthServiceImpl implements AuthService {
                 ClaimsDto.builder()
                         .userId(userFromDb.getId())
                         .username(userFromDb.getUsername())
-                        .role(userFromDb.getRole())
+                        .role(userFromDb.getRole().getName())
+                        .permissions(getPermissions(userFromDb))
                         .build()
         );
 
@@ -63,7 +63,6 @@ public class AuthServiceImpl implements AuthService {
     public ClaimsDto validateToken(String accessToken) {
 
         if (!this.jwtHelper.validateToken(accessToken)) {
-
             throw new BusinessException(
                     AuthErrorCode.AUTH_INVALID_TOKEN,
                     "Token inválido"
@@ -79,6 +78,9 @@ public class AuthServiceImpl implements AuthService {
                 )
                 .role(
                         this.jwtHelper.getRoleFromToken(accessToken)
+                )
+                .permissions(
+                        this.jwtHelper.getPermissionsFromToken(accessToken)
                 )
                 .build();
     }
@@ -96,20 +98,18 @@ public class AuthServiceImpl implements AuthService {
                         "Usuario no encontrado"
                 ));
 
-        // Revocar refresh token anterior
         this.refreshTokenService
                 .revokeRefreshToken(oldRefreshToken);
 
-        // Crear nuevo refresh token
         String newRefreshToken = this.refreshTokenService
                 .createRefreshToken(userId);
 
-        // Crear nuevo access token
         String accessToken = this.jwtHelper.createToken(
                 ClaimsDto.builder()
                         .userId(userFromDb.getId())
                         .username(userFromDb.getUsername())
-                        .role(userFromDb.getRole())
+                        .role(userFromDb.getRole().getName())
+                        .permissions(getPermissions(userFromDb))
                         .build()
         );
 
@@ -117,6 +117,15 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(newRefreshToken)
                 .build();
+    }
+
+    private Set<String> getPermissions(UserEntity user) {
+
+        return user.getRole()
+                .getPermissions()
+                .stream()
+                .map(permission -> permission.getName())
+                .collect(Collectors.toSet());
     }
 
     private void validPassword(

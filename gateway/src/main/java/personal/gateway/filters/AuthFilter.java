@@ -1,5 +1,7 @@
 package personal.gateway.filters;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +23,7 @@ public class AuthFilter implements WebFilter {
 
         private static final String USER_ID_HEADER = "X-User-Id";
         private static final String ROLE_HEADER = "X-Role";
+        private static final String PERMISSIONS_HEADER = "X-Permissions";
 
         @Override
         public Mono<Void> filter(
@@ -55,6 +58,9 @@ public class AuthFilter implements WebFilter {
 
                                         String role = jwt.getClaimAsString("role");
 
+                                        List<String> permissions =
+                                        jwt.getClaimAsStringList("permissions");
+
                                         log.info("=================================");
                                         log.info("JWT autenticado correctamente");
                                         log.info("UserId: {}", userId);
@@ -69,6 +75,9 @@ public class AuthFilter implements WebFilter {
 
                                                                 headers.remove(
                                                                                 ROLE_HEADER);
+                                                                                
+                                                                headers.remove(
+                                                                                PERMISSIONS_HEADER);
 
                                                                 if (userId != null) {
                                                                         headers.set(
@@ -80,6 +89,12 @@ public class AuthFilter implements WebFilter {
                                                                         headers.set(
                                                                                         ROLE_HEADER,
                                                                                         role);
+                                                                }
+                                                                
+                                                                if (permissions != null) {
+                                                                        headers.set(
+                                                                                        PERMISSIONS_HEADER,
+                                                                                        String.join(",", permissions));
                                                                 }
                                                         }))
                                                         .build();

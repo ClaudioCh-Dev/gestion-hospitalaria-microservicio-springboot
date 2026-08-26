@@ -3,7 +3,9 @@ package com.hospital.auth_ms.helpers;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
-import java.util.function.Function;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,13 +24,14 @@ public class JwtHelper {
 
     private final RSAPrivateKey privateKey;
     private final RSAPublicKey publicKey;
-    
+
     @Value("${auth.jwt.access-token-expiration}")
     private long accessTokenExpiration;
 
     public JwtHelper(
             RSAPrivateKey privateKey,
             RSAPublicKey publicKey) {
+
         this.privateKey = privateKey;
         this.publicKey = publicKey;
     }
@@ -37,12 +40,17 @@ public class JwtHelper {
 
         final var now = new Date();
 
-        final var expirationDate = new Date(now.getTime() + accessTokenExpiration * 1000);
+        final var expirationDate =
+                new Date(
+                        now.getTime()
+                                + accessTokenExpiration * 1000
+                );
 
         return Jwts.builder()
                 .subject(claims.getUsername())
                 .claim("role", claims.getRole())
                 .claim("userId", claims.getUserId())
+                .claim("permissions", claims.getPermissions())
                 .issuedAt(now)
                 .expiration(expirationDate)
                 .signWith(privateKey, Jwts.SIG.RS256)
@@ -51,23 +59,39 @@ public class JwtHelper {
 
     public String getUsernameFromToken(String token) {
 
-        return getClaimsFromToken(
-                token,
-                claims -> claims.getSubject());
+        Claims claims = parseToken(token);
+
+        return claims.getSubject();
     }
 
     public String getRoleFromToken(String token) {
 
-        return getClaimsFromToken(
-                token,
-                claims -> claims.get("role", String.class));
+        Claims claims = parseToken(token);
+
+        return claims.get("role", String.class);
     }
 
     public Long getUserIdFromToken(String token) {
 
-        return getClaimsFromToken(
-                token,
-                claims -> claims.get("userId", Long.class));
+        Claims claims = parseToken(token);
+
+        return claims.get("userId", Long.class);
+    }
+
+    public Set<String> getPermissionsFromToken(String token) {
+
+        Claims claims = parseToken(token);
+
+        List<?> permissions =
+                claims.get("permissions", List.class);
+
+        if (permissions == null) {
+            return Set.of();
+        }
+
+        return permissions.stream()
+                .map(permission -> String.valueOf(permission))
+                .collect(Collectors.toSet());
     }
 
     public boolean isTokenExpired(String token) {
@@ -88,27 +112,21 @@ public class JwtHelper {
 
             log.error(
                     "Invalid JWT token: {}",
-                    e.getMessage());
+                    e.getMessage()
+            );
 
             throw new BusinessException(
                     AuthErrorCode.AUTH_INVALID_TOKEN,
-                    "Token inválido");
+                    "Token inválido"
+            );
         }
     }
 
     private Date getExpirationDate(String token) {
 
-        return getClaimsFromToken(
-                token,
-                claims -> claims.getExpiration());
-    }
+        Claims claims = parseToken(token);
 
-    private <T> T getClaimsFromToken(
-            String token,
-            Function<Claims, T> resolver) {
-
-        return resolver.apply(
-                parseToken(token));
+        return claims.getExpiration();
     }
 
     private Claims parseToken(String token) {

@@ -1,5 +1,7 @@
 package com.hospital.auth_ms.dtos;
 
+import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +18,6 @@ public class ClaimsDto {
     private String username;
 
     private String role;
+
+    private Set<String> permissions;
 }
