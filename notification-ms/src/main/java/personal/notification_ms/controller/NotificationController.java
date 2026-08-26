@@ -1,7 +1,9 @@
 package personal.notification_ms.controller;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import personal.notification_ms.dto.AdminNotificationResponse;
@@ -17,53 +19,44 @@ import java.util.List;
 @RequestMapping("/crud")
 public class NotificationController {
 
-    private final INotificationService service;
+        private final INotificationService service;
 
-    @PostMapping
-    public ResponseEntity<NotificationResponse> save(
-            @RequestBody NotificationRequest request
-    ) {
+        @PreAuthorize("@auth.hasPermission('NOTIFICATION_CREATE')")
+        @PostMapping
+        public ResponseEntity<NotificationResponse> save(
+                        @RequestBody NotificationRequest request) {
+                return ResponseEntity.ok(
+                                service.save(request));
+        }
 
-        return ResponseEntity.ok(
-                service.save(request)
-        );
-    }
+        @PreAuthorize("@auth.hasPermission('NOTIFICATION_READ_DOCTOR')")
+        @GetMapping("/doctor/{doctorId}")
+        public ResponseEntity<List<DoctorNotificationResponse>> findByDoctorId(
+                        @PathVariable Long doctorId) {
+                return ResponseEntity.ok(
+                                service.findByDoctorId(doctorId));
+        }
 
-    @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<DoctorNotificationResponse>> findByDoctorId(
-            @PathVariable Long doctorId
-    ) {
+        @PreAuthorize("@auth.hasPermission('NOTIFICATION_READ_ADMIN')")
+        @GetMapping("/admin")
+        public ResponseEntity<List<AdminNotificationResponse>> findForAdmin() {
+                return ResponseEntity.ok(
+                                service.findForAdmin());
+        }
 
-        return ResponseEntity.ok(
-                service.findByDoctorId(doctorId)
-        );
-    }
+        @PreAuthorize("@auth.hasPermission('NOTIFICATION_MARK_READ_DOCTOR')")
+        @PatchMapping("/{notificationId}/read/doctor")
+        public ResponseEntity<Void> markAsReadByDoctor(
+                        @PathVariable Long notificationId) {
+                service.markAsReadByDoctor(notificationId);
+                return ResponseEntity.noContent().build();
+        }
 
-    @GetMapping("/admin")
-    public ResponseEntity<List<AdminNotificationResponse>> findForAdmin() {
-
-        return ResponseEntity.ok(
-                service.findForAdmin()
-        );
-    }
-
-    @PatchMapping("/{notificationId}/read/doctor")
-    public ResponseEntity<Void> markAsReadByDoctor(
-            @PathVariable Long notificationId
-    ) {
-
-        service.markAsReadByDoctor(notificationId);
-
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{notificationId}/read/admin")
-    public ResponseEntity<Void> markAsReadByAdmin(
-            @PathVariable Long notificationId
-    ) {
-
-        service.markAsReadByAdmin(notificationId);
-
-        return ResponseEntity.noContent().build();
-    }
+        @PreAuthorize("@auth.hasPermission('NOTIFICATION_MARK_READ_ADMIN')")
+        @PatchMapping("/{notificationId}/read/admin")
+        public ResponseEntity<Void> markAsReadByAdmin(
+                        @PathVariable Long notificationId) {
+                service.markAsReadByAdmin(notificationId);
+                return ResponseEntity.noContent().build();
+        }
 }

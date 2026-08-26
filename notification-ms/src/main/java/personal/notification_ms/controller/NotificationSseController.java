@@ -12,10 +12,7 @@ public class NotificationSseController {
 
     private final SseService sseService;
 
-    @GetMapping(
-            value = "/stream",
-            produces = MediaType.TEXT_EVENT_STREAM_VALUE
-    )
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream() {
         return sseService.subscribe();
     }
