@@ -28,7 +28,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtHelper jwtHelper;
 
-    private final RefreshTokenService refreshTokenService;
+    private final RefreshTokenService  refreshTokenService;
 
     @Override
     public AuthTokenDto login(UserDto userDto) {
