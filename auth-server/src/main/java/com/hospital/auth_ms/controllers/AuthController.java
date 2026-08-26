@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hospital.auth_ms.dtos.ClaimsDto;
+import com.hospital.auth_ms.dtos.RefreshTokenDto;
 import com.hospital.auth_ms.dtos.UserDto;
 import com.hospital.auth_ms.dtos.TokenDto;
 import com.hospital.auth_ms.services.AuthService;
@@ -30,5 +31,13 @@ public class AuthController {
     public ResponseEntity<ClaimsDto> jwtValidate(
             @RequestHeader(value = "access-token") String accessToken) {
         return ResponseEntity.ok(this.authService.validateToken(accessToken));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<TokenDto> refreshToken(
+            @RequestBody RefreshTokenDto request) {
+
+        return ResponseEntity.ok(
+                this.authService.refreshToken(request));
     }
 }

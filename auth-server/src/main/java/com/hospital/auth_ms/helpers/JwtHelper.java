@@ -5,6 +5,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.hospital.auth_ms.dtos.ClaimsDto;
@@ -21,11 +22,13 @@ public class JwtHelper {
 
     private final RSAPrivateKey privateKey;
     private final RSAPublicKey publicKey;
+    
+    @Value("${auth.jwt.access-token-expiration}")
+    private long accessTokenExpiration;
 
     public JwtHelper(
             RSAPrivateKey privateKey,
-            RSAPublicKey publicKey
-    ) {
+            RSAPublicKey publicKey) {
         this.privateKey = privateKey;
         this.publicKey = publicKey;
     }
@@ -34,8 +37,7 @@ public class JwtHelper {
 
         final var now = new Date();
 
-        final var expirationDate =
-                new Date(now.getTime() + 3600 * 1000);
+        final var expirationDate = new Date(now.getTime() + accessTokenExpiration * 1000);
 
         return Jwts.builder()
                 .subject(claims.getUsername())
@@ -51,24 +53,21 @@ public class JwtHelper {
 
         return getClaimsFromToken(
                 token,
-                claims -> claims.getSubject()
-        );
+                claims -> claims.getSubject());
     }
 
     public String getRoleFromToken(String token) {
 
         return getClaimsFromToken(
                 token,
-                claims -> claims.get("role", String.class)
-        );
+                claims -> claims.get("role", String.class));
     }
 
     public Long getUserIdFromToken(String token) {
 
         return getClaimsFromToken(
                 token,
-                claims -> claims.get("userId", Long.class)
-        );
+                claims -> claims.get("userId", Long.class));
     }
 
     public boolean isTokenExpired(String token) {
@@ -89,13 +88,11 @@ public class JwtHelper {
 
             log.error(
                     "Invalid JWT token: {}",
-                    e.getMessage()
-            );
+                    e.getMessage());
 
-           throw new BusinessException(
+            throw new BusinessException(
                     AuthErrorCode.AUTH_INVALID_TOKEN,
-                    "Token inválido"
-            );
+                    "Token inválido");
         }
     }
 
@@ -103,18 +100,15 @@ public class JwtHelper {
 
         return getClaimsFromToken(
                 token,
-                claims -> claims.getExpiration()
-        );
+                claims -> claims.getExpiration());
     }
 
     private <T> T getClaimsFromToken(
             String token,
-            Function<Claims, T> resolver
-    ) {
+            Function<Claims, T> resolver) {
 
         return resolver.apply(
-                parseToken(token)
-        );
+                parseToken(token));
     }
 
     private Claims parseToken(String token) {

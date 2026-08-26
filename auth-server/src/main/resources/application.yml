@@ -17,6 +17,10 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 
 server:
@@ -35,3 +39,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+
+auth:
+  jwt:
+    access-token-expiration: 900
+  refresh-token:
+    expiration: 604800

@@ -25,4 +25,6 @@ ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
 ENV OTEL_LOGS_EXPORTER=otlp
 ENV OTEL_TRACES_EXPORTER=otlp
 ENV OTEL_METRICS_EXPORTER=otlp
+ENV REDIS_HOST=redis-hospital
+ENV REDIS_PORT=6379
 ENTRYPOINT ["java","-javaagent:/app/opentelemetry-javaagent.jar","-jar","/app/app.jar"]

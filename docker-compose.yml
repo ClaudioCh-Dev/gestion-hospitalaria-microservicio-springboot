@@ -16,6 +16,13 @@ services:
     ports:
       - '5434:5432'
 
+  redis:
+    image: redis:7.4
+    container_name: redis-hospital
+    restart: always
+    ports:
+      - "6379:6379"
+
   db-notification:
     image: mysql:8.4
     container_name: db-notification
@@ -378,6 +385,8 @@ services:
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
+      REDIS_HOST: redis-hospital
+      REDIS_PORT: 6379
 
       SPRING_PROFILES_ACTIVE: default
 

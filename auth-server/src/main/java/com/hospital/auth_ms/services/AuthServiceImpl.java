@@ -4,6 +4,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.hospital.auth_ms.dtos.ClaimsDto;
+import com.hospital.auth_ms.dtos.RefreshTokenDto;
 import com.hospital.auth_ms.dtos.TokenDto;
 import com.hospital.auth_ms.dtos.UserDto;
 import com.hospital.auth_ms.entities.UserEntity;
@@ -25,6 +26,7 @@ public class AuthServiceImpl implements AuthService {
         private final UserRepository userRepository;
         private final PasswordEncoder passwordEncoder;
         private final JwtHelper jwtHelper;
+        private final RefreshTokenService refreshTokenService;
 
         @Override
         public TokenDto login(UserDto userDto) {
@@ -37,14 +39,19 @@ public class AuthServiceImpl implements AuthService {
 
                 this.validPassword(userDto, userFromDb);
 
+                String accessToken = this.jwtHelper.createToken(
+                                ClaimsDto.builder()
+                                                .userId(userFromDb.getId())
+                                                .username(userFromDb.getUsername())
+                                                .role(userFromDb.getRole())
+                                                .build());
+
+                String refreshToken = this.refreshTokenService.createRefreshToken(
+                                userFromDb.getId());
+
                 return TokenDto.builder()
-                                .accessToken(
-                                                this.jwtHelper.createToken(
-                                                                ClaimsDto.builder()
-                                                                                .userId(userFromDb.getId())
-                                                                                .username(userFromDb.getUsername())
-                                                                                .role(userFromDb.getRole())
-                                                                                .build()))
+                                .accessToken(accessToken)
+                                .refreshToken(refreshToken)
                                 .build();
         }
 
@@ -78,5 +85,39 @@ public class AuthServiceImpl implements AuthService {
                                         AuthErrorCode.AUTH_INVALID_CREDENTIALS,
                                         "Credenciales inválidas");
                 }
+        }
+
+        @Override
+        public TokenDto refreshToken(RefreshTokenDto refreshTokenDto) {
+
+                String oldRefreshToken = refreshTokenDto.refreshToken();
+
+                Long userId = this.refreshTokenService
+                                .validateRefreshToken(oldRefreshToken);
+
+                final var userFromDb = this.userRepository
+                                .findById(userId)
+                                .orElseThrow(() -> new BusinessException(
+                                                AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+                                                "Usuario no encontrado"));
+
+                // Revocar refresh token anterior
+                this.refreshTokenService.revokeRefreshToken(oldRefreshToken);
+
+                // Crear nuevo refresh token
+                String newRefreshToken = this.refreshTokenService.createRefreshToken(userId);
+
+                // Crear nuevo access token
+                String accessToken = this.jwtHelper.createToken(
+                                ClaimsDto.builder()
+                                                .userId(userFromDb.getId())
+                                                .username(userFromDb.getUsername())
+                                                .role(userFromDb.getRole())
+                                                .build());
+
+                return TokenDto.builder()
+                                .accessToken(accessToken)
+                                .refreshToken(newRefreshToken)
+                                .build();
         }
 }
