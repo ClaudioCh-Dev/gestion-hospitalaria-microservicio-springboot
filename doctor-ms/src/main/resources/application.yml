@@ -18,6 +18,9 @@ spring:
         doctor-created-out-0:
           destination: doctor-created
           content-type: application/json
+        doctor-updated-out-0:
+          destination: doctor-updated
+          content-type: application/json
 
 
   datasource:

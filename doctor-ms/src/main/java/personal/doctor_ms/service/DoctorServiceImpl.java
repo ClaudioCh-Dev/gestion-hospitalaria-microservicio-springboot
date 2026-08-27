@@ -19,6 +19,7 @@ import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
 import personal.doctor_ms.stream.DoctorPublisher;
 import personal.shared.event.DoctorCreatedEvent;
+import personal.shared.event.DoctorUpdateEvent;
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -145,6 +146,17 @@ public class DoctorServiceImpl implements IDoctorService {
                 doctor.setScheduleStart(request.scheduleStart());
                 doctor.setScheduleEnd(request.scheduleEnd());
                 doctor.setActive(request.active());
+
+                doctorPublisher.publishDoctorUpdated(
+                                new DoctorUpdateEvent(
+                                                doctor.getId(),
+                                                doctor.getLicenseNumber(),
+                                                doctor.getFirstName(),
+                                                doctor.getLastName(),
+                                                doctor.getEmail(),
+                                                doctor.getPhone(),
+                                                doctor.getUserId(),
+                                                doctor.getSpecialty().getName()));
 
                 return doctorMapper.toResponse(
                                 doctorRepository.save(doctor));

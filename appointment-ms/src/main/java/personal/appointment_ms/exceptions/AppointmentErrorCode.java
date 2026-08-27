@@ -20,7 +20,8 @@ public enum AppointmentErrorCode implements ErrorCode {
     DOCTOR_INVALID_REQUEST(HttpStatus.BAD_REQUEST.value()),
     DOCTOR_CONFLICT(HttpStatus.CONFLICT.value()),
     DOCTOR_VALIDATION_ERROR(HttpStatus.UNPROCESSABLE_CONTENT.value()),
-    DOCTOR_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE.value());
+    DOCTOR_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE.value()),
+    DOCTOR_NOT_AVAILABLE(HttpStatus.CONFLICT.value());
 
     private final int status;
 

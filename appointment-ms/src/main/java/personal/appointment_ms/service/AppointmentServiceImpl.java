@@ -1,5 +1,6 @@
 package personal.appointment_ms.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -10,9 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import personal.appointment_ms.client.DoctorClient;
-import personal.appointment_ms.client.DoctorResponse;
 import personal.appointment_ms.client.PatientClient;
-import personal.appointment_ms.client.PatientResponse;
+import personal.appointment_ms.client.dto.DoctorResponse;
+import personal.appointment_ms.client.dto.PatientResponse;
 import personal.appointment_ms.dto.AppointmentResponse;
 import personal.appointment_ms.dto.CreateAppointmentRequest;
 import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
@@ -70,7 +71,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
                         doctorEntity.setId(doctor.id());
                         doctorEntity.setUserId(doctor.userId());
-                        doctorEntity.setFullName(doctor.firstName() + " " + doctor.lastName());
+                        doctorEntity.setFullName(
+                                        doctor.firstName() + " " + doctor.lastName());
                         doctorEntity.setSpecialty(doctor.specialtyName());
 
                         doctorRepository.save(doctorEntity);
@@ -83,28 +85,46 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                                 AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
                                                 "Tipo de cita no encontrado"));
 
-                // 4. Crear cita
+                // 4. Calcular duración y horario de finalización
+                Integer duration = request.durationMinutes() != null
+                                ? request.durationMinutes()
+                                : 30;
+
+                LocalDateTime start = request.scheduledAt();
+
+                LocalDateTime end = start.plusMinutes(duration);
+
+                // 5. Validar disponibilidad del doctor
+                boolean hasOverlap = appointmentRepository.existsOverlappingAppointment(
+                                request.doctorId(),
+                                start,
+                                end);
+
+                if (hasOverlap) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.DOCTOR_NOT_AVAILABLE,
+                                        "El doctor ya tiene una cita en ese horario");
+                }
+
+                // 6. Crear cita
                 Appointment appointment = Appointment.builder()
                                 .patientId(request.patientId())
                                 .doctorId(request.doctorId())
                                 .appointmentType(appointmentType)
-                                .scheduledAt(request.scheduledAt())
-                                .durationMinutes(
-                                                request.durationMinutes() != null
-                                                                ? request.durationMinutes()
-                                                                : 30)
+                                .scheduledAt(start)
+                                .durationMinutes(duration)
                                 .reason(request.reason())
                                 .status(AppointmentStatus.SCHEDULED)
                                 .notes(request.notes())
                                 .build();
 
-                // 5. Guardar
+                // 7. Guardar
                 Appointment savedAppointment = appointmentRepository.save(appointment);
 
-                // 6. Crear evento
+                // 8. Crear evento
                 AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
 
-                // 7. Publicar evento
+                // 9. Publicar evento
                 publishAppointmentEvent(
                                 savedAppointment.getStatus(),
                                 appointmentEvent);
@@ -224,6 +244,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         case CANCELLED -> "appointment-cancelled";
                 };
 
+                // TODO Mejorar esto
                 PatientEntity patient = patientRepository.findById(appointment.getPatientId())
                                 .orElse(new PatientEntity());
                 DoctorEntity doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(new DoctorEntity());

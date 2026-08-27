@@ -18,6 +18,9 @@ spring:
         patient-created-out-0:
           destination: patient-created
           content-type: application/json
+        patient-updated-out-0:
+          destination: patient-updated
+          content-type: application/json
 
 
   datasource:

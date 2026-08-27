@@ -1,6 +1,6 @@
 package personal.shared.event;
 
-public record PatientCreatedEvent (
+public record PatientCreateEvent( 
     Long id,
     String firstName,
     String lastName,

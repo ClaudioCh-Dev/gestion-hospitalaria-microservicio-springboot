@@ -19,7 +19,9 @@ import personal.appointment_ms.repositories.PatientRepository;
 import personal.appointment_ms.security.UserContext;
 import personal.appointment_ms.security.UserContextHolder;
 import personal.shared.event.DoctorCreatedEvent;
-import personal.shared.event.PatientCreatedEvent;
+import personal.shared.event.DoctorUpdateEvent;
+import personal.shared.event.PatientCreateEvent;
+import personal.shared.event.PatientUpdateEvent;
 
 @Configuration
 @Slf4j
@@ -32,76 +34,121 @@ public class AppointmentListener {
         @Bean
         public Consumer<Message<DoctorCreatedEvent>> doctorCreatedConsumer() {
 
-                return message -> {
+                return message -> executeWithContext(message, () -> {
 
-                        try {
+                        DoctorCreatedEvent event = message.getPayload();
 
-                                UserContext context = buildUserContext(message);
-                                UserContextHolder.set(context);
+                        DoctorEntity doctor = doctorRepository
+                                        .findById(event.doctorId())
+                                        .orElseGet(DoctorEntity::new);
 
-                                DoctorCreatedEvent event = message.getPayload();
+                        doctor.setId(event.doctorId());
+                        doctor.setUserId(event.userId());
+                        doctor.setFullName(
+                                        event.firstName() + " " + event.lastName());
+                        doctor.setSpecialty(event.specialty());
 
-                                DoctorEntity doctor = new DoctorEntity();
-                                doctor.setId(event.doctorId());
-                                doctor.setUserId(event.userId());
-                                doctor.setFullName(
-                                                event.firstName() + " " + event.lastName());
+                        doctorRepository.save(doctor);
 
-                                doctor.setSpecialty(event.specialty());
-                                doctorRepository.save(doctor);
-
-                                log.info(
-                                                "Doctor guardado en appointment-ms. doctorId={}",
-                                                event.doctorId());
-
-                        } catch (Exception e) {
-
-                                log.error(
-                                                "Error procesando DoctorCreatedEvent",
-                                                e);
-
-                        } finally {
-
-                                UserContextHolder.clear();
-                        }
-                };
+                        log.info(
+                                        "Doctor creado/actualizado en appointment-ms. doctorId={}",
+                                        event.doctorId());
+                });
         }
 
         @Bean
-        public Consumer<Message<PatientCreatedEvent>> patientCreatedConsumer() {
+        public Consumer<Message<DoctorUpdateEvent>> doctorUpdatedConsumer() {
 
-                return message -> {
+                return message -> executeWithContext(message, () -> {
 
-                        try {
+                        DoctorUpdateEvent event = message.getPayload();
 
-                                UserContext context = buildUserContext(message);
-                                UserContextHolder.set(context);
+                        DoctorEntity doctor = doctorRepository
+                                        .findById(event.doctorId())
+                                        .orElseGet(DoctorEntity::new);
 
-                                PatientCreatedEvent event = message.getPayload();
+                        doctor.setId(event.doctorId());
+                        doctor.setUserId(event.userId());
+                        doctor.setFullName(
+                                        event.firstName() + " " + event.lastName());
+                        doctor.setSpecialty(event.specialty());
 
-                                PatientEntity patient = new PatientEntity();
+                        doctorRepository.save(doctor);
 
-                                patient.setId(event.id());
-                                patient.setFullName(
-                                                event.firstName() + " " + event.lastName());
+                        log.info(
+                                        "Doctor actualizado en appointment-ms. doctorId={}",
+                                        event.doctorId());
+                });
+        }
 
-                                patientRepository.save(patient);
+        @Bean
+        public Consumer<Message<PatientCreateEvent>> patientCreatedConsumer() {
 
-                                log.info(
-                                                "Paciente guardado en appointment-ms. patientId={}",
-                                                event.id());
+                return message -> executeWithContext(message, () -> {
 
-                        } catch (Exception e) {
+                        PatientCreateEvent event = message.getPayload();
 
-                                log.error(
-                                                "Error procesando PatientCreatedEvent",
-                                                e);
+                        PatientEntity patient = patientRepository
+                                        .findById(event.id())
+                                        .orElseGet(PatientEntity::new);
 
-                        } finally {
+                        patient.setId(event.id());
+                        patient.setFullName(
+                                        event.firstName() + " " + event.lastName());
 
-                                UserContextHolder.clear();
-                        }
-                };
+                        patientRepository.save(patient);
+
+                        log.info(
+                                        "Paciente creado/actualizado en appointment-ms. patientId={}",
+                                        event.id());
+                });
+        }
+
+        @Bean
+        public Consumer<Message<PatientUpdateEvent>> patientUpdatedConsumer() {
+
+                return message -> executeWithContext(message, () -> {
+
+                        PatientUpdateEvent event = message.getPayload();
+
+                        PatientEntity patient = patientRepository
+                                        .findById(event.id())
+                                        .orElseGet(PatientEntity::new);
+
+                        patient.setId(event.id());
+                        patient.setFullName(
+                                        event.firstName() + " " + event.lastName());
+
+                        patientRepository.save(patient);
+
+                        log.info(
+                                        "Paciente actualizado en appointment-ms. patientId={}",
+                                        event.id());
+                });
+        }
+
+        private <T> void executeWithContext(
+                        Message<T> message,
+                        Runnable action) {
+
+                try {
+
+                        UserContext context = buildUserContext(message);
+
+                        UserContextHolder.set(context);
+
+                        action.run();
+
+                } catch (Exception e) {
+
+                        log.error(
+                                        "Error procesando evento en appointment-ms",
+                                        e);
+
+                } finally {
+
+                        UserContextHolder.clear();
+                }
         }
 
         private UserContext buildUserContext(

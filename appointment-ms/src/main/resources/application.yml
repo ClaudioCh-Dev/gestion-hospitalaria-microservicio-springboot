@@ -29,12 +29,22 @@ spring:
         appointment-canceled-out-0:
           destination: appointment-canceled
           content-type: application/json
+
         doctorCreatedConsumer-in-0:
           destination: doctor-created
           group: appointment-ms-group
           content-type: application/json
+        doctorUpdatedConsumer-in-0:
+          destination: doctor-updated
+          group: appointment-ms-group
+          content-type: application/json
+
         patientCreatedConsumer-in-0:
-          destination: patient-registered
+          destination: patient-created
+          group: appointment-ms-group
+          content-type: application/json
+        patientUpdatedConsumer-in-0:
+          destination: patient-updated
           group: appointment-ms-group
           content-type: application/json
     openfeign:

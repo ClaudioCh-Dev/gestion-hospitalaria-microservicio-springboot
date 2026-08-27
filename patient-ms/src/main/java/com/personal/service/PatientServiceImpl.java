@@ -9,7 +9,8 @@ import com.personal.mapper.PatientMapper;
 import com.personal.repository.IPatientRepository;
 import com.personal.streams.PatientPublisher;
 
-import personal.shared.event.PatientCreatedEvent;
+import personal.shared.event.PatientCreateEvent;
+import personal.shared.event.PatientUpdateEvent;
 import personal.shared.exception.BusinessException;
 
 import org.springframework.data.domain.Page;
@@ -82,7 +83,8 @@ public class PatientServiceImpl implements IPatientService {
 
         Patient savedPatient = patientRepository.save(patient);
 
-        PatientCreatedEvent event = new PatientCreatedEvent(
+        // Publish patient created event
+        PatientCreateEvent event = new PatientCreateEvent(
                 savedPatient.getId(),
                 savedPatient.getFirstName(),
                 savedPatient.getLastName(),
@@ -123,6 +125,15 @@ public class PatientServiceImpl implements IPatientService {
         patientMapper.updateEntity(request, patient);
 
         Patient updatedPatient = patientRepository.save(patient);
+
+        // Publish patient updated event
+        PatientUpdateEvent event = new PatientUpdateEvent(
+                updatedPatient.getId(),
+                updatedPatient.getFirstName(),
+                updatedPatient.getLastName(),
+                updatedPatient.getEmail());
+
+        patientPublisher.publishPatientUpdated(event);
 
         return patientMapper.toResponse(updatedPatient);
     }

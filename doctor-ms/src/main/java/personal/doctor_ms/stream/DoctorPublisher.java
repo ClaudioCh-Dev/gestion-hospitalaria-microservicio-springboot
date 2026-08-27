@@ -8,9 +8,11 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 import lombok.AllArgsConstructor;
+
 import personal.doctor_ms.security.UserContext;
 import personal.doctor_ms.security.UserContextHolder;
 import personal.shared.event.DoctorCreatedEvent;
+import personal.shared.event.DoctorUpdateEvent;
 
 @Component
 @AllArgsConstructor
@@ -23,47 +25,73 @@ public class DoctorPublisher {
 
         streamBridge.send(
                 "doctor-created-out-0",
-                buildMessage(doctorEvent)
+                buildCreatedMessage(doctorEvent)
         );
     }
 
-    private Message<DoctorCreatedEvent> buildMessage(
+    public void publishDoctorUpdated(
+            DoctorUpdateEvent doctorEvent) {
+
+        streamBridge.send(
+                "doctor-updated-out-0",
+                buildUpdatedMessage(doctorEvent)
+        );
+    }
+
+    private Message<DoctorCreatedEvent> buildCreatedMessage(
             DoctorCreatedEvent event) {
+
+        MessageBuilder<DoctorCreatedEvent> builder =
+                MessageBuilder.withPayload(event);
+
+        addUserContextHeaders(builder);
+
+        return builder.build();
+    }
+
+    private Message<DoctorUpdateEvent> buildUpdatedMessage(
+            DoctorUpdateEvent event) {
+
+        MessageBuilder<DoctorUpdateEvent> builder =
+                MessageBuilder.withPayload(event);
+
+        addUserContextHeaders(builder);
+
+        return builder.build();
+    }
+
+    private void addUserContextHeaders(
+            MessageBuilder<?> builder) {
 
         UserContext context =
                 UserContextHolder.get();
 
-        MessageBuilder<DoctorCreatedEvent> builder =
-                MessageBuilder
-                        .withPayload(event);
-
-        if (context != null) {
-
-            if (context.userId() != null) {
-                builder.setHeader(
-                        "X-User-Id",
-                        context.userId().toString()
-                );
-            }
-
-            if (context.role() != null) {
-                builder.setHeader(
-                        "X-Role",
-                        context.role()
-                );
-            }
-
-            Set<String> permissions =
-                    context.permissions();
-
-            if (permissions != null && !permissions.isEmpty()) {
-                builder.setHeader(
-                        "X-Permissions",
-                        String.join(",", permissions)
-                );
-            }
+        if (context == null) {
+            return;
         }
 
-        return builder.build();
+        if (context.userId() != null) {
+            builder.setHeader(
+                    "X-User-Id",
+                    context.userId().toString()
+            );
+        }
+
+        if (context.role() != null) {
+            builder.setHeader(
+                    "X-Role",
+                    context.role()
+            );
+        }
+
+        Set<String> permissions =
+                context.permissions();
+
+        if (permissions != null && !permissions.isEmpty()) {
+            builder.setHeader(
+                    "X-Permissions",
+                    String.join(",", permissions)
+            );
+        }
     }
 }
