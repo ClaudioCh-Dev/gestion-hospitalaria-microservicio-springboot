@@ -31,8 +31,12 @@ public enum AuthErrorCode implements ErrorCode {
             HttpStatus.BAD_REQUEST.value()),
             
     USER_NOT_FOUND(
-            HttpStatus.NOT_FOUND.value());
+            HttpStatus.NOT_FOUND.value()),
 
+    INVALID_PASSWORD(
+            HttpStatus.BAD_REQUEST.value());
+
+            
     private final int status;
 
     AuthErrorCode(int status) {

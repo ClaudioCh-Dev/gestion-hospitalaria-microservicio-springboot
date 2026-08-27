@@ -8,6 +8,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.hospital.auth_ms.dtos.users.ActivateUserRequest;
+import com.hospital.auth_ms.dtos.users.ChangePasswordRequest;
+import com.hospital.auth_ms.dtos.users.CreateDoctorRequest;
 import com.hospital.auth_ms.dtos.users.CreateUserRequest;
 import com.hospital.auth_ms.dtos.users.ResendActivationRequest;
 import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
@@ -69,23 +71,37 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    /*/
-    @PreAuthorize("@auth.hasPermission('USER_UPDATE')")
-    @PatchMapping("/{id}/activate")
-    public ResponseEntity<Void> activate(
-            @PathVariable Long id) {
+    @PreAuthorize("@auth.hasPermission('USER_CREATE')")
+    @PostMapping("/doctor")
+    public ResponseEntity<UserResponse> createDoctor(
+            @RequestBody CreateDoctorRequest request) {
 
-        userService.activate(id);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(userService.createDoctor(request));
+    }
 
-        return ResponseEntity.noContent().build();
-    }*/
-
+    /*
+     * /
+     * 
+     * @PreAuthorize("@auth.hasPermission('USER_UPDATE')")
+     * 
+     * @PatchMapping("/{id}/activate")
+     * public ResponseEntity<Void> activate(
+     * 
+     * @PathVariable Long id) {
+     * 
+     * userService.activate(id);
+     * 
+     * return ResponseEntity.noContent().build();
+     * }
+     */
 
     @PostMapping("/activate")
     public ResponseEntity<Void> activateByToken(
             @RequestBody ActivateUserRequest request) {
 
-        userService.activateByToken(request.token());
+        userService.activateByToken(request);
 
         return ResponseEntity.noContent().build();
     }
@@ -93,10 +109,19 @@ public class UserController {
     @PreAuthorize("@auth.hasPermission('USER_UPDATE')")
     @PostMapping("/resend-activation")
     public ResponseEntity<Void> resendActivation(
-        @Valid @RequestBody ResendActivationRequest request) {
+            @Valid @RequestBody ResendActivationRequest request) {
 
         userService.resendActivation(request.email());
 
         return ResponseEntity.noContent().build();
     }
-}   
+
+    @PostMapping("/change-password-me")
+    public ResponseEntity<Void> changePasswordMe(
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        userService.changePasswordMe(request);
+
+        return ResponseEntity.noContent().build();
+    }
+}

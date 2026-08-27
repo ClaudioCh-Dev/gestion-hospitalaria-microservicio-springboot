@@ -46,7 +46,8 @@ public class SecurityConfig {
                                 "/auth/validate-jwt",
                                 "/auth/refresh-token",
                                 "/.well-known/jwks.json",
-                                "/h2-console/**"
+                                "/h2-console/**",
+                                "/users/activate"
                         ).permitAll()
 
                         .requestMatchers("/users/**")

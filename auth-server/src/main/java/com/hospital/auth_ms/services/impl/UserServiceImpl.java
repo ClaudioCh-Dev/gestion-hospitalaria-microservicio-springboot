@@ -7,6 +7,9 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.hospital.auth_ms.dtos.users.ActivateUserRequest;
+import com.hospital.auth_ms.dtos.users.ChangePasswordRequest;
+import com.hospital.auth_ms.dtos.users.CreateDoctorRequest;
 import com.hospital.auth_ms.dtos.users.CreateUserRequest;
 import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
 import com.hospital.auth_ms.dtos.users.UserResponse;
@@ -15,6 +18,8 @@ import com.hospital.auth_ms.entities.UserEntity;
 import com.hospital.auth_ms.exceptions.AuthErrorCode;
 import com.hospital.auth_ms.repositories.RoleRepository;
 import com.hospital.auth_ms.repositories.UserRepository;
+import com.hospital.auth_ms.security.UserContext;
+import com.hospital.auth_ms.security.UserContextHolder;
 import com.hospital.auth_ms.services.IUserService;
 import com.hospital.auth_ms.services.IEmailService;
 import com.hospital.auth_ms.services.IRefreshTokenService;
@@ -108,24 +113,9 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public void activate(Long id) {
+    public void activateByToken(ActivateUserRequest request) {
 
-        UserEntity user = findUser(id);
-
-        user.setActive(true);
-
-        userRepository.save(user);
-    }
-
-    private UserEntity findUser(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-    }
-
-    @Override
-    public void activateByToken(String token) {
-
-        UserEntity user = userRepository.findByActivationToken(token)
+        UserEntity user = userRepository.findByActivationToken(request.token())
                 .orElseThrow(() -> new BusinessException(
                         AuthErrorCode.INVALID_ACTIVATION_TOKEN,
                         "Token de activación inválido"));
@@ -139,6 +129,7 @@ public class UserServiceImpl implements IUserService {
         user.setActive(true);
         user.setActivationToken(null);
         user.setActivationTokenExpiresAt(null);
+        user.setPassword(passwordEncoder.encode(request.password()));
 
         userRepository.save(user);
     }
@@ -170,6 +161,60 @@ public class UserServiceImpl implements IUserService {
                 savedUser.getActivationToken());
     }
 
+    @Override
+    public UserResponse createDoctor(CreateDoctorRequest request) {
+
+        RoleEntity role = roleRepository.findByName("DOCTOR")
+                .orElseThrow(() -> new RuntimeException("Rol DOCTOR no encontrado"));
+
+        String activationToken = UUID.randomUUID().toString();
+
+        UserEntity user = UserEntity.builder()
+                .email(request.email())
+                .role(role)
+                .active(false)
+                .activationToken(activationToken)
+                .activationTokenExpiresAt(LocalDateTime.now().plusHours(24))
+                .build();
+
+        UserEntity savedUser = userRepository.save(user);
+
+        emailService.sendActivationEmail(
+                savedUser.getEmail(),
+                savedUser.getActivationToken());
+
+        return toResponse(savedUser);
+    }
+
+    @Override
+    public void changePasswordMe(ChangePasswordRequest request) {
+
+        UserContext context = UserContextHolder.get();
+
+        UserEntity user = findUser(context.userId());
+
+        if (!passwordEncoder.matches(
+                request.currentPassword(),
+                user.getPassword())) {
+
+            throw new BusinessException(
+                    AuthErrorCode.INVALID_PASSWORD,
+                    "La contraseña actual es incorrecta");
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(request.newPassword()));
+
+        userRepository.save(user);
+
+        refreshTokenService.revokeAllByUserId(user.getId());
+    }
+
+    private UserEntity findUser(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    }
+
     private UserResponse toResponse(UserEntity user) {
 
         return new UserResponse(
@@ -179,4 +224,16 @@ public class UserServiceImpl implements IUserService {
                 user.getRole().getName(),
                 user.isActive());
     }
+
+        /*
+     * @Override
+     * public void activate(Long id) {
+     * 
+     * UserEntity user = findUser(id);
+     * 
+     * user.setActive(true);
+     * 
+     * userRepository.save(user);
+     * }
+     */
 }
