@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import personal.doctor_ms.client.dto.CreateDoctorRequestClient;
+import personal.doctor_ms.client.dto.UserResponse;
 
 @FeignClient(name = "auth-ms")
 public interface UserClient {
@@ -13,6 +15,6 @@ public interface UserClient {
     @GetMapping("/users/{id}")
     UserResponse findById(@PathVariable Long id);
 
-    @PostMapping("/users")
-    UserResponse createUser(@RequestBody CreateUserRequestClient request);
+    @PostMapping("/doctor")
+    UserResponse createDoctor(@RequestBody CreateDoctorRequestClient request);
 }

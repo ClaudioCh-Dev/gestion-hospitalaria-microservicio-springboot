@@ -1,8 +1,8 @@
-package personal.doctor_ms.client;
+package personal.doctor_ms.client.dto;
 
 public record UserResponse(
         Long id,
-        String username,
+        String email,
         Long roleId,
         String role,
         boolean active
