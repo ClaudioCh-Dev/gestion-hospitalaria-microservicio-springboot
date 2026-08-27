@@ -17,9 +17,13 @@ import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
 import personal.appointment_ms.entities.Appointment;
 import personal.appointment_ms.entities.AppointmentStatus;
 import personal.appointment_ms.entities.AppointmentType;
+import personal.appointment_ms.entities.DoctorEntity;
+import personal.appointment_ms.entities.PatientEntity;
 import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
+import personal.appointment_ms.repositories.DoctorRepository;
+import personal.appointment_ms.repositories.PatientRepository;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentEvent;
 import personal.shared.exception.BusinessException;
@@ -34,6 +38,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
     private final PatientClient patientClient;
     private final DoctorClient doctorClient;
     private final AppointmentPublisher appointmentPublisher;
+    private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
 
     @Override
     public AppointmentResponse createAppointment(
@@ -187,8 +193,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
         );
     }
 
-    // TODO: Implementar Outbox Pattern para garantizar
-    // la publicación del AppointmentEvent en Kafka.
     private AppointmentEvent buildAppointmentEvent(
             Appointment appointment) {
 
@@ -199,13 +203,16 @@ public class AppointmentServiceImpl implements IAppointmentService {
             case CANCELLED -> "appointment-cancelled";
         };
 
+        PatientEntity patient = patientRepository.findById(appointment.getPatientId()).orElse(new PatientEntity());
+        DoctorEntity doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(new DoctorEntity());
+
         return new AppointmentEvent(
                 appointment.getId(),
                 appointment.getPatientId(),
-                "TODO",
+                patient.getFullName(),
                 appointment.getDoctorId(),
-                "TODO",
-                "TODO",
+                doctor.getFullName(),
+                doctor.getSpecialty(),
                 appointment.getScheduledAt().toString(),
                 appointment.getReason(),
                 appointment.getStatus().name(),

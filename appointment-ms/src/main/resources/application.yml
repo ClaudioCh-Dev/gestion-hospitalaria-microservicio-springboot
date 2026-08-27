@@ -29,6 +29,14 @@ spring:
         appointment-canceled-out-0:
           destination: appointment-canceled
           content-type: application/json
+        doctorCreatedConsumer-in-0:
+          destination: doctor-created
+          group: appointment-ms-group
+          content-type: application/json
+        patientCreatedConsumer-in-0:
+          destination: patient-registered
+          group: appointment-ms-group
+          content-type: application/json
     openfeign:
       circuitbreaker:
         enabled: true
