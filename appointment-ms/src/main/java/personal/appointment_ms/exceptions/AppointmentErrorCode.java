@@ -11,9 +11,15 @@ public enum AppointmentErrorCode implements ErrorCode {
     APPOINTMENT_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
 
     PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
-    DOCTOR_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
-
+    PATIENT_INVALID_REQUEST(HttpStatus.BAD_REQUEST.value()),
+    PATIENT_CONFLICT(HttpStatus.CONFLICT.value()),
+    PATIENT_VALIDATION_ERROR(HttpStatus.UNPROCESSABLE_CONTENT.value()),
     PATIENT_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE.value()),
+
+    DOCTOR_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
+    DOCTOR_INVALID_REQUEST(HttpStatus.BAD_REQUEST.value()),
+    DOCTOR_CONFLICT(HttpStatus.CONFLICT.value()),
+    DOCTOR_VALIDATION_ERROR(HttpStatus.UNPROCESSABLE_CONTENT.value()),
     DOCTOR_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE.value());
 
     private final int status;

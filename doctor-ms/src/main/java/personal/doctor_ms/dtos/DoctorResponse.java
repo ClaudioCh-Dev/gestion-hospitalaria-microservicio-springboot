@@ -1,6 +1,5 @@
 package personal.doctor_ms.dtos;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public record DoctorResponse(
@@ -10,10 +9,11 @@ public record DoctorResponse(
         String lastName,
         String email,
         String phone,
-        SpecialtyResponse specialty,
+        Long userId,
+        Long specialtyId,
+        String specialtyName,
         LocalTime scheduleStart,
         LocalTime scheduleEnd,
-        Boolean active,
-        LocalDateTime createdAt
+        Boolean active
 ) {
 }

@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import personal.appointment_ms.client.DoctorClient;
+import personal.appointment_ms.client.DoctorResponse;
 import personal.appointment_ms.client.PatientClient;
+import personal.appointment_ms.client.PatientResponse;
 import personal.appointment_ms.dto.AppointmentResponse;
 import personal.appointment_ms.dto.CreateAppointmentRequest;
 import personal.appointment_ms.dto.UpdateAppointmentStatusRequest;
@@ -33,214 +35,233 @@ import personal.shared.exception.BusinessException;
 @Slf4j
 public class AppointmentServiceImpl implements IAppointmentService {
 
-    private final AppointmentRepository appointmentRepository;
-    private final AppointmentTypeRepository appointmentTypeRepository;
-    private final PatientClient patientClient;
-    private final DoctorClient doctorClient;
-    private final AppointmentPublisher appointmentPublisher;
-    private final PatientRepository patientRepository;
-    private final DoctorRepository doctorRepository;
+        private final AppointmentRepository appointmentRepository;
+        private final AppointmentTypeRepository appointmentTypeRepository;
+        private final PatientClient patientClient;
+        private final DoctorClient doctorClient;
+        private final AppointmentPublisher appointmentPublisher;
+        private final PatientRepository patientRepository;
+        private final DoctorRepository doctorRepository;
 
-    @Override
-    public AppointmentResponse createAppointment(
-            CreateAppointmentRequest request) {
+        @Override
+        public AppointmentResponse createAppointment(
+                        CreateAppointmentRequest request) {
 
-        // Feign client call
-        patientClient.findById(request.patientId());
-        doctorClient.findById(request.doctorId());
+                // 1. Buscar paciente en la BD local
+                if (!patientRepository.existsById(request.patientId())) {
 
-        AppointmentType appointmentType = appointmentTypeRepository
-                .findById(request.appointmentTypeId())
-                .orElseThrow(() -> new BusinessException(
-                        AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
-                        "Tipo de cita no encontrado"
-                ));
+                        PatientResponse patient = patientClient.findById(request.patientId());
 
-        Appointment appointment = Appointment.builder()
-                .patientId(request.patientId())
-                .doctorId(request.doctorId())
-                .appointmentType(appointmentType)
-                .scheduledAt(request.scheduledAt())
-                .durationMinutes(
-                        request.durationMinutes() != null
-                                ? request.durationMinutes()
-                                : 30)
-                .reason(request.reason())
-                .status(AppointmentStatus.SCHEDULED)
-                .notes(request.notes())
-                .build();
+                        PatientEntity patientEntity = new PatientEntity();
 
-        Appointment savedAppointment =
-                appointmentRepository.save(appointment);
+                        patientEntity.setId(patient.id());
+                        patientEntity.setFullName(
+                                        patient.firstName() + " " + patient.lastName());
 
-        AppointmentEvent appointmentEvent =
-                buildAppointmentEvent(savedAppointment);
+                        patientRepository.save(patientEntity);
+                }
 
-        publishAppointmentEvent(
-                savedAppointment.getStatus(),
-                appointmentEvent);
+                // 2. Buscar doctor en la BD local
+                if (!doctorRepository.existsById(request.doctorId())) {
 
-        return toResponse(savedAppointment);
-    }
+                        DoctorResponse doctor = doctorClient.findById(request.doctorId());
 
-    @Override
-    public Page<AppointmentResponse> getAppointments(
-            Pageable pageable) {
+                        DoctorEntity doctorEntity = new DoctorEntity();
 
-        return appointmentRepository
-                .findAll(pageable)
-                .map(this::toResponse);
-    }
+                        doctorEntity.setId(doctor.id());
+                        doctorEntity.setUserId(doctor.userId());
+                        doctorEntity.setFullName(doctor.firstName() + " " + doctor.lastName());
+                        doctorEntity.setSpecialty(doctor.specialtyName());
 
-    @Override
-    public AppointmentResponse getAppointmentById(Long id) {
+                        doctorRepository.save(doctorEntity);
+                }
 
-        Appointment appointment = appointmentRepository
-                .findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
-                        "Cita no encontrada"
-                ));
+                // 3. Validar tipo de cita
+                AppointmentType appointmentType = appointmentTypeRepository
+                                .findById(request.appointmentTypeId())
+                                .orElseThrow(() -> new BusinessException(
+                                                AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
+                                                "Tipo de cita no encontrado"));
 
-        return toResponse(appointment);
-    }
+                // 4. Crear cita
+                Appointment appointment = Appointment.builder()
+                                .patientId(request.patientId())
+                                .doctorId(request.doctorId())
+                                .appointmentType(appointmentType)
+                                .scheduledAt(request.scheduledAt())
+                                .durationMinutes(
+                                                request.durationMinutes() != null
+                                                                ? request.durationMinutes()
+                                                                : 30)
+                                .reason(request.reason())
+                                .status(AppointmentStatus.SCHEDULED)
+                                .notes(request.notes())
+                                .build();
 
-    @Override
-    public List<AppointmentResponse> getAppointmentsByPatient(
-            Long patientId) {
+                // 5. Guardar
+                Appointment savedAppointment = appointmentRepository.save(appointment);
 
-        return appointmentRepository
-                .findByPatientId(patientId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
+                // 6. Crear evento
+                AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
 
-    @Override
-    public List<AppointmentResponse> getAppointmentsByDoctor(
-            Long doctorId) {
+                // 7. Publicar evento
+                publishAppointmentEvent(
+                                savedAppointment.getStatus(),
+                                appointmentEvent);
 
-        return appointmentRepository
-                .findByDoctorId(doctorId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    @Override
-    public AppointmentResponse updateStatus(
-            Long id,
-            UpdateAppointmentStatusRequest request) {
-
-        Appointment appointment = appointmentRepository
-                .findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
-                        "Cita no encontrada"
-                ));
-
-        appointment.setStatus(request.status());
-
-        Appointment updatedAppointment =
-                appointmentRepository.save(appointment);
-
-        AppointmentEvent appointmentEvent =
-                buildAppointmentEvent(updatedAppointment);
-
-        publishAppointmentEvent(
-                updatedAppointment.getStatus(),
-                appointmentEvent);
-
-        return toResponse(updatedAppointment);
-    }
-
-    @Override
-    public void cancelAppointment(Long id) {
-
-        Appointment appointment = appointmentRepository
-                .findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
-                        "Cita no encontrada"
-                ));
-
-        appointment.setStatus(AppointmentStatus.CANCELLED);
-
-        Appointment updatedAppointment =
-                appointmentRepository.save(appointment);
-
-        AppointmentEvent appointmentEvent =
-                buildAppointmentEvent(updatedAppointment);
-
-        publishAppointmentEvent(
-                updatedAppointment.getStatus(),
-                appointmentEvent);
-    }
-
-    private AppointmentResponse toResponse(
-            Appointment appointment) {
-
-        return new AppointmentResponse(
-                appointment.getId(),
-                appointment.getPatientId(),
-                appointment.getDoctorId(),
-                appointment.getScheduledAt(),
-                appointment.getDurationMinutes(),
-                appointment.getReason(),
-                appointment.getStatus(),
-                appointment.getNotes(),
-                appointment.getCreatedAt()
-        );
-    }
-
-    private AppointmentEvent buildAppointmentEvent(
-            Appointment appointment) {
-
-        String eventType = switch (appointment.getStatus()) {
-            case SCHEDULED -> "appointment-created";
-            case CONFIRMED -> "appointment-confirmed";
-            case COMPLETED -> "appointment-completed";
-            case CANCELLED -> "appointment-cancelled";
-        };
-
-        PatientEntity patient = patientRepository.findById(appointment.getPatientId()).orElse(new PatientEntity());
-        DoctorEntity doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(new DoctorEntity());
-
-        return new AppointmentEvent(
-                appointment.getId(),
-                appointment.getPatientId(),
-                patient.getFullName(),
-                appointment.getDoctorId(),
-                doctor.getFullName(),
-                doctor.getSpecialty(),
-                appointment.getScheduledAt().toString(),
-                appointment.getReason(),
-                appointment.getStatus().name(),
-                appointment.getAppointmentType().getPrice(),
-                eventType
-        );
-    }
-
-    private void publishAppointmentEvent(
-            AppointmentStatus status,
-            AppointmentEvent appointmentEvent) {
-
-        switch (status) {
-            case SCHEDULED ->
-                    appointmentPublisher.publishAppointmentScheduled(
-                            appointmentEvent);
-
-            case CONFIRMED ->
-                    appointmentPublisher.publishAppointmentConfirmed(
-                            appointmentEvent);
-
-            case COMPLETED ->
-                    appointmentPublisher.publishAppointmentCompleted(
-                            appointmentEvent);
-
-            case CANCELLED ->
-                    appointmentPublisher.publishAppointmentCanceled(
-                            appointmentEvent);
+                return toResponse(savedAppointment);
         }
-    }
+
+        @Override
+        public Page<AppointmentResponse> getAppointments(
+                        Pageable pageable) {
+
+                return appointmentRepository
+                                .findAll(pageable)
+                                .map(this::toResponse);
+        }
+
+        @Override
+        public AppointmentResponse getAppointmentById(Long id) {
+
+                Appointment appointment = appointmentRepository
+                                .findById(id)
+                                .orElseThrow(() -> new BusinessException(
+                                                AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
+                                                "Cita no encontrada"));
+
+                return toResponse(appointment);
+        }
+
+        @Override
+        public List<AppointmentResponse> getAppointmentsByPatient(
+                        Long patientId) {
+
+                return appointmentRepository
+                                .findByPatientId(patientId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
+
+        @Override
+        public List<AppointmentResponse> getAppointmentsByDoctor(
+                        Long doctorId) {
+
+                return appointmentRepository
+                                .findByDoctorId(doctorId)
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
+
+        @Override
+        public AppointmentResponse updateStatus(
+                        Long id,
+                        UpdateAppointmentStatusRequest request) {
+
+                Appointment appointment = appointmentRepository
+                                .findById(id)
+                                .orElseThrow(() -> new BusinessException(
+                                                AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
+                                                "Cita no encontrada"));
+
+                appointment.setStatus(request.status());
+
+                Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+                AppointmentEvent appointmentEvent = buildAppointmentEvent(updatedAppointment);
+
+                publishAppointmentEvent(
+                                updatedAppointment.getStatus(),
+                                appointmentEvent);
+
+                return toResponse(updatedAppointment);
+        }
+
+        @Override
+        public void cancelAppointment(Long id) {
+
+                Appointment appointment = appointmentRepository
+                                .findById(id)
+                                .orElseThrow(() -> new BusinessException(
+                                                AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
+                                                "Cita no encontrada"));
+
+                appointment.setStatus(AppointmentStatus.CANCELLED);
+
+                Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+                AppointmentEvent appointmentEvent = buildAppointmentEvent(updatedAppointment);
+
+                publishAppointmentEvent(
+                                updatedAppointment.getStatus(),
+                                appointmentEvent);
+        }
+
+        private AppointmentResponse toResponse(
+                        Appointment appointment) {
+
+                return new AppointmentResponse(
+                                appointment.getId(),
+                                appointment.getPatientId(),
+                                appointment.getDoctorId(),
+                                appointment.getScheduledAt(),
+                                appointment.getDurationMinutes(),
+                                appointment.getReason(),
+                                appointment.getStatus(),
+                                appointment.getNotes(),
+                                appointment.getCreatedAt());
+        }
+
+        private AppointmentEvent buildAppointmentEvent(
+                        Appointment appointment) {
+
+                String eventType = switch (appointment.getStatus()) {
+                        case SCHEDULED -> "appointment-created";
+                        case CONFIRMED -> "appointment-confirmed";
+                        case COMPLETED -> "appointment-completed";
+                        case CANCELLED -> "appointment-cancelled";
+                };
+
+                PatientEntity patient = patientRepository.findById(appointment.getPatientId())
+                                .orElse(new PatientEntity());
+                DoctorEntity doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(new DoctorEntity());
+
+                return new AppointmentEvent(
+                                appointment.getId(),
+                                appointment.getPatientId(),
+                                patient.getFullName(),
+                                appointment.getDoctorId(),
+                                doctor.getFullName(),
+                                doctor.getSpecialty(),
+                                appointment.getScheduledAt().toString(),
+                                appointment.getReason(),
+                                appointment.getStatus().name(),
+                                appointment.getAppointmentType().getPrice(),
+                                eventType);
+        }
+
+        private void publishAppointmentEvent(
+                        AppointmentStatus status,
+                        AppointmentEvent appointmentEvent) {
+
+                switch (status) {
+                        case SCHEDULED ->
+                                appointmentPublisher.publishAppointmentScheduled(
+                                                appointmentEvent);
+
+                        case CONFIRMED ->
+                                appointmentPublisher.publishAppointmentConfirmed(
+                                                appointmentEvent);
+
+                        case COMPLETED ->
+                                appointmentPublisher.publishAppointmentCompleted(
+                                                appointmentEvent);
+
+                        case CANCELLED ->
+                                appointmentPublisher.publishAppointmentCanceled(
+                                                appointmentEvent);
+                }
+        }
 }
