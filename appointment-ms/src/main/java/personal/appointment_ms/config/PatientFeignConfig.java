@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import feign.codec.ErrorDecoder;
+
 import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.shared.exception.BusinessException;
 
@@ -15,15 +16,31 @@ public class PatientFeignConfig {
 
         return (methodKey, response) -> {
 
-            if (response.status() == 404) {
-                return new BusinessException(
+            return switch (response.status()) {
+
+                case 400 -> new BusinessException(
+                        AppointmentErrorCode.PATIENT_INVALID_REQUEST,
+                        "Solicitud inválida en patient-ms"
+                );
+
+                case 404 -> new BusinessException(
                         AppointmentErrorCode.PATIENT_NOT_FOUND,
                         "Paciente no encontrado"
                 );
-            }
 
-            return new ErrorDecoder.Default()
-                    .decode(methodKey, response);
+                case 409 -> new BusinessException(
+                        AppointmentErrorCode.PATIENT_CONFLICT,
+                        "Conflicto al consultar el paciente"
+                );
+
+                case 422 -> new BusinessException(
+                        AppointmentErrorCode.PATIENT_VALIDATION_ERROR,
+                        "Datos del paciente inválidos"
+                );
+
+                default -> new ErrorDecoder.Default()
+                        .decode(methodKey, response);
+            };
         };
     }
 }
