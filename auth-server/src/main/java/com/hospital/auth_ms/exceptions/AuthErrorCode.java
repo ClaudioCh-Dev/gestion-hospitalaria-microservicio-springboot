@@ -18,8 +18,20 @@ public enum AuthErrorCode implements ErrorCode {
     AUTH_USER_INACTIVE(
             HttpStatus.UNAUTHORIZED.value()),
 
+    INVALID_ACTIVATION_TOKEN(
+            HttpStatus.BAD_REQUEST.value()),
+
+    ACTIVATION_TOKEN_EXPIRED(
+            HttpStatus.BAD_REQUEST.value()),
+
     USER_ADMIN_CANNOT_BE_DEACTIVATED(
-            HttpStatus.FORBIDDEN.value());
+            HttpStatus.FORBIDDEN.value()),
+            
+    USER_ALREADY_ACTIVE(
+            HttpStatus.BAD_REQUEST.value()),
+            
+    USER_NOT_FOUND(
+            HttpStatus.NOT_FOUND.value());
 
     private final int status;
 

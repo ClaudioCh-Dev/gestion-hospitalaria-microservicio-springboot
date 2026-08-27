@@ -9,4 +9,8 @@ import com.hospital.auth_ms.entities.UserEntity;
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     Optional<UserEntity> findByUsername(String username);
+
+    Optional<UserEntity> findByActivationToken(String activationToken);
+
+    Optional<UserEntity> findByEmail(String email);
 }

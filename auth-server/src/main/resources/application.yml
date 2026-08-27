@@ -2,6 +2,18 @@ spring:
   application:
     name: auth-server
 
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: ${MAILTRAP_USERNAME}
+    password: ${MAILTRAP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   config:
     import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
 
@@ -45,3 +57,5 @@ auth:
     access-token-expiration: 900
   refresh-token:
     expiration: 604800
+
+

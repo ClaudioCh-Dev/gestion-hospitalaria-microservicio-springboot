@@ -192,23 +192,23 @@ public class DataSeeder {
                                         PermissionEntity.builder()
                                                         .name("NOTIFICATION_MARK_READ_ADMIN")
                                                         .build());
-                        
-                        //Users
+
+                        // Users
                         PermissionEntity userRead = permissionRepository.save(
                                         PermissionEntity.builder()
                                                         .name("USER_READ")
                                                         .build());
-                        
+
                         PermissionEntity userCreate = permissionRepository.save(
                                         PermissionEntity.builder()
                                                         .name("USER_CREATE")
                                                         .build());
-                        
+
                         PermissionEntity userUpdate = permissionRepository.save(
                                         PermissionEntity.builder()
                                                         .name("USER_UPDATE")
                                                         .build());
-                        
+
                         PermissionEntity userDelete = permissionRepository.save(
                                         PermissionEntity.builder()
                                                         .name("USER_DELETE")
@@ -258,7 +258,7 @@ public class DataSeeder {
                                                                         notificationCreate,
                                                                         notificationReadAdmin,
                                                                         notificationMarkReadAdmin,
-                                                                        
+
                                                                         userRead,
                                                                         userCreate,
                                                                         userUpdate,
@@ -283,7 +283,7 @@ public class DataSeeder {
 
                                                                         medicalRecordRead,
                                                                         medicalRecordReadByPatient,
-                                                                
+
                                                                         notificationReadDoctor,
                                                                         notificationMarkReadDoctor))
                                                         .build());
@@ -294,18 +294,20 @@ public class DataSeeder {
 
                         userRepository.save(
                                         UserEntity.builder()
-                                                        .username("admin")
+                                                        .email("admin@example.com")
                                                         .password(
                                                                         passwordEncoder.encode("123456"))
                                                         .role(admin)
+                                                        .active(true)
                                                         .build());
 
                         userRepository.save(
                                         UserEntity.builder()
-                                                        .username("doctor")
+                                                        .email("doctor@example.com")
                                                         .password(
                                                                         passwordEncoder.encode("123456"))
                                                         .role(doctor)
+                                                        .active(true)
                                                         .build());
                 };
         }

@@ -47,7 +47,7 @@ public class JwtHelper {
                 );
 
         return Jwts.builder()
-                .subject(claims.getUsername())
+                .subject(claims.getEmail())
                 .claim("role", claims.getRole())
                 .claim("userId", claims.getUserId())
                 .claim("permissions", claims.getPermissions())
@@ -57,7 +57,7 @@ public class JwtHelper {
                 .compact();
     }
 
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
 
         Claims claims = parseToken(token);
 

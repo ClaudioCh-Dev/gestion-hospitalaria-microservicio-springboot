@@ -19,4 +19,8 @@ public interface IUserService {
     void delete(Long id);
 
     void activate(Long id);
+    
+    void activateByToken(String token);
+
+    void resendActivation(String email);
 }

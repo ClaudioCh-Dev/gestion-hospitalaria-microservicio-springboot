@@ -47,7 +47,7 @@ public class AuthServiceImpl implements IAuthService {
                 String accessToken = this.jwtHelper.createToken(
                                 ClaimsDto.builder()
                                                 .userId(userFromDb.getId())
-                                                .username(userFromDb.getUsername())
+                                                .email(userFromDb.getEmail())
                                                 .role(userFromDb.getRole().getName())
                                                 .permissions(getPermissions(userFromDb))
                                                 .build());
@@ -73,8 +73,8 @@ public class AuthServiceImpl implements IAuthService {
                 return ClaimsDto.builder()
                                 .userId(
                                                 this.jwtHelper.getUserIdFromToken(accessToken))
-                                .username(
-                                                this.jwtHelper.getUsernameFromToken(accessToken))
+                                .email(
+                                                this.jwtHelper.getEmailFromToken(accessToken))
                                 .role(
                                                 this.jwtHelper.getRoleFromToken(accessToken))
                                 .permissions(
@@ -113,7 +113,7 @@ public class AuthServiceImpl implements IAuthService {
                 String accessToken = this.jwtHelper.createToken(
                                 ClaimsDto.builder()
                                                 .userId(userFromDb.getId())
-                                                .username(userFromDb.getUsername())
+                                                .email(userFromDb.getEmail())
                                                 .role(userFromDb.getRole().getName())
                                                 .permissions(getPermissions(userFromDb))
                                                 .build());

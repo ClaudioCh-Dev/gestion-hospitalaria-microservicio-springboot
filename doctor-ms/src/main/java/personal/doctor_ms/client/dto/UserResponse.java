@@ -1,8 +1,8 @@
-package com.hospital.auth_ms.dtos.users;
+package personal.doctor_ms.client;
 
 public record UserResponse(
         Long id,
-        String email,
+        String username,
         Long roleId,
         String role,
         boolean active

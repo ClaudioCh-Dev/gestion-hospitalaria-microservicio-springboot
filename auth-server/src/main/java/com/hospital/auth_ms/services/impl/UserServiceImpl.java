@@ -1,6 +1,8 @@
 package com.hospital.auth_ms.services.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import com.hospital.auth_ms.exceptions.AuthErrorCode;
 import com.hospital.auth_ms.repositories.RoleRepository;
 import com.hospital.auth_ms.repositories.UserRepository;
 import com.hospital.auth_ms.services.IUserService;
+import com.hospital.auth_ms.services.IEmailService;
 import com.hospital.auth_ms.services.IRefreshTokenService;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ public class UserServiceImpl implements IUserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final IRefreshTokenService refreshTokenService;
+    private final IEmailService emailService;
 
     @Override
     public List<UserResponse> findAll() {
@@ -47,14 +51,23 @@ public class UserServiceImpl implements IUserService {
         RoleEntity role = roleRepository.findById(request.roleId())
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
 
+        String activationToken = UUID.randomUUID().toString();
+
         UserEntity user = UserEntity.builder()
-                .username(request.username())
-                .password(passwordEncoder.encode(request.password()))
+                .email(request.email())
                 .role(role)
-                .active(true)
+                .active(false)
+                .activationToken(activationToken)
+                .activationTokenExpiresAt(LocalDateTime.now().plusHours(24))
                 .build();
 
-        return toResponse(userRepository.save(user));
+        UserEntity savedUser = userRepository.save(user);
+
+        emailService.sendActivationEmail(
+                savedUser.getEmail(),
+                savedUser.getActivationToken());
+
+        return toResponse(savedUser);
     }
 
     @Override
@@ -65,7 +78,7 @@ public class UserServiceImpl implements IUserService {
         RoleEntity role = roleRepository.findById(request.roleId())
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
 
-        user.setUsername(request.username());
+        user.setEmail(request.email());
         user.setRole(role);
 
         if (request.password() != null && !request.password().isBlank()) {
@@ -109,11 +122,59 @@ public class UserServiceImpl implements IUserService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     }
 
+    @Override
+    public void activateByToken(String token) {
+
+        UserEntity user = userRepository.findByActivationToken(token)
+                .orElseThrow(() -> new BusinessException(
+                        AuthErrorCode.INVALID_ACTIVATION_TOKEN,
+                        "Token de activación inválido"));
+
+        if (user.getActivationTokenExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(
+                    AuthErrorCode.ACTIVATION_TOKEN_EXPIRED,
+                    "El token de activación ha expirado");
+        }
+
+        user.setActive(true);
+        user.setActivationToken(null);
+        user.setActivationTokenExpiresAt(null);
+
+        userRepository.save(user);
+    }
+
+    @Override
+    public void resendActivation(String email) {
+
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(
+                        AuthErrorCode.USER_NOT_FOUND,
+                        "Usuario no encontrado"));
+
+        if (user.isActive()) {
+            throw new BusinessException(
+                    AuthErrorCode.USER_ALREADY_ACTIVE,
+                    "El usuario ya está activo");
+        }
+
+        String activationToken = UUID.randomUUID().toString();
+
+        user.setActivationToken(activationToken);
+        user.setActivationTokenExpiresAt(
+                LocalDateTime.now().plusHours(24));
+
+        UserEntity savedUser = userRepository.save(user);
+
+        emailService.sendActivationEmail(
+                savedUser.getEmail(),
+                savedUser.getActivationToken());
+    }
+
     private UserResponse toResponse(UserEntity user) {
 
         return new UserResponse(
                 user.getId(),
-                user.getUsername(),
+                user.getEmail(),
                 user.getRole().getId(),
                 user.getRole().getName(),
                 user.isActive());

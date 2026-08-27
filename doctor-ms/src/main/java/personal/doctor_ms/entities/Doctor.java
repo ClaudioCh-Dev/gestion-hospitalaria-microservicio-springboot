@@ -37,6 +37,9 @@ public class Doctor {
     @Column(length = 20)
     private String phone;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialty_id")
     private Specialty specialty;

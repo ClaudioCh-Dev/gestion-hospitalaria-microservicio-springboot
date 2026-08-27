@@ -7,11 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.hospital.auth_ms.dtos.users.ActivateUserRequest;
 import com.hospital.auth_ms.dtos.users.CreateUserRequest;
+import com.hospital.auth_ms.dtos.users.ResendActivationRequest;
 import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
 import com.hospital.auth_ms.dtos.users.UserResponse;
 import com.hospital.auth_ms.services.IUserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -33,8 +36,7 @@ public class UserController {
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                userService.findById(id)
-        );
+                userService.findById(id));
     }
 
     @PreAuthorize("@auth.hasPermission('USER_CREATE')")
@@ -54,8 +56,7 @@ public class UserController {
             @RequestBody UpdateUserRequest request) {
 
         return ResponseEntity.ok(
-                userService.update(id, request)
-        );
+                userService.update(id, request));
     }
 
     @PreAuthorize("@auth.hasPermission('USER_DELETE')")
@@ -68,6 +69,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    /*/
     @PreAuthorize("@auth.hasPermission('USER_UPDATE')")
     @PatchMapping("/{id}/activate")
     public ResponseEntity<Void> activate(
@@ -76,5 +78,25 @@ public class UserController {
         userService.activate(id);
 
         return ResponseEntity.noContent().build();
+    }*/
+
+
+    @PostMapping("/activate")
+    public ResponseEntity<Void> activateByToken(
+            @RequestBody ActivateUserRequest request) {
+
+        userService.activateByToken(request.token());
+
+        return ResponseEntity.noContent().build();
     }
-}
+
+    @PreAuthorize("@auth.hasPermission('USER_UPDATE')")
+    @PostMapping("/resend-activation")
+    public ResponseEntity<Void> resendActivation(
+        @Valid @RequestBody ResendActivationRequest request) {
+
+        userService.resendActivation(request.email());
+
+        return ResponseEntity.noContent().build();
+    }
+}   
