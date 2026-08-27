@@ -27,4 +27,9 @@ ENV OTEL_TRACES_EXPORTER=otlp
 ENV OTEL_METRICS_EXPORTER=otlp
 ENV REDIS_HOST=redis-hospital
 ENV REDIS_PORT=6379
+ENV MAILTRAP_HOST=sandbox.smtp.mailtrap.io
+ENV MAILTRAP_PORT=2525
+ENV MAILTRAP_USERNAME=${MAILTRAP_HOST}
+ENV MAILTRAP_PASSWORD=${MAILTRAP_PASSWORD}
+
 ENTRYPOINT ["java","-javaagent:/app/opentelemetry-javaagent.jar","-jar","/app/app.jar"]
