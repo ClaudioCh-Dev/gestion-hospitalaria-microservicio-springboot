@@ -17,7 +17,8 @@ import personal.doctor_ms.mapper.DoctorMapper;
 import personal.doctor_ms.mapper.SpecialtyMapper;
 import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
-
+import personal.doctor_ms.stream.DoctorPublisher;
+import personal.shared.event.DoctorCreatedEvent;
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -29,6 +30,7 @@ public class DoctorServiceImpl implements IDoctorService {
         private final DoctorMapper doctorMapper;
         private final SpecialtyMapper specialtyMapper;
         private final UserClient userClient;
+        private final DoctorPublisher doctorPublisher;
 
         @Override
         public Page<DoctorResponse> findAll(Pageable pageable) {
@@ -69,7 +71,6 @@ public class DoctorServiceImpl implements IDoctorService {
 
                 // 2. Crear usuario en Auth Server
                 CreateDoctorRequestClient userRequest = new CreateDoctorRequestClient(request.email());
-                
                 UserResponse user = userClient.createDoctor(userRequest);
 
                 // 3. Crear doctor asociado al usuario
@@ -84,6 +85,18 @@ public class DoctorServiceImpl implements IDoctorService {
                                 .scheduleStart(request.scheduleStart())
                                 .scheduleEnd(request.scheduleEnd())
                                 .build();
+
+                // 4. Publicar evento de doctor creado
+                doctorPublisher.publishDoctorCreated(
+                                new DoctorCreatedEvent(
+                                                doctor.getId(),
+                                                doctor.getLicenseNumber(),
+                                                doctor.getFirstName(),
+                                                doctor.getLastName(),
+                                                doctor.getEmail(),
+                                                doctor.getPhone(),
+                                                doctor.getUserId(),
+                                                doctor.getSpecialty().getName()));
 
                 return doctorMapper.toResponse(
                                 doctorRepository.save(doctor));
