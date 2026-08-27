@@ -25,6 +25,7 @@ public class FeignAuthInterceptor implements RequestInterceptor {
         HttpServletRequest request =
                 ((ServletRequestAttributes) attributes).getRequest();
 
+        copyHeader(request, template, "Authorization");
         copyHeader(request, template, "X-User-Id");
         copyHeader(request, template, "X-Role");
         copyHeader(request, template, "X-Permissions");

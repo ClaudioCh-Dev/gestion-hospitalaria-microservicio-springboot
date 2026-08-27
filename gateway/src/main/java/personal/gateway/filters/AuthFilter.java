@@ -14,7 +14,11 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
+import org.springframework.http.HttpHeaders;
+
 import reactor.core.publisher.Mono;
+
+// TODO Implementar autenticación **service-to-service con OAuth2 Client Credentials** entre `doctor-ms` y `auth-server`, utilizando un **Service Token independiente del JWT del usuario**, con scopes específicos para proteger los endpoints internos.
 
 @Component
 public class AuthFilter implements WebFilter {
@@ -58,8 +62,7 @@ public class AuthFilter implements WebFilter {
 
                                         String role = jwt.getClaimAsString("role");
 
-                                        List<String> permissions =
-                                        jwt.getClaimAsStringList("permissions");
+                                        List<String> permissions = jwt.getClaimAsStringList("permissions");
 
                                         log.info("=================================");
                                         log.info("JWT autenticado correctamente");
@@ -68,38 +71,37 @@ public class AuthFilter implements WebFilter {
                                         log.info("Role: {}", role);
                                         log.info("Permissions: {}", permissions);
 
+                                        String authorization = exchange.getRequest()
+                                                        .getHeaders()
+                                                        .getFirst(HttpHeaders.AUTHORIZATION);
+
                                         ServerWebExchange mutatedExchange = exchange.mutate()
                                                         .request(request -> request.headers(headers -> {
 
-                                                                headers.remove(
-                                                                                USER_ID_HEADER);
+                                                                headers.remove(USER_ID_HEADER);
+                                                                headers.remove(ROLE_HEADER);
+                                                                headers.remove(PERMISSIONS_HEADER);
 
-                                                                headers.remove(
-                                                                                ROLE_HEADER);
-                                                                                
-                                                                headers.remove(
-                                                                                PERMISSIONS_HEADER);
+                                                                if (authorization != null) {
+                                                                        headers.set(HttpHeaders.AUTHORIZATION,
+                                                                                        authorization);
+                                                                }
 
                                                                 if (userId != null) {
-                                                                        headers.set(
-                                                                                        USER_ID_HEADER,
-                                                                                        userId);
+                                                                        headers.set(USER_ID_HEADER, userId);
                                                                 }
 
                                                                 if (role != null) {
-                                                                        headers.set(
-                                                                                        ROLE_HEADER,
-                                                                                        role);
+                                                                        headers.set(ROLE_HEADER, role);
                                                                 }
-                                                                
+
                                                                 if (permissions != null) {
-                                                                        headers.set(
-                                                                                        PERMISSIONS_HEADER,
+                                                                        headers.set(PERMISSIONS_HEADER,
                                                                                         String.join(",", permissions));
                                                                 }
+
                                                         }))
                                                         .build();
-
                                         return chain.filter(mutatedExchange);
                                 })
                                 .switchIfEmpty(
