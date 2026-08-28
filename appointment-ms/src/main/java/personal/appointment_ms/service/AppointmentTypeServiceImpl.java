@@ -29,7 +29,6 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         AppointmentType appointmentType = AppointmentType.builder()
                 .title(request.title())
                 .description(request.description())
-                .price(request.price())
                 .active(true)
                 .build();
 
@@ -78,7 +77,6 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
 
         appointmentType.setTitle(request.title());
         appointmentType.setDescription(request.description());
-        appointmentType.setPrice(request.price());
 
         AppointmentType updated =
                 appointmentTypeRepository.save(appointmentType);
@@ -116,7 +114,6 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
                 appointmentType.getId(),
                 appointmentType.getTitle(),
                 appointmentType.getDescription(),
-                appointmentType.getPrice(),
                 appointmentType.getActive()
         );
     }

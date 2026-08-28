@@ -31,9 +31,6 @@ public class AppointmentType {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
-
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;

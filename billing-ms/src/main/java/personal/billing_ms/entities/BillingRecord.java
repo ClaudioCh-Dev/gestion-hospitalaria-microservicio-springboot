@@ -33,7 +33,7 @@ public class BillingRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "appointment_id", nullable = false)
+    @Column(name = "appointment_id", nullable = false, unique = true)
     private Long appointmentId;
 
     @Column(name = "patient_id", nullable = false)

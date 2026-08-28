@@ -14,7 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.service.IBillingRecordService;
-import personal.shared.event.AppointmentEvent;
+import personal.shared.event.AppointmentCreatedEvent;
+import personal.shared.event.AppointmentUpdateStatusEvent;
+import personal.shared.event.EnumStatusAppointment;
 import personal.billing_ms.security.UserContext;
 import personal.billing_ms.security.UserContextHolder;
 
@@ -26,54 +28,61 @@ public class AppointmentListener {
     private final IBillingRecordService billingRecordService;
 
     @Bean
-    public Consumer<Message<AppointmentEvent>> appointmentCompletedConsumer() {
+    public Consumer<Message<AppointmentUpdateStatusEvent>> appointmentUpdatedConsumer() {
+        return message -> executeWithUserContext(
+                message,
+                event -> {
+                    if (event.status() == EnumStatusAppointment.CANCELLED) {
+                        billingRecordService.cancelBillingRecord(
+                                event.appointmentId());
+                    }
+                });
+    }
 
-        return message -> {
+    @Bean
+    public Consumer<Message<AppointmentCreatedEvent>> appointmentCreatedConsumer() {
+        return message -> executeWithUserContext(
+                message,
+                event -> {
 
-            try {
+                    var request = new AppointmentEventRequest(
+                            event.appointmentId(),
+                            event.patientId(),
+                            event.amount());
 
-                UserContext context = buildUserContext(message);
+                    billingRecordService.createBillingFromAppointment(request);
+                });
+    }
 
-                UserContextHolder.set(context);
+    private <T> void executeWithUserContext(
+            Message<T> message,
+            Consumer<T> action) {
 
-                AppointmentEvent event = message.getPayload();
+        try {
+            UserContextHolder.set(buildUserContext(message));
+            action.accept(message.getPayload());
 
-                var request = new AppointmentEventRequest(
-                        event.appointmentId(),
-                        event.patientId(),
-                        event.amount());
-
-                billingRecordService
-                        .createBillingFromAppointment(request);
-
-            } finally {
-
-                UserContextHolder.clear();
-            }
-        };
+        } finally {
+            UserContextHolder.clear();
+        }
     }
 
     private UserContext buildUserContext(Message<?> message) {
 
-        String userId = (String) message.getHeaders()
-                .get("X-User-Id");
-
-        String role = (String) message.getHeaders()
-                .get("X-Role");
-
-        String permissionsHeader = (String) message.getHeaders()
-                .get("X-Permissions");
+        String userId = (String) message.getHeaders().get("X-User-Id");
+        String role = (String) message.getHeaders().get("X-Role");
+        String permissionsHeader =
+                (String) message.getHeaders().get("X-Permissions");
 
         Set<String> permissions = permissionsHeader == null
                 ? Set.of()
                 : Arrays.stream(permissionsHeader.split(","))
-                        .map(permission -> permission.trim())
+                        .map(String::trim)
+                        .filter(permission -> !permission.isBlank())
                         .collect(Collectors.toSet());
 
         return new UserContext(
-                userId != null
-                        ? Long.valueOf(userId)
-                        : null,
+                userId != null ? Long.valueOf(userId) : null,
                 role,
                 permissions);
     }

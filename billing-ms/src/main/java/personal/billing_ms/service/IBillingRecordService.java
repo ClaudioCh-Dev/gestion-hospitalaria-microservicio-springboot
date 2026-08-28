@@ -16,5 +16,7 @@ public interface IBillingRecordService {
 
     BillingRecord payBilling(Long id);
     
+    BillingRecord cancelBillingRecord(Long appointmentId);
+    
     BillingRecord createBillingFromAppointment(AppointmentEventRequest event);
 }

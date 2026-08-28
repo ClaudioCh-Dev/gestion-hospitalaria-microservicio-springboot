@@ -1,5 +1,6 @@
 package personal.appointment_ms.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,9 +10,10 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
+import personal.appointment_ms.client.BillingClient;
 import personal.appointment_ms.client.DoctorClient;
 import personal.appointment_ms.client.PatientClient;
+import personal.appointment_ms.client.dto.BillingTariffResponse;
 import personal.appointment_ms.client.dto.DoctorResponse;
 import personal.appointment_ms.client.dto.PatientResponse;
 import personal.appointment_ms.dto.AppointmentResponse;
@@ -28,7 +30,9 @@ import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.repositories.DoctorRepository;
 import personal.appointment_ms.repositories.PatientRepository;
 import personal.appointment_ms.streams.AppointmentPublisher;
-import personal.shared.event.AppointmentEvent;
+import personal.shared.event.AppointmentCreatedEvent;
+import personal.shared.event.AppointmentUpdateStatusEvent;
+import personal.shared.event.EnumStatusAppointment;
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -40,6 +44,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         private final AppointmentTypeRepository appointmentTypeRepository;
         private final PatientClient patientClient;
         private final DoctorClient doctorClient;
+        private final BillingClient billingClient;
         private final AppointmentPublisher appointmentPublisher;
         private final PatientRepository patientRepository;
         private final DoctorRepository doctorRepository;
@@ -49,33 +54,47 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         CreateAppointmentRequest request) {
 
                 // 1. Buscar paciente en la BD local
-                if (!patientRepository.existsById(request.patientId())) {
+                PatientEntity patientEntity = patientRepository
+                                .findById(request.patientId())
+                                .orElseGet(() -> {
 
-                        PatientResponse patient = patientClient.findById(request.patientId());
+                                        PatientResponse patient = patientClient.findById(request.patientId());
 
-                        PatientEntity patientEntity = new PatientEntity();
+                                        PatientEntity entity = new PatientEntity();
+                                        entity.setId(patient.id());
+                                        entity.setFullName(
+                                                        patient.firstName() + " " + patient.lastName());
 
-                        patientEntity.setId(patient.id());
-                        patientEntity.setFullName(
-                                        patient.firstName() + " " + patient.lastName());
-
-                        patientRepository.save(patientEntity);
-                }
+                                        return patientRepository.save(entity);
+                                });
 
                 // 2. Buscar doctor en la BD local
-                if (!doctorRepository.existsById(request.doctorId())) {
+                DoctorEntity doctorEntity = doctorRepository
+                                .findById(request.doctorId())
+                                .orElseGet(() -> {
 
-                        DoctorResponse doctor = doctorClient.findById(request.doctorId());
+                                        // Si no existe localmente, buscar en doctor-ms
+                                        DoctorResponse doctor = doctorClient.findById(request.doctorId());
 
-                        DoctorEntity doctorEntity = new DoctorEntity();
+                                        // Crear copia local
+                                        DoctorEntity entity = new DoctorEntity();
+                                        entity.setId(doctor.id());
+                                        entity.setUserId(doctor.userId());
+                                        entity.setFullName(
+                                                        doctor.firstName() + " " + doctor.lastName());
+                                        entity.setSpecialty(doctor.specialtyName());
 
-                        doctorEntity.setId(doctor.id());
-                        doctorEntity.setUserId(doctor.userId());
-                        doctorEntity.setFullName(
-                                        doctor.firstName() + " " + doctor.lastName());
-                        doctorEntity.setSpecialty(doctor.specialtyName());
+                                        // Guardar y devolver
+                                        return doctorRepository.save(entity);
+                                });
 
-                        doctorRepository.save(doctorEntity);
+                // 2.5 Buscar tarifa en bd externa
+                BillingTariffResponse tariff = billingClient.findTariffByAppointmentTypeId(request.appointmentTypeId());
+
+                if (!tariff.active()) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_TARIFF_NOT_ACTIVE,
+                                        "Tarifa no activa");
                 }
 
                 // 3. Validar tipo de cita
@@ -122,11 +141,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 Appointment savedAppointment = appointmentRepository.save(appointment);
 
                 // 8. Crear evento
-                AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
+                // AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
+                AppointmentCreatedEvent appointmentEvent = new AppointmentCreatedEvent(
+                                appointment.getId(),
+                                appointment.getPatientId(),
+                                patientEntity.getFullName(),
+                                appointment.getDoctorId(),
+                                doctorEntity.getFullName(),
+                                doctorEntity.getSpecialty(),
+                                appointment.getScheduledAt().toString(),
+                                appointment.getReason(),
+                                EnumStatusAppointment.valueOf(appointment.getStatus().name()),
+                                tariff.price(),
+                                tariff.currency());
 
                 // 9. Publicar evento
-                publishAppointmentEvent(
-                                savedAppointment.getStatus(),
+                appointmentPublisher.publishAppointmentScheduled(
                                 appointmentEvent);
 
                 return toResponse(savedAppointment);
@@ -186,14 +216,63 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                                 AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
                                                 "Cita no encontrada"));
 
-                appointment.setStatus(request.status());
+                if (request.status() == appointment.getStatus()) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_STATUS_ALREADY_SET,
+                                        "No se puede cambiar el estado de la cita a el mismo estado");
+                }
 
+                if (appointment.getStatus().isFinal()) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_STATUS_CANNOT_CHANGE,
+                                        "No se puede cambiar el estado de una cita completada o cancelada.");
+                }
+
+                appointment.setStatus(request.status());
                 Appointment updatedAppointment = appointmentRepository.save(appointment);
 
-                AppointmentEvent appointmentEvent = buildAppointmentEvent(updatedAppointment);
+                // 1. Buscar paciente en la BD local
+                PatientEntity patientEntity = patientRepository
+                                .findById(appointment.getPatientId())
+                                .orElseGet(() -> {
 
-                publishAppointmentEvent(
-                                updatedAppointment.getStatus(),
+                                        PatientResponse patient = patientClient.findById(appointment.getPatientId());
+
+                                        PatientEntity entity = new PatientEntity();
+                                        entity.setId(patient.id());
+                                        entity.setFullName(
+                                                        patient.firstName() + " " + patient.lastName());
+
+                                        return patientRepository.save(entity);
+                                });
+
+                // 2. Buscar doctor en la BD local
+                DoctorEntity doctorEntity = doctorRepository
+                                .findById(appointment.getDoctorId())
+                                .orElseGet(() -> {
+
+                                        // Si no existe localmente, buscar en doctor-ms
+                                        DoctorResponse doctor = doctorClient.findById(appointment.getDoctorId());
+
+                                        // Crear copia local
+                                        DoctorEntity entity = new DoctorEntity();
+                                        entity.setId(doctor.id());
+                                        entity.setUserId(doctor.userId());
+                                        entity.setFullName(
+                                                        doctor.firstName() + " " + doctor.lastName());
+                                        entity.setSpecialty(doctor.specialtyName());
+
+                                        // Guardar y devolver
+                                        return doctorRepository.save(entity);
+                                });
+
+                AppointmentUpdateStatusEvent appointmentEvent = new AppointmentUpdateStatusEvent(
+                                updatedAppointment.getId(),
+                                EnumStatusAppointment.valueOf(updatedAppointment.getStatus().name()),
+                                patientEntity.getFullName(),
+                                doctorEntity.getFullName());
+
+                appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);
 
                 return toResponse(updatedAppointment);
@@ -201,22 +280,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
         @Override
         public void cancelAppointment(Long id) {
-
-                Appointment appointment = appointmentRepository
-                                .findById(id)
-                                .orElseThrow(() -> new BusinessException(
-                                                AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
-                                                "Cita no encontrada"));
-
-                appointment.setStatus(AppointmentStatus.CANCELLED);
-
-                Appointment updatedAppointment = appointmentRepository.save(appointment);
-
-                AppointmentEvent appointmentEvent = buildAppointmentEvent(updatedAppointment);
-
-                publishAppointmentEvent(
-                                updatedAppointment.getStatus(),
-                                appointmentEvent);
+               updateStatus(id, new UpdateAppointmentStatusRequest(AppointmentStatus.CANCELLED));
         }
 
         private AppointmentResponse toResponse(
@@ -234,55 +298,4 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 appointment.getCreatedAt());
         }
 
-        private AppointmentEvent buildAppointmentEvent(
-                        Appointment appointment) {
-
-                String eventType = switch (appointment.getStatus()) {
-                        case SCHEDULED -> "appointment-created";
-                        case CONFIRMED -> "appointment-confirmed";
-                        case COMPLETED -> "appointment-completed";
-                        case CANCELLED -> "appointment-cancelled";
-                };
-
-                // TODO Mejorar esto
-                PatientEntity patient = patientRepository.findById(appointment.getPatientId())
-                                .orElse(new PatientEntity());
-                DoctorEntity doctor = doctorRepository.findById(appointment.getDoctorId()).orElse(new DoctorEntity());
-
-                return new AppointmentEvent(
-                                appointment.getId(),
-                                appointment.getPatientId(),
-                                patient.getFullName(),
-                                appointment.getDoctorId(),
-                                doctor.getFullName(),
-                                doctor.getSpecialty(),
-                                appointment.getScheduledAt().toString(),
-                                appointment.getReason(),
-                                appointment.getStatus().name(),
-                                appointment.getAppointmentType().getPrice(),
-                                eventType);
-        }
-
-        private void publishAppointmentEvent(
-                        AppointmentStatus status,
-                        AppointmentEvent appointmentEvent) {
-
-                switch (status) {
-                        case SCHEDULED ->
-                                appointmentPublisher.publishAppointmentScheduled(
-                                                appointmentEvent);
-
-                        case CONFIRMED ->
-                                appointmentPublisher.publishAppointmentConfirmed(
-                                                appointmentEvent);
-
-                        case COMPLETED ->
-                                appointmentPublisher.publishAppointmentCompleted(
-                                                appointmentEvent);
-
-                        case CANCELLED ->
-                                appointmentPublisher.publishAppointmentCanceled(
-                                                appointmentEvent);
-                }
-        }
 }

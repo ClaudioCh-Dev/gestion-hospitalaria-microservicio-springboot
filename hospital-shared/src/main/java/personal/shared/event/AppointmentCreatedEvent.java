@@ -2,7 +2,7 @@ package personal.shared.event;
 
 import java.math.BigDecimal;
 
-public record AppointmentEvent(
+public record AppointmentCreatedEvent(
     Long   appointmentId,
     Long   patientId,
     String patientName,
@@ -11,7 +11,7 @@ public record AppointmentEvent(
     String specialty,
     String scheduledAt,   // ISO 8601
     String reason,
-    String status,        // SCHEDULED | COMPLETED | CANCELLED
+    EnumStatusAppointment status,        // SCHEDULED | COMPLETED | CANCELLED
     BigDecimal amount,
-    String eventType      // appointment-created | appointment-cancelled | appointment-completed
+    String currency     // appointment-created | appointment-cancelled | appointment-completed
 ) {}

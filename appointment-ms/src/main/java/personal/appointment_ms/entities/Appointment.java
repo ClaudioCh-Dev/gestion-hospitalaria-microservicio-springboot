@@ -1,5 +1,6 @@
 package personal.appointment_ms.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -52,7 +53,11 @@ public class Appointment {
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "status", nullable = false, columnDefinition = "appointment_status")
+    @Column(
+        name = "status",
+        nullable = false,
+        columnDefinition = "appointment_status"
+    )
     @Builder.Default
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
@@ -62,6 +67,10 @@ public class Appointment {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "appointment_type_id", nullable = false)
     private AppointmentType appointmentType;
+
+    // Precio aplicado a esta cita
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
     @Column(name = "created_at")
     @Builder.Default

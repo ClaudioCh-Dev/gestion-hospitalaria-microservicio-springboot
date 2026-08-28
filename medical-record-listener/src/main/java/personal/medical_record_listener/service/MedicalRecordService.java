@@ -33,7 +33,6 @@ public class MedicalRecordService {
                 .scheduledAt(event.scheduledAt())
                 .reason(event.reason())
                 .status(event.status())
-                .amount(event.amount())
                 .build();
 
         repository.save(record);

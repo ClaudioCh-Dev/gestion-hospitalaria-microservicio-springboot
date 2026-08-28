@@ -1,6 +1,5 @@
 package personal.appointment_ms.client.dto;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public record DoctorResponse(

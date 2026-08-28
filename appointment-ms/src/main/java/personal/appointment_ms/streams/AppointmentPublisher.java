@@ -8,8 +8,9 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 import lombok.AllArgsConstructor;
-
-import personal.shared.event.AppointmentEvent;
+import personal.shared.event.AppointmentCreatedEvent;
+//import personal.shared.event.AppointmentEvent;
+import personal.shared.event.AppointmentUpdateStatusEvent;
 import personal.appointment_ms.security.UserContext;
 import personal.appointment_ms.security.UserContextHolder;
 
@@ -20,50 +21,47 @@ public class AppointmentPublisher {
     private final StreamBridge streamBridge;
 
     public void publishAppointmentScheduled(
-            AppointmentEvent appointmentEvent) {
+            AppointmentCreatedEvent appointmentEvent) {
 
         streamBridge.send(
                 "appointment-created-out-0",
                 buildMessage(appointmentEvent)
         );
     }
+    
+    public void publishAppointmentStatusUpdated(
+            AppointmentUpdateStatusEvent appointmentEvent) {
 
-    public void publishAppointmentConfirmed(
-            AppointmentEvent appointmentEvent) {
-
-        streamBridge.send(
-                "appointment-confirmed-out-0",
-                buildMessage(appointmentEvent)
-        );
+        switch (appointmentEvent.status()) {
+                case CONFIRMED:
+                        streamBridge.send(
+                                "appointment-confirmed-out-0",
+                                buildMessage(appointmentEvent)
+                        );
+                        break;
+                case COMPLETED:
+                        streamBridge.send(
+                                "appointment-completed-out-0",
+                                buildMessage(appointmentEvent)
+                        );
+                        break;
+                case CANCELLED:
+                        streamBridge.send(
+                                "appointment-canceled-out-0",
+                                buildMessage(appointmentEvent)
+                        );
+                        break;
+                default:
+                        break;
+        }
     }
 
-    public void publishAppointmentCompleted(
-            AppointmentEvent appointmentEvent) {
+    private <T> Message<T> buildMessage(T event) {
 
-        streamBridge.send(
-                "appointment-completed-out-0",
-                buildMessage(appointmentEvent)
-        );
-    }
+        UserContext context = UserContextHolder.get();
 
-    public void publishAppointmentCanceled(
-            AppointmentEvent appointmentEvent) {
-
-        streamBridge.send(
-                "appointment-canceled-out-0",
-                buildMessage(appointmentEvent)
-        );
-    }
-
-    private Message<AppointmentEvent> buildMessage(
-            AppointmentEvent event) {
-
-        UserContext context =
-                UserContextHolder.get();
-
-        MessageBuilder<AppointmentEvent> builder =
-                MessageBuilder
-                        .withPayload(event);
+        MessageBuilder<T> builder =
+                MessageBuilder.withPayload(event);
 
         if (context != null) {
 
@@ -81,8 +79,7 @@ public class AppointmentPublisher {
                 );
             }
 
-            Set<String> permissions =
-                    context.permissions();
+            Set<String> permissions = context.permissions();
 
             if (permissions != null && !permissions.isEmpty()) {
                 builder.setHeader(

@@ -25,8 +25,6 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
     private final BillingRepository billingRepository;
     private final AppointmentClient appointmentClient;
 
-    // TODO: Mejorar la lógica para crear factura desde request.
-    // El monto debería venir del servicio de citas.
     @Override
     @Transactional
     public BillingRecord createBilling(CreateBillingRequest request) {
@@ -87,5 +85,19 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
     @Override
     public List<BillingRecord> getBillings() {
         return billingRepository.findAll();
+    }
+
+    @Override
+    public BillingRecord cancelBillingRecord(Long appointmentId) {
+        
+        BillingRecord billingRecord = billingRepository.findById(appointmentId)
+                .orElseThrow(() -> new BusinessException(
+                        BillingErrorCode.BILLING_RECORD_NOT_FOUND,
+                        "Registro de facturación no encontrado"
+                ));
+
+        billingRecord.setStatus(BillingStatus.CANCELLED);
+        
+        return billingRepository.save(billingRecord);
     }
 }
