@@ -27,18 +27,8 @@ spring:
           group: notification-group
           content-type: application/json
 
-        appointmentConfirmedConsumer-in-0:
-          destination: appointment-confirmed
-          group: notification-group
-          content-type: application/json
-
-        appointmentCompletedConsumer-in-0:
-          destination: appointment-completed
-          group: notification-group
-          content-type: application/json
-
-        appointmentCanceledConsumer-in-0:
-          destination: appointment-canceled
+        appointmentUpdatedStatusConsumer-in-0:
+          destination: appointment-updated-status
           group: notification-group
           content-type: application/json
 

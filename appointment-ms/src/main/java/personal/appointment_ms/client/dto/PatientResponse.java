@@ -1,4 +1,4 @@
-package personal.appointment_ms.client;
+package personal.appointment_ms.client.dto;
 
 import java.time.LocalDate;
 

@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import personal.appointment_ms.config.DoctorFeignConfig;
+import personal.appointment_ms.client.dto.DoctorResponse;
 import personal.appointment_ms.client.fallback.DoctorClientFallback;
 
 @FeignClient(

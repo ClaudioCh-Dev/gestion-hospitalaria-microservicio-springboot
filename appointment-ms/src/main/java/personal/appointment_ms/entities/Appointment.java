@@ -68,10 +68,6 @@ public class Appointment {
     @JoinColumn(name = "appointment_type_id", nullable = false)
     private AppointmentType appointmentType;
 
-    // Precio aplicado a esta cita
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
-
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

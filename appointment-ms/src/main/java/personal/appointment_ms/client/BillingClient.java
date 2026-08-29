@@ -15,7 +15,7 @@ import personal.appointment_ms.config.BillingFeignConfig;
 )
 public interface BillingClient {
 
-    @GetMapping("/billing/tariffs/{appointmentTypeId}")
+    @GetMapping("/tariffs/{appointmentTypeId}")
     BillingTariffResponse findTariffByAppointmentTypeId(
             @PathVariable("appointmentTypeId") Long appointmentTypeId
     );

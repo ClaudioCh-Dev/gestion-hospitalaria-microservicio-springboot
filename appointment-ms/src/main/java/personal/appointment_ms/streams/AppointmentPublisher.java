@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.AllArgsConstructor;
 import personal.shared.event.AppointmentCreatedEvent;
+import personal.shared.event.AppointmentCreatedTypeEvent;
 //import personal.shared.event.AppointmentEvent;
 import personal.shared.event.AppointmentUpdateStatusEvent;
 import personal.appointment_ms.security.UserContext;
@@ -32,28 +33,19 @@ public class AppointmentPublisher {
     public void publishAppointmentStatusUpdated(
             AppointmentUpdateStatusEvent appointmentEvent) {
 
-        switch (appointmentEvent.status()) {
-                case CONFIRMED:
-                        streamBridge.send(
-                                "appointment-confirmed-out-0",
-                                buildMessage(appointmentEvent)
-                        );
-                        break;
-                case COMPLETED:
-                        streamBridge.send(
-                                "appointment-completed-out-0",
-                                buildMessage(appointmentEvent)
-                        );
-                        break;
-                case CANCELLED:
-                        streamBridge.send(
-                                "appointment-canceled-out-0",
-                                buildMessage(appointmentEvent)
-                        );
-                        break;
-                default:
-                        break;
-        }
+        streamBridge.send(
+                        "appointment-updated-status-out-0",
+                        buildMessage(appointmentEvent)
+                );
+    }
+
+    public void publishAppointmentCreatedType(
+            AppointmentCreatedTypeEvent appointmentEvent) {
+
+        streamBridge.send(
+                        "appointment-created-type-out-0",
+                        buildMessage(appointmentEvent)
+                );
     }
 
     private <T> Message<T> buildMessage(T event) {

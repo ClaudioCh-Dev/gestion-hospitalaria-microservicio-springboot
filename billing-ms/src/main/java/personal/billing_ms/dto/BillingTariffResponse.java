@@ -1,8 +1,9 @@
-package personal.appointment_ms.client.dto;
+package personal.billing_ms.dto;
+
 import java.math.BigDecimal;
 
 public record BillingTariffResponse(
-        Long billingAppointmentTypeId,
+        Long appointmentTypeId,
         BigDecimal price,
         String currency
 ) {

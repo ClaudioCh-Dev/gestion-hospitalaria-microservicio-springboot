@@ -13,6 +13,8 @@ import personal.appointment_ms.dto.UpdateAppointmentTypeRequest;
 import personal.appointment_ms.entities.AppointmentType;
 import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
+import personal.appointment_ms.streams.AppointmentPublisher;
+import personal.shared.event.AppointmentCreatedTypeEvent;
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -20,6 +22,7 @@ import personal.shared.exception.BusinessException;
 public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
 
     private final AppointmentTypeRepository appointmentTypeRepository;
+    private final AppointmentPublisher publisher;
 
     @Override
     @Transactional
@@ -29,11 +32,20 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         AppointmentType appointmentType = AppointmentType.builder()
                 .title(request.title())
                 .description(request.description())
-                .active(true)
+                .active(false)
                 .build();
 
         AppointmentType saved =
                 appointmentTypeRepository.save(appointmentType);
+
+        publisher.publishAppointmentCreatedType(
+                new AppointmentCreatedTypeEvent(
+                        saved.getId(),
+                        saved.getTitle(),
+                        saved.getDescription(),
+                        saved.getActive()
+                )
+        );
 
         return toResponse(saved);
     }

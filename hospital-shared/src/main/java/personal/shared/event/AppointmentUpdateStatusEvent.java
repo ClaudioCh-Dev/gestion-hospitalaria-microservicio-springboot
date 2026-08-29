@@ -4,5 +4,7 @@ public record AppointmentUpdateStatusEvent(
     Long   appointmentId,
     EnumStatusAppointment status,
     String patientName,
-    String doctorName
+    String doctorName,
+    Long patientId,
+    Long doctorId
 ) {}

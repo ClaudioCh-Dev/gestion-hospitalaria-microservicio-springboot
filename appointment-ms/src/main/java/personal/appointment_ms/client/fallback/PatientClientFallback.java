@@ -3,7 +3,7 @@ package personal.appointment_ms.client.fallback;
 import org.springframework.stereotype.Component;
 
 import personal.appointment_ms.client.PatientClient;
-import personal.appointment_ms.client.PatientResponse;
+import personal.appointment_ms.client.dto.PatientResponse;
 import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.shared.exception.BusinessException;
 

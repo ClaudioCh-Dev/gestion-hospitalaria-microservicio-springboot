@@ -12,6 +12,8 @@ public enum AppointmentErrorCode implements ErrorCode {
     APPOINTMENT_TARIFF_NOT_ACTIVE(HttpStatus.CONFLICT.value()),
     APPOINTMENT_STATUS_ALREADY_SET(HttpStatus.CONFLICT.value()),
     APPOINTMENT_STATUS_CANNOT_CHANGE(HttpStatus.CONFLICT.value()),
+    APPOINTMENT_TARIFF_INVALID(HttpStatus.CONFLICT.value()),
+    APPOINTMENT_TYPE_NOT_ACTIVE(HttpStatus.CONFLICT.value()),
 
     PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
     PATIENT_INVALID_REQUEST(HttpStatus.BAD_REQUEST.value()),

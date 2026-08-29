@@ -1,21 +1,25 @@
 package personal.notification_ms.dto;
+
 import lombok.Builder;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
+
+import personal.notification_ms.model.NotificationType;
 
 @Builder
 public record NotificationRequest(
-        Long appointmentId,
-        Long patientId,
-        String patientName,
-        Long doctorId,
-        String doctorName,
-        String specialty,
-        String eventType,
-        String status,
-        String reason,
-        LocalDateTime scheduledAt,
-        BigDecimal amount
-) {
+        NotificationType type,
+
+        String title,
+
+        String message,
+
+        String referenceType,
+
+        Long referenceId,
+
+        Map<String, Object> metadata,
+
+        LocalDateTime createdAt) {
 }

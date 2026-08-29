@@ -20,14 +20,26 @@ spring:
             "[enable.auto.commit]": false
 
       bindings:
-        appointmentCompletedConsumer-in-0:
-          destination: appointment-completed
+        appointmentCreatedConsumer-in-0:
+          destination: appointment-created
           group: billing-ms
           content-type: application/json
           consumer:
             max-attempts: 3
-          
+        
+        appointmentUpdatedStatusConsumer-in-0:
+          destination: appointment-updated-status
+          group: billing-ms
+          content-type: application/json
+          consumer:
+            max-attempts: 3
 
+        appointmentCreatedTypeConsumer-in-0:
+          destination: appointment-created-type
+          group: billing-ms
+          content-type: application/json
+          consumer:
+            max-attempts: 3
   datasource:
     username: ${db.username:postgres}
     password: ${db.password:123456}

@@ -7,14 +7,12 @@ import personal.notification_ms.dto.AdminNotificationResponse;
 import personal.notification_ms.dto.DoctorNotificationResponse;
 import personal.notification_ms.dto.NotificationRequest;
 import personal.notification_ms.dto.NotificationResponse;
-import personal.notification_ms.exceptions.NotificationErrorCode;
 import personal.notification_ms.mapper.NotificationMapper;
 import personal.notification_ms.model.Notification;
 import personal.notification_ms.model.NotificationRecipient;
 import personal.notification_ms.repository.NotificationRecipientRepository;
 import personal.notification_ms.repository.NotificationRepository;
 import personal.notification_ms.security.UserContextHolder;
-import personal.shared.exception.BusinessException;
 
 import java.time.LocalDateTime;
 import java.util.List;

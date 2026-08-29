@@ -1,4 +1,4 @@
-package personal.billing_ms.service;
+package personal.billing_ms.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,6 +16,7 @@ import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.entities.BillingStatus;
 import personal.billing_ms.exceptions.BillingErrorCode;
 import personal.billing_ms.repositories.BillingRepository;
+import personal.billing_ms.service.IBillingRecordService;
 import personal.shared.exception.BusinessException;
 
 @Service

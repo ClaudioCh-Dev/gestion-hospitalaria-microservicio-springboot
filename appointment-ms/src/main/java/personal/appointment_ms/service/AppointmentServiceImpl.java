@@ -46,6 +46,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
         private final DoctorClient doctorClient;
         private final BillingClient billingClient;
         private final AppointmentPublisher appointmentPublisher;
+
         private final PatientRepository patientRepository;
         private final DoctorRepository doctorRepository;
 
@@ -88,15 +89,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                         return doctorRepository.save(entity);
                                 });
 
-                // 2.5 Buscar tarifa en bd externa
-                BillingTariffResponse tariff = billingClient.findTariffByAppointmentTypeId(request.appointmentTypeId());
-
-                if (!tariff.active()) {
-                        throw new BusinessException(
-                                        AppointmentErrorCode.APPOINTMENT_TARIFF_NOT_ACTIVE,
-                                        "Tarifa no activa");
-                }
-
                 // 3. Validar tipo de cita
                 AppointmentType appointmentType = appointmentTypeRepository
                                 .findById(request.appointmentTypeId())
@@ -104,7 +96,22 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                                 AppointmentErrorCode.APPOINTMENT_TYPE_NOT_FOUND,
                                                 "Tipo de cita no encontrado"));
 
-                // 4. Calcular duración y horario de finalización
+                if (!appointmentType.getActive()) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_TYPE_NOT_ACTIVE,
+                                        "El tipo de cita no está activo");
+                }
+
+                // 4. Buscar tarifa en bd externa
+                BillingTariffResponse tariff = billingClient.findTariffByAppointmentTypeId(request.appointmentTypeId());
+
+                if (tariff.price() == null || tariff.price().compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_TARIFF_INVALID,
+                                        "Establece la tarifa para este tipo de cita en gestion Billing");
+                }
+
+                // 5. Calcular duración y horario de finalización
                 Integer duration = request.durationMinutes() != null
                                 ? request.durationMinutes()
                                 : 30;
@@ -113,7 +120,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
                 LocalDateTime end = start.plusMinutes(duration);
 
-                // 5. Validar disponibilidad del doctor
+                // 6. Validar disponibilidad del doctor
                 boolean hasOverlap = appointmentRepository.existsOverlappingAppointment(
                                 request.doctorId(),
                                 start,
@@ -125,7 +132,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                         "El doctor ya tiene una cita en ese horario");
                 }
 
-                // 6. Crear cita
+                // 7. Crear cita
                 Appointment appointment = Appointment.builder()
                                 .patientId(request.patientId())
                                 .doctorId(request.doctorId())
@@ -137,10 +144,10 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 .notes(request.notes())
                                 .build();
 
-                // 7. Guardar
+                // 8. Guardar
                 Appointment savedAppointment = appointmentRepository.save(appointment);
 
-                // 8. Crear evento
+                // 9. Crear evento
                 // AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
                 AppointmentCreatedEvent appointmentEvent = new AppointmentCreatedEvent(
                                 appointment.getId(),
@@ -149,13 +156,13 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 appointment.getDoctorId(),
                                 doctorEntity.getFullName(),
                                 doctorEntity.getSpecialty(),
-                                appointment.getScheduledAt().toString(),
+                                appointment.getScheduledAt(),
                                 appointment.getReason(),
                                 EnumStatusAppointment.valueOf(appointment.getStatus().name()),
                                 tariff.price(),
                                 tariff.currency());
 
-                // 9. Publicar evento
+                // 10. Publicar evento
                 appointmentPublisher.publishAppointmentScheduled(
                                 appointmentEvent);
 
@@ -270,7 +277,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 updatedAppointment.getId(),
                                 EnumStatusAppointment.valueOf(updatedAppointment.getStatus().name()),
                                 patientEntity.getFullName(),
-                                doctorEntity.getFullName());
+                                doctorEntity.getFullName(),
+                                patientEntity.getId(),
+                                doctorEntity.getId());
 
                 appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);

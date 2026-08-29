@@ -15,20 +15,19 @@ spring:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
 
       bindings:
+      
         appointment-created-out-0:
           destination: appointment-created
           content-type: application/json
 
-        appointment-confirmed-out-0:
-          destination: appointment-confirmed
-          content-type: application/json
-        appointment-completed-out-0:
-          destination: appointment-completed
+        appointment-updated-status-out-0:
+          destination: appointment-updated-status
           content-type: application/json
 
-        appointment-canceled-out-0:
-          destination: appointment-canceled
+        appointment-created-type-out-0:
+          destination: appointment-created-type
           content-type: application/json
+
 
         doctorCreatedConsumer-in-0:
           destination: doctor-created
