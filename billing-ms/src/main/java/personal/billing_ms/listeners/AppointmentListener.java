@@ -12,14 +12,13 @@ import org.springframework.messaging.Message;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.dto.CreateBillingTariffRequest;
 import personal.billing_ms.dto.UpdateBillingTariffRequest;
 import personal.billing_ms.service.IBillingRecordService;
 import personal.billing_ms.service.IBillingTariffService;
 import personal.shared.event.AppointmentCreatedEvent;
 import personal.shared.event.AppointmentCreatedTypeEvent;
+import personal.shared.event.AppointmentEventRequest;
 import personal.shared.event.AppointmentUpdateStatusEvent;
 import personal.shared.event.EnumStatusAppointment;
 import personal.billing_ms.security.UserContext;

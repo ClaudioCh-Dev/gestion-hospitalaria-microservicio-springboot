@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import personal.billing_ms.client.AppointmentClient;
-import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.dto.AppointmentResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
@@ -17,6 +16,10 @@ import personal.billing_ms.entities.BillingStatus;
 import personal.billing_ms.exceptions.BillingErrorCode;
 import personal.billing_ms.repositories.BillingRepository;
 import personal.billing_ms.service.IBillingRecordService;
+import personal.billing_ms.streams.PaymentPublisher;
+import personal.shared.event.AppointmentEventRequest;
+import personal.shared.event.PaymentStatus;
+import personal.shared.event.PaymentUpdateStatus;
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -25,6 +28,7 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
 
     private final BillingRepository billingRepository;
     private final AppointmentClient appointmentClient;
+    private final PaymentPublisher paymentPublisher;
 
     @Override
     @Transactional
@@ -60,9 +64,35 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                         BillingErrorCode.BILLING_RECORD_NOT_FOUND,
                         "Registro de facturación no encontrado"
                 ));
+        
+        if(billingRecord.getStatus() == BillingStatus.PAID) {
+            throw new BusinessException(
+                    BillingErrorCode.BILLING_RECORD_ALREADY_PAID,
+                    "El registro de facturación ya se encuentra pagado"
+            );
+        }
+        if(billingRecord.getStatus() == BillingStatus.CANCELLED) {
+            throw new BusinessException(
+                    BillingErrorCode.BILLING_RECORD_ALREADY_CANCELLED,
+                    "El registro de facturación ya se encuentra cancelado"
+            );
+        }
 
         billingRecord.setStatus(BillingStatus.PAID);
         billingRecord.setPaidAt(LocalDateTime.now());
+
+        paymentPublisher.publishPaymentUpdateStatus(
+                new PaymentUpdateStatus(
+                        billingRecord.getId(),
+                        billingRecord.getAppointmentId(),
+                        billingRecord.getAmount(),
+                        "PEN",
+                        PaymentStatus.valueOf(BillingStatus.PAID.name()),
+                        billingRecord.getIssuedAt(),
+                        billingRecord.getPaidAt()
+                )
+                
+        );
 
         return billingRepository.save(billingRecord);
     }
@@ -97,7 +127,32 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                         "Registro de facturación no encontrado"
                 ));
 
+        if(billingRecord.getStatus() == BillingStatus.PAID) {
+            throw new BusinessException(
+                    BillingErrorCode.BILLING_RECORD_ALREADY_PAID,
+                    "El registro de facturación ya se encuentra pagado"
+            );
+        }
+        if(billingRecord.getStatus() == BillingStatus.CANCELLED) {
+            throw new BusinessException(
+                    BillingErrorCode.BILLING_RECORD_ALREADY_CANCELLED,
+                    "El registro de facturación ya se encuentra cancelado"
+            );
+        }
+
         billingRecord.setStatus(BillingStatus.CANCELLED);
+
+        paymentPublisher.publishPaymentUpdateStatus(
+                new PaymentUpdateStatus(
+                        billingRecord.getId(),
+                        billingRecord.getAppointmentId(),
+                        billingRecord.getAmount(),
+                        "PEN",
+                        PaymentStatus.valueOf(BillingStatus.CANCELLED.name()),
+                        billingRecord.getIssuedAt(),
+                        null
+                )
+        );
         
         return billingRepository.save(billingRecord);
     }

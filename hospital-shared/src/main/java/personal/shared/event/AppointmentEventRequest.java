@@ -1,4 +1,4 @@
-package personal.billing_ms.dto;
+package personal.shared.event;
 
 import java.math.BigDecimal;
 

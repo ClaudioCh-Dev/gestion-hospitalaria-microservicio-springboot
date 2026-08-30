@@ -40,6 +40,10 @@ spring:
           content-type: application/json
           consumer:
             max-attempts: 3
+
+        paymentUpdateStatusProducer-out-0:
+          destination: payment-update-status
+          content-type: application/json
   datasource:
     username: ${db.username:postgres}
     password: ${db.password:123456}
