@@ -4,8 +4,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import personal.billing_ms.client.dto.AppointmentResponse;
 import personal.billing_ms.config.AppointmentFeignConfig;
-import personal.billing_ms.dto.AppointmentResponse;
 
 @FeignClient(
         name = "appointment-ms",

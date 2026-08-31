@@ -1,4 +1,4 @@
-package personal.billing_ms.dto;
+package personal.billing_ms.client.dto;
 
 import java.time.LocalDateTime;
 
