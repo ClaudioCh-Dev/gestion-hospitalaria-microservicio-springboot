@@ -1,18 +1,16 @@
 package personal.medical_record_listener.service;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import personal.medical_record_listener.dto.MedicalRecordResponse;
 import personal.medical_record_listener.exceptions.MedicalRecordErrorCode;
 import personal.medical_record_listener.model.MedicalRecord;
 import personal.medical_record_listener.repository.MedicalRecordRepository;
-
-import personal.shared.event.AppointmentEvent;
+import personal.shared.event.MedicalRecordReadyEvent;
 import personal.shared.exception.BusinessException;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,8 +18,9 @@ public class MedicalRecordService {
 
     private final MedicalRecordRepository repository;
 
-    // Guardar registro médico cuando se crea una cita
-    public void save(AppointmentEvent event) {
+    // Guardar registro médico cuando la cita está COMPLETED
+    // y el pago está PAID
+    public void save(MedicalRecordReadyEvent event) {
 
         MedicalRecord record = MedicalRecord.builder()
                 .appointmentId(event.appointmentId())
@@ -33,15 +32,18 @@ public class MedicalRecordService {
                 .scheduledAt(event.scheduledAt())
                 .reason(event.reason())
                 .status(event.status())
+                .amount(event.amount())
                 .build();
 
         repository.save(record);
     }
 
     // Obtener todos los registros médicos de un paciente
-    public List<MedicalRecordResponse> findByPatientId(Long patientId) {
+    public List<MedicalRecordResponse> findByPatientId(
+            Long patientId) {
 
-        List<MedicalRecord> records = repository.findByPatientId(patientId);
+        List<MedicalRecord> records =
+                repository.findByPatientId(patientId);
 
         if (records.isEmpty()) {
             throw new BusinessException(
@@ -64,7 +66,8 @@ public class MedicalRecordService {
                 .toList();
     }
 
-    private MedicalRecordResponse toResponse(MedicalRecord record) {
+    private MedicalRecordResponse toResponse(
+            MedicalRecord record) {
 
         return new MedicalRecordResponse(
                 record.getId(),

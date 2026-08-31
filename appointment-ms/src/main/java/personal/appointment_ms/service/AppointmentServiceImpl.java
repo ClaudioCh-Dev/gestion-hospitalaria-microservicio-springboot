@@ -275,11 +275,15 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
                 AppointmentUpdateStatusEvent appointmentEvent = new AppointmentUpdateStatusEvent(
                                 updatedAppointment.getId(),
+                                updatedAppointment.getAppointmentType().getTitle(),
                                 EnumStatusAppointment.valueOf(updatedAppointment.getStatus().name()),
                                 patientEntity.getFullName(),
                                 doctorEntity.getFullName(),
                                 patientEntity.getId(),
-                                doctorEntity.getId());
+                                doctorEntity.getId(),
+                                doctorEntity.getSpecialty(),
+                                updatedAppointment.getScheduledAt(),
+                                updatedAppointment.getReason());
 
                 appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);

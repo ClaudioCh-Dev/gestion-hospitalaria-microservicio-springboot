@@ -1,4 +1,4 @@
-package personal.medical_record_listener.listeners;
+package personal.medical_record_listener.listener;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -11,11 +11,10 @@ import org.springframework.messaging.Message;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import personal.medical_record_listener.security.UserContext;
 import personal.medical_record_listener.security.UserContextHolder;
 import personal.medical_record_listener.service.MedicalRecordService;
-import personal.shared.event.AppointmentEvent;
+import personal.shared.event.MedicalRecordReadyEvent;
 
 @Slf4j
 @Configuration
@@ -25,20 +24,21 @@ public class MedicalRecordListener {
     private final MedicalRecordService service;
 
     @Bean
-    public Consumer<Message<AppointmentEvent>> appointmentCompletedConsumer() {
+    public Consumer<Message<MedicalRecordReadyEvent>>
+            medicalRecordReadyConsumer() {
 
         return message -> {
 
             try {
 
                 UserContext context = buildUserContext(message);
-
                 UserContextHolder.set(context);
 
-                AppointmentEvent event = message.getPayload();
+                MedicalRecordReadyEvent event =
+                        message.getPayload();
 
                 log.info(
-                        "Appointment completed received: {}",
+                        "Medical record ready received: {}",
                         event);
 
                 service.save(event);
@@ -65,7 +65,7 @@ public class MedicalRecordListener {
                 ? Set.of()
                 : Arrays.stream(
                         permissionsHeader.split(","))
-                        .map(permission -> permission.trim())
+                        .map(String::trim)
                         .collect(Collectors.toSet());
 
         return new UserContext(
