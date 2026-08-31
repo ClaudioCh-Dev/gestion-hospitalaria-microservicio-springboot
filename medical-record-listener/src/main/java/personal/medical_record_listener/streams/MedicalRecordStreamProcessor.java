@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import personal.medical_record_listener.streams.model.AppointmentState;
-import personal.shared.event.EnumStatusAppointment;
 import personal.shared.event.MedicalRecordReadyEvent;
-import personal.shared.event.PaymentStatus;
 import personal.shared.event.PaymentUpdateStatus;
+import personal.shared.event.status.StatusAppointment;
+import personal.shared.event.status.StatusPayment;
 
 @Configuration
 public class MedicalRecordStreamProcessor {
@@ -37,7 +37,7 @@ public class MedicalRecordStreamProcessor {
                                     (key, event) ->
                                             event != null
                                                     && event.status()
-                                                    == EnumStatusAppointment.COMPLETED
+                                                    == StatusAppointment.COMPLETED
                             )
                             .selectKey(
                                     (key, event) ->
@@ -57,7 +57,7 @@ public class MedicalRecordStreamProcessor {
                                     (key, event) ->
                                             event != null
                                                     && event.status()
-                                                    == PaymentStatus.PAID
+                                                    == StatusPayment.PAID
                             )
                             .selectKey(
                                     (key, event) ->

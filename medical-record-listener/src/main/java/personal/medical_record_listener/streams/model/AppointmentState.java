@@ -3,7 +3,7 @@ package personal.medical_record_listener.streams.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import personal.shared.event.EnumStatusAppointment;
+import personal.shared.event.status.StatusAppointment;
 
 public record AppointmentState(
 
@@ -23,7 +23,7 @@ public record AppointmentState(
 
         String reason,
 
-        EnumStatusAppointment status,
+        StatusAppointment status,
 
         BigDecimal amount,
 
@@ -32,7 +32,7 @@ public record AppointmentState(
 ) {
 
     public AppointmentState withStatus(
-            EnumStatusAppointment newStatus) {
+            StatusAppointment newStatus) {
 
         return new AppointmentState(
                 appointmentId,

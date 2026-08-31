@@ -18,7 +18,7 @@ import personal.billing_ms.repositories.BillingRepository;
 import personal.billing_ms.service.IBillingRecordService;
 import personal.billing_ms.streams.PaymentPublisher;
 import personal.shared.event.AppointmentEventRequest;
-import personal.shared.event.PaymentStatus;
+import personal.shared.event.status.StatusPayment;
 import personal.shared.event.PaymentUpdateStatus;
 import personal.shared.exception.BusinessException;
 
@@ -87,7 +87,7 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                         billingRecord.getAppointmentId(),
                         billingRecord.getAmount(),
                         "PEN",
-                        PaymentStatus.valueOf(BillingStatus.PAID.name()),
+                        StatusPayment.valueOf(BillingStatus.PAID.name()),
                         billingRecord.getIssuedAt(),
                         billingRecord.getPaidAt()
                 )
@@ -139,7 +139,7 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                     "El registro de facturación ya se encuentra cancelado"
             );
         }
-
+ 
         billingRecord.setStatus(BillingStatus.CANCELLED);
 
         paymentPublisher.publishPaymentUpdateStatus(
@@ -148,7 +148,7 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                         billingRecord.getAppointmentId(),
                         billingRecord.getAmount(),
                         "PEN",
-                        PaymentStatus.valueOf(BillingStatus.CANCELLED.name()),
+                        StatusPayment.valueOf(BillingStatus.CANCELLED.name()),
                         billingRecord.getIssuedAt(),
                         null
                 )

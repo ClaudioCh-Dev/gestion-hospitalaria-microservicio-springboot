@@ -20,7 +20,7 @@ import personal.shared.event.AppointmentCreatedEvent;
 import personal.shared.event.AppointmentCreatedTypeEvent;
 import personal.shared.event.AppointmentEventRequest;
 import personal.shared.event.AppointmentUpdateStatusEvent;
-import personal.shared.event.EnumStatusAppointment;
+import personal.shared.event.status.StatusAppointment;
 import personal.billing_ms.security.UserContext;
 import personal.billing_ms.security.UserContextHolder;
 
@@ -37,7 +37,7 @@ public class AppointmentListener {
         return message -> executeWithUserContext(
                 message,
                 event -> {
-                    if (event.status() == EnumStatusAppointment.CANCELLED) {
+                    if (event.status() == StatusAppointment.CANCELLED) {
                         billingRecordService.cancelBillingRecord(
                                 event.appointmentId());
                     }

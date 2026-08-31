@@ -32,7 +32,7 @@ import personal.appointment_ms.repositories.PatientRepository;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentCreatedEvent;
 import personal.shared.event.AppointmentUpdateStatusEvent;
-import personal.shared.event.EnumStatusAppointment;
+import personal.shared.event.status.StatusAppointment;
 import personal.shared.exception.BusinessException;
 
 @Service
@@ -159,7 +159,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 doctorEntity.getSpecialty(),
                                 appointment.getScheduledAt(),
                                 appointment.getReason(),
-                                EnumStatusAppointment.valueOf(appointment.getStatus().name()),
+                                StatusAppointment.valueOf(appointment.getStatus().name()),
                                 tariff.price(),
                                 tariff.currency());
 
@@ -241,7 +241,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
                 AppointmentUpdateStatusEvent appointmentEvent = new AppointmentUpdateStatusEvent(
                                 updatedAppointment.getId(),
-                                EnumStatusAppointment.valueOf(updatedAppointment.getStatus().name()));
+                                StatusAppointment.valueOf(updatedAppointment.getStatus().name()));
 
                 appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);

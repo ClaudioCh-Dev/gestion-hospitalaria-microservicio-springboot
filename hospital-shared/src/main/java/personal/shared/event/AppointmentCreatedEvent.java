@@ -3,6 +3,8 @@ package personal.shared.event;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import personal.shared.event.status.StatusAppointment;
+
 public record AppointmentCreatedEvent(
         Long appointmentId,
         String appointmentType,
@@ -13,7 +15,7 @@ public record AppointmentCreatedEvent(
         String specialty,
         LocalDateTime scheduledAt,
         String reason,
-        EnumStatusAppointment status,
+        StatusAppointment status,
         BigDecimal amount,
         String currency) {
 }
