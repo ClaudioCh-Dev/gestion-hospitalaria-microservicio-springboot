@@ -20,6 +20,7 @@ import personal.notification_ms.security.UserContext;
 import personal.notification_ms.security.UserContextHolder;
 import personal.notification_ms.service.INotificationService;
 import personal.notification_ms.service.SseService;
+
 import personal.shared.event.AppointmentCreatedEvent;
 import personal.shared.event.AppointmentUpdateStatusEvent;
 
@@ -31,22 +32,32 @@ public class NotificationListener {
     private final SseService sseService;
     private final INotificationService notificationService;
 
+    // ============================================================
+    // APPOINTMENT CREATED
+    // ============================================================
+
     @Bean
-    public Consumer<Message<AppointmentCreatedEvent>> appointmentCreatedConsumer() {
+    public Consumer<Message<AppointmentCreatedEvent>>
+            appointmentCreatedConsumer() {
 
         return message -> {
 
             try {
 
-                UserContextHolder.set(buildUserContext(message));
+                UserContextHolder.set(
+                        buildUserContext(message)
+                );
 
-                AppointmentCreatedEvent event = message.getPayload();
+                AppointmentCreatedEvent event =
+                        message.getPayload();
 
                 log.info(
                         "Notification received for appointment created: {}",
-                        event);
+                        event
+                );
 
-                NotificationRequest request = buildAppointmentCreatedNotification(event);
+                NotificationRequest request =
+                        buildAppointmentCreatedNotification(event);
 
                 notificationService.save(request);
 
@@ -59,22 +70,32 @@ public class NotificationListener {
         };
     }
 
+    // ============================================================
+    // APPOINTMENT STATUS UPDATED
+    // ============================================================
+
     @Bean
-    public Consumer<Message<AppointmentUpdateStatusEvent>> appointmentUpdateStatusConsumer() {
+    public Consumer<Message<AppointmentUpdateStatusEvent>>
+            appointmentUpdateStatusConsumer() {
 
         return message -> {
 
             try {
 
-                UserContextHolder.set(buildUserContext(message));
+                UserContextHolder.set(
+                        buildUserContext(message)
+                );
 
-                AppointmentUpdateStatusEvent event = message.getPayload();
+                AppointmentUpdateStatusEvent event =
+                        message.getPayload();
 
                 log.info(
                         "Notification received for appointment status update: {}",
-                        event);
+                        event
+                );
 
-                NotificationRequest request = buildAppointmentStatusNotification(event);
+                NotificationRequest request =
+                        buildAppointmentStatusNotification(event);
 
                 notificationService.save(request);
 
@@ -86,21 +107,26 @@ public class NotificationListener {
             }
         };
     }
+
+    // ============================================================
+    // APPOINTMENT CREATED NOTIFICATION
+    // ============================================================
 
     private NotificationRequest buildAppointmentCreatedNotification(
             AppointmentCreatedEvent event) {
 
         return NotificationRequest.builder()
 
-                .type(NotificationType.APPOINTMENT_CREATED)
+                .type(NotificationType.APPOINTMENT_SCHEDULED)
 
-                .title("Cita creada")
+                .title("Cita programada")
 
                 .message(
                         "Se ha creado una nueva cita para "
                                 + event.patientName()
                                 + " con el doctor "
-                                + event.doctorName())
+                                + event.doctorName()
+                )
 
                 .referenceType("APPOINTMENT")
 
@@ -124,46 +150,56 @@ public class NotificationListener {
                 .build();
     }
 
+    // ============================================================
+    // APPOINTMENT STATUS NOTIFICATION
+    // ============================================================
+
     private NotificationRequest buildAppointmentStatusNotification(
             AppointmentUpdateStatusEvent event) {
 
         NotificationType type = switch (event.status()) {
-            case SCHEDULED -> NotificationType.APPOINTMENT_SCHEDULED;
-            case COMPLETED -> NotificationType.APPOINTMENT_COMPLETED;
-            case CANCELLED -> NotificationType.APPOINTMENT_CANCELLED;
-            default -> NotificationType.APPOINTMENT_CREATED;
+
+            case SCHEDULED ->
+                    NotificationType.APPOINTMENT_SCHEDULED;
+
+            case CONFIRMED ->
+                    NotificationType.APPOINTMENT_CONFIRMED;
+
+            case COMPLETED ->
+                    NotificationType.APPOINTMENT_COMPLETED;
+
+            case CANCELLED ->
+                    NotificationType.APPOINTMENT_CANCELLED;
         };
 
         String title = switch (event.status()) {
 
-            case SCHEDULED -> "Cita programada";
+            case SCHEDULED ->
+                    "Cita programada";
 
-            case COMPLETED -> "Cita completada";
+            case CONFIRMED ->
+                    "Cita confirmada";
 
-            case CANCELLED -> "Cita cancelada";
+            case COMPLETED ->
+                    "Cita completada";
 
-             default -> "Actualización de cita";
+            case CANCELLED ->
+                    "Cita cancelada";
         };
 
         String message = switch (event.status()) {
 
             case SCHEDULED ->
-                    "La cita de "
-                            + event.patientName()
-                            + " ha sido programada.";
+                    "La cita ha sido programada.";
+
+            case CONFIRMED ->
+                    "La cita ha sido confirmada.";
 
             case COMPLETED ->
-                    "La cita de "
-                            + event.patientName()
-                            + " ha sido completada.";
+                    "La cita ha sido completada.";
 
             case CANCELLED ->
-                    "La cita de "
-                            + event.patientName()
-                            + " ha sido cancelada.";
-            
-            default ->
-                    "Actualización de cita";
+                    "La cita ha sido cancelada.";
         };
 
         return NotificationRequest.builder()
@@ -179,11 +215,7 @@ public class NotificationListener {
                 .referenceId(event.appointmentId())
 
                 .metadata(Map.of(
-                        "patientName", event.patientName(),
-                        "doctorName", event.doctorName(),
-                        "status", event.status().name(),
-                        "patientId", event.patientId(),
-                        "doctorId", event.doctorId()
+                        "status", event.status().name()
                 ))
 
                 .createdAt(LocalDateTime.now())
@@ -191,28 +223,43 @@ public class NotificationListener {
                 .build();
     }
 
-    private UserContext buildUserContext(Message<?> message) {
+    // ============================================================
+    // USER CONTEXT
+    // ============================================================
 
-        String userId = (String) message.getHeaders()
-                .get("X-User-Id");
+    private UserContext buildUserContext(
+            Message<?> message) {
 
-        String role = (String) message.getHeaders()
-                .get("X-Role");
+        String userId =
+                (String) message.getHeaders()
+                        .get("X-User-Id");
 
-        String permissionsHeader = (String) message.getHeaders()
-                .get("X-Permissions");
+        String role =
+                (String) message.getHeaders()
+                        .get("X-Role");
 
-        Set<String> permissions = permissionsHeader == null
-                ? Set.of()
-                : Arrays.stream(permissionsHeader.split(","))
+        String permissionsHeader =
+                (String) message.getHeaders()
+                        .get("X-Permissions");
+
+        Set<String> permissions =
+                permissionsHeader == null
+                        ? Set.of()
+                        : Arrays.stream(
+                                permissionsHeader.split(",")
+                        )
                         .map(String::trim)
                         .collect(Collectors.toSet());
 
         return new UserContext(
+
                 userId != null
                         ? Long.valueOf(userId)
                         : null,
+
                 role,
-                permissions);
+
+                permissions
+        );
     }
 }

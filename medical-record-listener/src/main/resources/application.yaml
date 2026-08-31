@@ -21,13 +21,28 @@ spring:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
 
       bindings:
+        appointmentStateProcessor-in-0:
+          destination: appointment-created
+          group: medical-record-appointment-created
+          content-type: application/json
+
+        appointmentStateProcessor-in-1:
+          destination: appointment-updated-status
+          group: medical-record-appointment-updated
+          content-type: application/json
+
+        appointmentStateProcessor-out-0:
+          destination: appointment-state
+          content-type: application/json
 
         medicalRecordProcessor-in-0:
-          destination: appointment-updated-status
+          destination: appointment-state
+          group: medical-record-processor
           content-type: application/json
 
         medicalRecordProcessor-in-1:
           destination: payment-update-status
+          group: medical-record-payment
           content-type: application/json
 
         medicalRecordProcessor-out-0:

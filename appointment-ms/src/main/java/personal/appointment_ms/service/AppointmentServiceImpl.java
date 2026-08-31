@@ -151,6 +151,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 // AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
                 AppointmentCreatedEvent appointmentEvent = new AppointmentCreatedEvent(
                                 appointment.getId(),
+                                appointment.getAppointmentType().getTitle(),
                                 appointment.getPatientId(),
                                 patientEntity.getFullName(),
                                 appointment.getDoctorId(),
@@ -238,52 +239,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 appointment.setStatus(request.status());
                 Appointment updatedAppointment = appointmentRepository.save(appointment);
 
-                // 1. Buscar paciente en la BD local
-                PatientEntity patientEntity = patientRepository
-                                .findById(appointment.getPatientId())
-                                .orElseGet(() -> {
-
-                                        PatientResponse patient = patientClient.findById(appointment.getPatientId());
-
-                                        PatientEntity entity = new PatientEntity();
-                                        entity.setId(patient.id());
-                                        entity.setFullName(
-                                                        patient.firstName() + " " + patient.lastName());
-
-                                        return patientRepository.save(entity);
-                                });
-
-                // 2. Buscar doctor en la BD local
-                DoctorEntity doctorEntity = doctorRepository
-                                .findById(appointment.getDoctorId())
-                                .orElseGet(() -> {
-
-                                        // Si no existe localmente, buscar en doctor-ms
-                                        DoctorResponse doctor = doctorClient.findById(appointment.getDoctorId());
-
-                                        // Crear copia local
-                                        DoctorEntity entity = new DoctorEntity();
-                                        entity.setId(doctor.id());
-                                        entity.setUserId(doctor.userId());
-                                        entity.setFullName(
-                                                        doctor.firstName() + " " + doctor.lastName());
-                                        entity.setSpecialty(doctor.specialtyName());
-
-                                        // Guardar y devolver
-                                        return doctorRepository.save(entity);
-                                });
-
                 AppointmentUpdateStatusEvent appointmentEvent = new AppointmentUpdateStatusEvent(
                                 updatedAppointment.getId(),
-                                updatedAppointment.getAppointmentType().getTitle(),
-                                EnumStatusAppointment.valueOf(updatedAppointment.getStatus().name()),
-                                patientEntity.getFullName(),
-                                doctorEntity.getFullName(),
-                                patientEntity.getId(),
-                                doctorEntity.getId(),
-                                doctorEntity.getSpecialty(),
-                                updatedAppointment.getScheduledAt(),
-                                updatedAppointment.getReason());
+                                EnumStatusAppointment.valueOf(updatedAppointment.getStatus().name()));
 
                 appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);
