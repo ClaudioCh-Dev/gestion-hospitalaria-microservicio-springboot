@@ -9,7 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import personal.billing_ms.client.AppointmentClient;
-import personal.billing_ms.dto.AppointmentResponse;
+import personal.billing_ms.client.dto.AppointmentResponse;
+import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.entities.BillingStatus;
@@ -17,7 +18,6 @@ import personal.billing_ms.exceptions.BillingErrorCode;
 import personal.billing_ms.repositories.BillingRepository;
 import personal.billing_ms.service.IBillingRecordService;
 import personal.billing_ms.streams.PaymentPublisher;
-import personal.shared.event.AppointmentEventRequest;
 import personal.shared.event.status.StatusPayment;
 import personal.shared.event.PaymentUpdateStatus;
 import personal.shared.exception.BusinessException;
