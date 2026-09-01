@@ -43,7 +43,6 @@ public class AppointmentListener {
                                         .orElseGet(DoctorEntity::new);
 
                         doctor.setId(event.doctorId());
-                        doctor.setUserId(event.userId());
                         doctor.setFullName(
                                         event.firstName() + " " + event.lastName());
                         doctor.setSpecialty(event.specialty());
@@ -68,7 +67,6 @@ public class AppointmentListener {
                                         .orElseGet(DoctorEntity::new);
 
                         doctor.setId(event.doctorId());
-                        doctor.setUserId(event.userId());
                         doctor.setFullName(
                                         event.firstName() + " " + event.lastName());
                         doctor.setSpecialty(event.specialty());

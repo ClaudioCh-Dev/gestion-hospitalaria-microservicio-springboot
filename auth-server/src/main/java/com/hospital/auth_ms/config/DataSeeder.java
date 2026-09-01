@@ -2,6 +2,8 @@ package com.hospital.auth_ms.config;
 
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,298 +19,391 @@ import com.hospital.auth_ms.repositories.UserRepository;
 @Configuration
 public class DataSeeder {
 
-        @Bean
-        CommandLineRunner initData(
-                        PermissionRepository permissionRepository,
-                        RoleRepository roleRepository,
-                        UserRepository userRepository,
-                        PasswordEncoder passwordEncoder) {
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
-                return args -> {
+    @Bean
+    CommandLineRunner initData(
+            PermissionRepository permissionRepository,
+            RoleRepository roleRepository,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
 
-                        // =========================
-                        // PERMISSIONS
-                        // =========================
+        return args -> {
 
-                        // Patient
-                        PermissionEntity patientRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("PATIENT_READ")
-                                                        .build());
+            log.info("==========================================");
+            log.info("INICIANDO DATA SEEDER");
+            log.info("==========================================");
 
-                        PermissionEntity patientCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("PATIENT_CREATE")
-                                                        .build());
+            try {
 
-                        PermissionEntity patientUpdate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("PATIENT_UPDATE")
-                                                        .build());
+                // =========================
+                // PERMISSIONS
+                // =========================
 
-                        PermissionEntity patientDelete = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("PATIENT_DELETE")
-                                                        .build());
+                log.info("Creando permisos...");
 
-                        // Appointment
-                        PermissionEntity appointmentCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_CREATE")
-                                                        .build());
+                PermissionEntity patientRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("PATIENT_READ")
+                                .build());
 
-                        PermissionEntity appointmentRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_READ")
-                                                        .build());
+                log.info("Permiso creado: PATIENT_READ");
 
-                        PermissionEntity appointmentReadByPatient = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_READ_BY_PATIENT")
-                                                        .build());
+                PermissionEntity patientCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("PATIENT_CREATE")
+                                .build());
 
-                        PermissionEntity appointmentReadByDoctor = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_READ_BY_DOCTOR")
-                                                        .build());
+                log.info("Permiso creado: PATIENT_CREATE");
 
-                        PermissionEntity appointmentUpdateStatus = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_UPDATE_STATUS")
-                                                        .build());
+                PermissionEntity patientUpdate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("PATIENT_UPDATE")
+                                .build());
 
-                        PermissionEntity appointmentCancel = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_CANCEL")
-                                                        .build());
+                log.info("Permiso creado: PATIENT_UPDATE");
 
-                        // Appointment Type
-                        PermissionEntity appointmentTypeCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_TYPE_CREATE")
-                                                        .build());
+                PermissionEntity patientDelete = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("PATIENT_DELETE")
+                                .build());
 
-                        PermissionEntity appointmentTypeRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_TYPE_READ")
-                                                        .build());
+                log.info("Permiso creado: PATIENT_DELETE");
 
-                        PermissionEntity appointmentTypeUpdate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_TYPE_UPDATE")
-                                                        .build());
+                PermissionEntity appointmentCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_CREATE")
+                                .build());
 
-                        PermissionEntity appointmentTypeDelete = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("APPOINTMENT_TYPE_DELETE")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_CREATE");
 
-                        // Billing
-                        PermissionEntity billingCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("BILLING_CREATE")
-                                                        .build());
+                PermissionEntity appointmentRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_READ")
+                                .build());
 
-                        PermissionEntity billingRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("BILLING_READ")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_READ");
 
-                        PermissionEntity billingReadByPatient = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("BILLING_READ_BY_PATIENT")
-                                                        .build());
+                PermissionEntity appointmentReadByPatient = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_READ_BY_PATIENT")
+                                .build());
 
-                        PermissionEntity billingPay = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("BILLING_PAY")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_READ_BY_PATIENT");
 
-                        // Doctor
-                        PermissionEntity doctorRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("DOCTOR_READ")
-                                                        .build());
+                PermissionEntity appointmentReadByDoctor = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_READ_BY_DOCTOR")
+                                .build());
 
-                        PermissionEntity doctorReadBySpecialty = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("DOCTOR_READ_BY_SPECIALTY")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_READ_BY_DOCTOR");
 
-                        PermissionEntity doctorCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("DOCTOR_CREATE")
-                                                        .build());
+                PermissionEntity appointmentUpdateStatus = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_UPDATE_STATUS")
+                                .build());
 
-                        PermissionEntity doctorUpdate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("DOCTOR_UPDATE")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_UPDATE_STATUS");
 
-                        // Specialty
-                        PermissionEntity specialtyRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("SPECIALTY_READ")
-                                                        .build());
+                PermissionEntity appointmentCancel = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_CANCEL")
+                                .build());
 
-                        PermissionEntity specialtyCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("SPECIALTY_CREATE")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_CANCEL");
 
-                        // Medical Record
-                        PermissionEntity medicalRecordRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("MEDICAL_RECORD_READ")
-                                                        .build());
+                PermissionEntity appointmentTypeCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_TYPE_CREATE")
+                                .build());
 
-                        PermissionEntity medicalRecordReadByPatient = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("MEDICAL_RECORD_READ_BY_PATIENT")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_TYPE_CREATE");
 
-                        // Notification
-                        PermissionEntity notificationCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("NOTIFICATION_CREATE")
-                                                        .build());
+                PermissionEntity appointmentTypeRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_TYPE_READ")
+                                .build());
 
-                        PermissionEntity notificationReadDoctor = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("NOTIFICATION_READ_DOCTOR")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_TYPE_READ");
 
-                        PermissionEntity notificationReadAdmin = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("NOTIFICATION_READ_ADMIN")
-                                                        .build());
+                PermissionEntity appointmentTypeUpdate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_TYPE_UPDATE")
+                                .build());
 
-                        PermissionEntity notificationMarkReadDoctor = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("NOTIFICATION_MARK_READ_DOCTOR")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_TYPE_UPDATE");
 
-                        PermissionEntity notificationMarkReadAdmin = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("NOTIFICATION_MARK_READ_ADMIN")
-                                                        .build());
+                PermissionEntity appointmentTypeDelete = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("APPOINTMENT_TYPE_DELETE")
+                                .build());
 
-                        // Users
-                        PermissionEntity userRead = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("USER_READ")
-                                                        .build());
+                log.info("Permiso creado: APPOINTMENT_TYPE_DELETE");
 
-                        PermissionEntity userCreate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("USER_CREATE")
-                                                        .build());
+                PermissionEntity billingCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("BILLING_CREATE")
+                                .build());
 
-                        PermissionEntity userUpdate = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("USER_UPDATE")
-                                                        .build());
+                log.info("Permiso creado: BILLING_CREATE");
 
-                        PermissionEntity userDelete = permissionRepository.save(
-                                        PermissionEntity.builder()
-                                                        .name("USER_DELETE")
-                                                        .build());
+                PermissionEntity billingRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("BILLING_READ")
+                                .build());
 
-                        // =========================
-                        // ROLES
-                        // =========================
+                log.info("Permiso creado: BILLING_READ");
 
-                        RoleEntity admin = roleRepository.save(
-                                        RoleEntity.builder()
-                                                        .name("ADMIN")
-                                                        .permissions(Set.of(
-                                                                        patientRead,
-                                                                        patientCreate,
-                                                                        patientUpdate,
-                                                                        patientDelete,
+                PermissionEntity billingReadByPatient = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("BILLING_READ_BY_PATIENT")
+                                .build());
 
-                                                                        appointmentCreate,
-                                                                        appointmentRead,
-                                                                        appointmentReadByPatient,
-                                                                        appointmentReadByDoctor,
-                                                                        appointmentUpdateStatus,
-                                                                        appointmentCancel,
+                log.info("Permiso creado: BILLING_READ_BY_PATIENT");
 
-                                                                        appointmentTypeCreate,
-                                                                        appointmentTypeRead,
-                                                                        appointmentTypeUpdate,
-                                                                        appointmentTypeDelete,
+                PermissionEntity billingPay = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("BILLING_PAY")
+                                .build());
 
-                                                                        billingCreate,
-                                                                        billingRead,
-                                                                        billingReadByPatient,
-                                                                        billingPay,
+                log.info("Permiso creado: BILLING_PAY");
 
-                                                                        doctorRead,
-                                                                        doctorReadBySpecialty,
-                                                                        doctorCreate,
-                                                                        doctorUpdate,
+                PermissionEntity doctorRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("DOCTOR_READ")
+                                .build());
 
-                                                                        specialtyRead,
-                                                                        specialtyCreate,
+                log.info("Permiso creado: DOCTOR_READ");
 
-                                                                        medicalRecordRead,
-                                                                        medicalRecordReadByPatient,
+                PermissionEntity doctorReadBySpecialty = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("DOCTOR_READ_BY_SPECIALTY")
+                                .build());
 
-                                                                        notificationCreate,
-                                                                        notificationReadAdmin,
-                                                                        notificationMarkReadAdmin,
+                log.info("Permiso creado: DOCTOR_READ_BY_SPECIALTY");
 
-                                                                        userRead,
-                                                                        userCreate,
-                                                                        userUpdate,
-                                                                        userDelete))
-                                                        .build());
+                PermissionEntity doctorCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("DOCTOR_CREATE")
+                                .build());
 
-                        RoleEntity doctor = roleRepository.save(
-                                        RoleEntity.builder()
-                                                        .name("DOCTOR")
-                                                        .permissions(Set.of(
-                                                                        patientRead,
+                log.info("Permiso creado: DOCTOR_CREATE");
 
-                                                                        appointmentRead,
-                                                                        appointmentReadByDoctor,
-                                                                        appointmentUpdateStatus,
+                PermissionEntity doctorUpdate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("DOCTOR_UPDATE")
+                                .build());
 
-                                                                        appointmentTypeRead,
+                log.info("Permiso creado: DOCTOR_UPDATE");
 
-                                                                        doctorRead,
-                                                                        doctorReadBySpecialty,
-                                                                        specialtyRead,
+                PermissionEntity specialtyRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("SPECIALTY_READ")
+                                .build());
 
-                                                                        medicalRecordRead,
-                                                                        medicalRecordReadByPatient,
+                log.info("Permiso creado: SPECIALTY_READ");
 
-                                                                        notificationReadDoctor,
-                                                                        notificationMarkReadDoctor))
-                                                        .build());
+                PermissionEntity specialtyCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("SPECIALTY_CREATE")
+                                .build());
 
-                        // =========================
-                        // USERS
-                        // =========================
+                log.info("Permiso creado: SPECIALTY_CREATE");
 
-                        userRepository.save(
-                                        UserEntity.builder()
-                                                        .email("admin@example.com")
-                                                        .password(
-                                                                        passwordEncoder.encode("123456"))
-                                                        .role(admin)
-                                                        .active(true)
-                                                        .build());
+                PermissionEntity medicalRecordRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("MEDICAL_RECORD_READ")
+                                .build());
 
-                        userRepository.save(
-                                        UserEntity.builder()
-                                                        .email("doctor@example.com")
-                                                        .password(
-                                                                        passwordEncoder.encode("123456"))
-                                                        .role(doctor)
-                                                        .active(true)
-                                                        .build());
-                };
-        }
+                log.info("Permiso creado: MEDICAL_RECORD_READ");
+
+                PermissionEntity medicalRecordReadByPatient = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("MEDICAL_RECORD_READ_BY_PATIENT")
+                                .build());
+
+                log.info("Permiso creado: MEDICAL_RECORD_READ_BY_PATIENT");
+
+                PermissionEntity notificationCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("NOTIFICATION_CREATE")
+                                .build());
+
+                log.info("Permiso creado: NOTIFICATION_CREATE");
+
+                PermissionEntity notificationReadDoctor = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("NOTIFICATION_READ_DOCTOR")
+                                .build());
+
+                log.info("Permiso creado: NOTIFICATION_READ_DOCTOR");
+
+                PermissionEntity notificationReadAdmin = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("NOTIFICATION_READ_ADMIN")
+                                .build());
+
+                log.info("Permiso creado: NOTIFICATION_READ_ADMIN");
+
+                PermissionEntity notificationMarkReadDoctor = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("NOTIFICATION_MARK_READ_DOCTOR")
+                                .build());
+
+                log.info("Permiso creado: NOTIFICATION_MARK_READ_DOCTOR");
+
+                PermissionEntity notificationMarkReadAdmin = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("NOTIFICATION_MARK_READ_ADMIN")
+                                .build());
+
+                log.info("Permiso creado: NOTIFICATION_MARK_READ_ADMIN");
+
+                PermissionEntity userRead = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("USER_READ")
+                                .build());
+
+                log.info("Permiso creado: USER_READ");
+
+                PermissionEntity userCreate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("USER_CREATE")
+                                .build());
+
+                log.info("Permiso creado: USER_CREATE");
+
+                PermissionEntity userUpdate = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("USER_UPDATE")
+                                .build());
+
+                log.info("Permiso creado: USER_UPDATE");
+
+                PermissionEntity userDelete = permissionRepository.save(
+                        PermissionEntity.builder()
+                                .name("USER_DELETE")
+                                .build());
+
+                log.info("Permiso creado: USER_DELETE");
+
+                log.info("TODOS LOS PERMISOS CREADOS");
+
+                // =========================
+                // ROLES
+                // =========================
+
+                log.info("Creando rol ADMIN...");
+
+                RoleEntity admin = roleRepository.save(
+                        RoleEntity.builder()
+                                .name("ADMIN")
+                                .permissions(Set.of(
+                                        patientRead,
+                                        patientCreate,
+                                        patientUpdate,
+                                        patientDelete,
+                                        appointmentCreate,
+                                        appointmentRead,
+                                        appointmentReadByPatient,
+                                        appointmentReadByDoctor,
+                                        appointmentUpdateStatus,
+                                        appointmentCancel,
+                                        appointmentTypeCreate,
+                                        appointmentTypeRead,
+                                        appointmentTypeUpdate,
+                                        appointmentTypeDelete,
+                                        billingCreate,
+                                        billingRead,
+                                        billingReadByPatient,
+                                        billingPay,
+                                        doctorRead,
+                                        doctorReadBySpecialty,
+                                        doctorCreate,
+                                        doctorUpdate,
+                                        specialtyRead,
+                                        specialtyCreate,
+                                        medicalRecordRead,
+                                        medicalRecordReadByPatient,
+                                        notificationCreate,
+                                        notificationReadAdmin,
+                                        notificationMarkReadAdmin,
+                                        userRead,
+                                        userCreate,
+                                        userUpdate,
+                                        userDelete))
+                                .build());
+
+                log.info("ROL ADMIN CREADO - ID: {}", admin.getId());
+
+                log.info("Creando rol DOCTOR...");
+
+                RoleEntity doctor = roleRepository.save(
+                        RoleEntity.builder()
+                                .name("DOCTOR")
+                                .permissions(Set.of(
+                                        patientRead,
+                                        appointmentRead,
+                                        appointmentReadByDoctor,
+                                        appointmentUpdateStatus,
+                                        appointmentTypeRead,
+                                        doctorRead,
+                                        doctorReadBySpecialty,
+                                        specialtyRead,
+                                        medicalRecordRead,
+                                        medicalRecordReadByPatient,
+                                        notificationReadDoctor,
+                                        notificationMarkReadDoctor))
+                                .build());
+
+                log.info("ROL DOCTOR CREADO - ID: {}", doctor.getId());
+
+                // =========================
+                // USERS
+                // =========================
+
+                log.info("Creando usuario admin...");
+
+                UserEntity adminUser = userRepository.save(
+                        UserEntity.builder()
+                                .email("admin@example.com")
+                                .password(passwordEncoder.encode("123456"))
+                                .role(admin)
+                                .active(true)
+                                .build());
+
+                log.info(
+                        "USUARIO ADMIN CREADO - ID: {}, EMAIL: {}",
+                        adminUser.getId(),
+                        adminUser.getEmail());
+
+                log.info("Creando usuario doctor...");
+
+                UserEntity doctorUser = userRepository.save(
+                        UserEntity.builder()
+                                .email("doctor@example.com")
+                                .password(passwordEncoder.encode("123456"))
+                                .role(doctor)
+                                .active(true)
+                                .build());
+
+                log.info(
+                        "USUARIO DOCTOR CREADO - ID: {}, EMAIL: {}",
+                        doctorUser.getId(),
+                        doctorUser.getEmail());
+
+                log.info("==========================================");
+                log.info("DATA SEEDER FINALIZADO CORRECTAMENTE");
+                log.info("==========================================");
+
+            } catch (Exception e) {
+
+                log.error("==========================================");
+                log.error("ERROR EJECUTANDO DATA SEEDER");
+                log.error("==========================================", e);
+
+                throw e;
+            }
+        };
+    }
 }

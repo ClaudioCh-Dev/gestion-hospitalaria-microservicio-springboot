@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import personal.medical_record_listener.security.UserContext;
 import personal.medical_record_listener.security.UserContextHolder;
-import personal.medical_record_listener.service.MedicalRecordService;
+import personal.medical_record_listener.service.impl.MedicalRecordServiceImpl;
 import personal.shared.event.MedicalRecordReadyEvent;
 
 @Slf4j
@@ -21,7 +21,7 @@ import personal.shared.event.MedicalRecordReadyEvent;
 @RequiredArgsConstructor
 public class MedicalRecordListener {
 
-    private final MedicalRecordService service;
+    private final MedicalRecordServiceImpl service;
 
     @Bean
     public Consumer<Message<MedicalRecordReadyEvent>>

@@ -31,5 +31,7 @@ ENV MAILTRAP_HOST=sandbox.smtp.mailtrap.io
 ENV MAILTRAP_PORT=2525
 ENV MAILTRAP_USERNAME=${MAILTRAP_HOST}
 ENV MAILTRAP_PASSWORD=${MAILTRAP_PASSWORD}
+ENV MAILTRAP_FROM=no-reply@demomailtrap.co
+ENV FRONTEND_URL=https://localhost:4200
 
 ENTRYPOINT ["java","-javaagent:/app/opentelemetry-javaagent.jar","-jar","/app/app.jar"]

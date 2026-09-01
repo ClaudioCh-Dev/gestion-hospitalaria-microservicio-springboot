@@ -1,17 +1,17 @@
-package personal.appointment_ms.config;
+package personal.doctor_ms.client.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import feign.codec.ErrorDecoder;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import feign.codec.ErrorDecoder;
+
 @Configuration
-public class PatientFeignConfig {
+public class UserFeignConfig {
 
     @Bean
-    public ErrorDecoder patientErrorDecoder(ObjectMapper objectMapper) {
+    public ErrorDecoder userErrorDecoder(ObjectMapper objectMapper) {
         return new GlobalFeignErrorDecoder(objectMapper);
     }
 }

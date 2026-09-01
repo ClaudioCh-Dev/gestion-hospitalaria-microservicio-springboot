@@ -9,6 +9,9 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "patients")
 @Data
@@ -34,6 +37,7 @@ public class Patient {
     private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "gender")
     private Gender gender;
 
@@ -45,6 +49,7 @@ public class Patient {
     private String address;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(columnDefinition = "blood_type")
     private BloodType bloodType;
 

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import feign.FeignException;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -162,6 +164,31 @@ public class GlobalExceptionHandler {
                 problem.setProperty(
                                 "code",
                                 GenericErrorCode.INVALID_ARGUMENT.name());
+
+                return problem;
+        }
+        // =========================================================
+        // FEIGN EXCEPTION HANDLING
+        // =========================================================
+
+        @ExceptionHandler(FeignException.class)
+        public ProblemDetail handleFeignException(
+                        FeignException ex,
+                        HttpServletRequest request) {
+
+                log.error(
+                                "Feign error path={} status={} message={}",
+                                request.getRequestURI(),
+                                ex.status(),
+                                ex.getMessage());
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.valueOf(ex.status()),
+                                "Error al comunicarse con el servicio de autenticación");
+
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.INTERNAL_ERROR.name());
 
                 return problem;
         }

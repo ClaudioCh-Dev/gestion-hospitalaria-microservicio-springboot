@@ -33,9 +33,10 @@ public class AuthServiceImpl implements IAuthService {
 
         @Override
         public AuthTokenDto login(UserDto userDto) {
+                
 
                 final var userFromDb = this.userRepository
-                                .findByUsername(userDto.getUsername())
+                                .findByEmail(userDto.getEmail())
                                 .orElseThrow(() -> new BusinessException(
                                                 AuthErrorCode.AUTH_INVALID_CREDENTIALS,
                                                 "Credenciales inválidas"));

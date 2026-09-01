@@ -1,4 +1,4 @@
-package personal.medical_record_listener.service;
+package personal.medical_record_listener.service.impl;
 
 import java.util.List;
 
@@ -9,17 +9,20 @@ import personal.medical_record_listener.dto.MedicalRecordResponse;
 import personal.medical_record_listener.exceptions.MedicalRecordErrorCode;
 import personal.medical_record_listener.model.MedicalRecord;
 import personal.medical_record_listener.repository.MedicalRecordRepository;
+import personal.medical_record_listener.service.IMedicalRecordService;
 import personal.shared.event.MedicalRecordReadyEvent;
 import personal.shared.exception.BusinessException;
 
 @Service
 @RequiredArgsConstructor
-public class MedicalRecordService {
+public class MedicalRecordServiceImpl implements IMedicalRecordService {
 
     private final MedicalRecordRepository repository;
 
     // Guardar registro médico cuando la cita está COMPLETED
     // y el pago está PAID
+    
+    @Override
     public void save(MedicalRecordReadyEvent event) {
 
         MedicalRecord record = MedicalRecord.builder()
@@ -39,8 +42,8 @@ public class MedicalRecordService {
     }
 
     // Obtener todos los registros médicos de un paciente
-    public List<MedicalRecordResponse> findByPatientId(
-            Long patientId) {
+    @Override
+    public List<MedicalRecordResponse> findByPatientId(Long patientId) {
 
         List<MedicalRecord> records =
                 repository.findByPatientId(patientId);
@@ -58,6 +61,7 @@ public class MedicalRecordService {
     }
 
     // Obtener todos los registros médicos
+    @Override
     public List<MedicalRecordResponse> findAll() {
 
         return repository.findAll()

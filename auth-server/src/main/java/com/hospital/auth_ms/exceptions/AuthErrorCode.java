@@ -34,7 +34,13 @@ public enum AuthErrorCode implements ErrorCode {
             HttpStatus.NOT_FOUND.value()),
 
     INVALID_PASSWORD(
-            HttpStatus.BAD_REQUEST.value());
+            HttpStatus.BAD_REQUEST.value()),
+
+    EMAIL_ALREADY_EXISTS(
+            HttpStatus.BAD_REQUEST.value()),
+            
+    EMAIL_SEND_FAILED(
+            HttpStatus.SERVICE_UNAVAILABLE.value());
 
             
     private final int status;

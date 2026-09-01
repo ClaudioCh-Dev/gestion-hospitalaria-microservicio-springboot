@@ -10,14 +10,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import personal.medical_record_listener.dto.MedicalRecordResponse;
-import personal.medical_record_listener.service.MedicalRecordService;
+import personal.medical_record_listener.service.IMedicalRecordService;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crud")
 public class MedicalRecordController {
 
-    private final MedicalRecordService service;
+    private final IMedicalRecordService service;
 
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ_BY_PATIENT')")

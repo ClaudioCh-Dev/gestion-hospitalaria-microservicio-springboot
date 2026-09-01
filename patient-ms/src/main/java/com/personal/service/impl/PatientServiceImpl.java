@@ -1,4 +1,4 @@
-package com.personal.service;
+package com.personal.service.impl;
 
 import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
@@ -7,6 +7,7 @@ import com.personal.entities.Patient;
 import com.personal.exceptions.PatientErrorCode;
 import com.personal.mapper.PatientMapper;
 import com.personal.repository.IPatientRepository;
+import com.personal.service.IPatientService;
 import com.personal.streams.PatientPublisher;
 
 import personal.shared.event.PatientCreateEvent;
@@ -43,6 +44,7 @@ public class PatientServiceImpl implements IPatientService {
     @Override
     @Transactional(readOnly = true)
     public PatientDetailResponse findById(Long id) {
+        
         Patient patient = patientRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(
                         PatientErrorCode.PATIENT_NOT_FOUND,

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -19,7 +20,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class BillingTariff {
 
-    @Column(name = "billing_appointment_type_id", nullable = false, unique = true)
+    @Id
+    @Column(name = "billing_appointment_type_id", nullable = false)
     private Long billingAppointmentTypeId;
 
     @Column(nullable = false, precision = 10, scale = 2)

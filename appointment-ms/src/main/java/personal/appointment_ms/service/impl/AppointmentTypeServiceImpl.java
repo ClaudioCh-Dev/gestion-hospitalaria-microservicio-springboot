@@ -1,4 +1,4 @@
-package personal.appointment_ms.service;
+package personal.appointment_ms.service.impl;
 
 import java.util.List;
 
@@ -13,6 +13,7 @@ import personal.appointment_ms.dto.UpdateAppointmentTypeRequest;
 import personal.appointment_ms.entities.AppointmentType;
 import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
+import personal.appointment_ms.service.IAppointmentTypeService;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentCreatedTypeEvent;
 import personal.shared.exception.BusinessException;

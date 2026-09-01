@@ -3,28 +3,15 @@ package personal.billing_ms.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import feign.codec.ErrorDecoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import personal.billing_ms.exceptions.BillingErrorCode;
-import personal.shared.exception.BusinessException;
+import feign.codec.ErrorDecoder;
 
 @Configuration
 public class AppointmentFeignConfig {
 
     @Bean
-    public ErrorDecoder appointmentErrorDecoder() {
-
-        return (methodKey, response) -> {
-
-            if (response.status() == 404) {
-                return new BusinessException(
-                        BillingErrorCode.APPOINTMENT_NOT_FOUND,
-                        "Cita no encontrada"
-                );
-            }
-
-            return new ErrorDecoder.Default()
-                    .decode(methodKey, response);
-        };
+    public ErrorDecoder appointmentErrorDecoder(ObjectMapper objectMapper) {
+        return new GlobalFeignErrorDecoder(objectMapper);
     }
 }

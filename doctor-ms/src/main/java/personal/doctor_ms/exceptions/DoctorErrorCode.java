@@ -8,7 +8,8 @@ public enum DoctorErrorCode implements ErrorCode {
 
     DOCTOR_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
     DOCTOR_LICENSE_NUMBER_ALREADY_EXISTS(HttpStatus.CONFLICT.value()),
-    SPECIALTY_NOT_FOUND(HttpStatus.NOT_FOUND.value());
+    SPECIALTY_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
+    DOCTOR_ALREADY_EXISTS(HttpStatus.CONFLICT.value());
 
     private final int status;
 

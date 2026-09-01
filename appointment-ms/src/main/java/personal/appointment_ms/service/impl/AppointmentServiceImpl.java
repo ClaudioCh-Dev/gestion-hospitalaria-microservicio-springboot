@@ -1,4 +1,4 @@
-package personal.appointment_ms.service;
+package personal.appointment_ms.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +29,7 @@ import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.repositories.DoctorRepository;
 import personal.appointment_ms.repositories.PatientRepository;
+import personal.appointment_ms.service.IAppointmentService;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentCreatedEvent;
 import personal.shared.event.AppointmentUpdateStatusEvent;
@@ -65,7 +66,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                         entity.setId(patient.id());
                                         entity.setFullName(
                                                         patient.firstName() + " " + patient.lastName());
-
                                         return patientRepository.save(entity);
                                 });
 
@@ -80,7 +80,6 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                         // Crear copia local
                                         DoctorEntity entity = new DoctorEntity();
                                         entity.setId(doctor.id());
-                                        entity.setUserId(doctor.userId());
                                         entity.setFullName(
                                                         doctor.firstName() + " " + doctor.lastName());
                                         entity.setSpecialty(doctor.specialtyName());

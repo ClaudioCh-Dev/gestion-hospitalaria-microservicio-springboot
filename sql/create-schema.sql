@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS specialties (
 
 CREATE TABLE IF NOT EXISTS doctors (
     id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT,
     license_number  VARCHAR(30) NOT NULL UNIQUE,
     first_name      VARCHAR(100) NOT NULL,
     last_name       VARCHAR(100) NOT NULL,
@@ -138,7 +139,6 @@ CREATE TABLE IF NOT EXISTS appointment_types (
 
 CREATE TABLE IF NOT EXISTS doctors_appointment (
     id         BIGINT PRIMARY KEY,
-    user_id    BIGINT NOT NULL UNIQUE,
     full_name  VARCHAR(255),
     specialty  VARCHAR(255)
 );
@@ -191,8 +191,6 @@ CREATE INDEX IF NOT EXISTS idx_appointments_doctor_id
 CREATE INDEX IF NOT EXISTS idx_appointments_type_id
     ON appointments(appointment_type_id);
 
-CREATE INDEX IF NOT EXISTS idx_doctors_appointment_user_id
-    ON doctors_appointment(user_id);
 
 
 -- ============================================================

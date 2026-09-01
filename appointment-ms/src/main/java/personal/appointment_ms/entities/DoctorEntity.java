@@ -1,6 +1,5 @@
 package personal.appointment_ms.entities;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -13,9 +12,6 @@ public class DoctorEntity {
 
     @Id
     private Long id;
-
-    @Column(unique = true, nullable = false)
-    private Long userId;
 
     private String fullName;
 

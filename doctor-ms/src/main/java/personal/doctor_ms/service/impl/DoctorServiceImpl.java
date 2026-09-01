@@ -1,4 +1,4 @@
-package personal.doctor_ms.service;
+package personal.doctor_ms.service.impl;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +17,7 @@ import personal.doctor_ms.mapper.DoctorMapper;
 import personal.doctor_ms.mapper.SpecialtyMapper;
 import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
+import personal.doctor_ms.service.IDoctorService;
 import personal.doctor_ms.stream.DoctorPublisher;
 import personal.shared.event.DoctorCreatedEvent;
 import personal.shared.event.DoctorUpdateEvent;
@@ -62,6 +63,13 @@ public class DoctorServiceImpl implements IDoctorService {
 
         @Override
         public DoctorResponse create(CreateDoctorRequest request) {
+
+
+                if (doctorRepository.existsByEmail(request.email())) {
+                        throw new BusinessException(
+                                        DoctorErrorCode.DOCTOR_ALREADY_EXISTS,
+                                        "El correo electrónico ya está registrado");
+                }
 
                 // 1. Verificar especialidad
                 Specialty specialty = specialtyRepository

@@ -19,8 +19,7 @@ import personal.notification_ms.model.NotificationType;
 import personal.notification_ms.security.UserContext;
 import personal.notification_ms.security.UserContextHolder;
 import personal.notification_ms.service.INotificationService;
-import personal.notification_ms.service.SseService;
-
+import personal.notification_ms.service.ISseService;
 import personal.shared.event.AppointmentCreatedEvent;
 import personal.shared.event.AppointmentUpdateStatusEvent;
 
@@ -29,7 +28,7 @@ import personal.shared.event.AppointmentUpdateStatusEvent;
 @Slf4j
 public class NotificationListener {
 
-    private final SseService sseService;
+    private final ISseService sseService;
     private final INotificationService notificationService;
 
     // ============================================================

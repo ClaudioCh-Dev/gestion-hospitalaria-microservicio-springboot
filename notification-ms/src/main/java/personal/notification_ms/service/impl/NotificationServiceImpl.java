@@ -1,4 +1,4 @@
-package personal.notification_ms.service;
+package personal.notification_ms.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +13,7 @@ import personal.notification_ms.model.NotificationRecipient;
 import personal.notification_ms.repository.NotificationRecipientRepository;
 import personal.notification_ms.repository.NotificationRepository;
 import personal.notification_ms.security.UserContextHolder;
+import personal.notification_ms.service.INotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;

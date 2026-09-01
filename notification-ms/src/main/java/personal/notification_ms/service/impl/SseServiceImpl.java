@@ -1,6 +1,8 @@
-package personal.notification_ms.service;
+package personal.notification_ms.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import personal.notification_ms.service.ISseService;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -10,10 +12,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 @Slf4j
-public class SseService {
+public class SseServiceImpl implements ISseService {
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
+    @Override
     public SseEmitter subscribe() {
 
         SseEmitter emitter = new SseEmitter(0L);
@@ -39,6 +42,7 @@ public class SseService {
         return emitter;
     }
 
+    @Override
     public void sendNotification(Object event) {
 
         for (SseEmitter emitter : emitters) {
