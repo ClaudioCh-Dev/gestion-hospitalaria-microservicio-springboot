@@ -19,5 +19,4 @@ public interface IPatientService {
     PatientResponse update(Long id, PatientRequest request);
 
     void delete(Long id);
-
 }

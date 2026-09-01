@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,7 +33,7 @@ public class BillingRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "appointment_id", nullable = false)
+    @Column(name = "appointment_id", nullable = false, unique = true)
     private Long appointmentId;
 
     @Column(name = "patient_id", nullable = false)
@@ -44,7 +47,11 @@ public class BillingRecord {
     private String currency = "PEN";
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(
+        nullable = false,
+        columnDefinition = "billing_status"
+    )
     @Builder.Default
     private BillingStatus status = BillingStatus.PENDING;
 

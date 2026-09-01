@@ -2,6 +2,7 @@ package personal.gateway.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -19,61 +20,46 @@ import personal.gateway.filters.AuthFilter;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityWebFilterChain securityWebFilterChain(
-            ServerHttpSecurity http,
-            AuthFilter authFilter
-    ) {
+        @Value("${cors.allowed-origins}")
+        private List<String> allowedOrigins;
 
-        return http
-                .csrf(csrf -> csrf.disable())
+        @Bean
+        public SecurityWebFilterChain securityWebFilterChain(
+                        ServerHttpSecurity http,
+                        AuthFilter authFilter) {
+                return http
+                                .csrf(csrf -> csrf.disable())
+                                .cors(cors -> {
+                                })
+                                .authorizeExchange(exchange -> exchange
+                                                .pathMatchers(
+                                                                "/auth-server/**",
+                                                                "/fallback/**")
+                                                .permitAll()
+                                                .anyExchange().authenticated())
+                                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {
+                                }))
+                                .addFilterAfter(
+                                                authFilter,
+                                                SecurityWebFiltersOrder.AUTHENTICATION)
+                                .build();
+        }
 
-                .cors(cors -> {})
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
 
-                .authorizeExchange(exchange -> exchange
-                        .pathMatchers(
-                                "/auth-server/**",
-                                "/fallback/**"
-                        ).permitAll()
-                        .anyExchange().authenticated()
-                )
+                CorsConfiguration configuration = new CorsConfiguration();
 
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwt -> {})
-                )
+                configuration.setAllowedOrigins(allowedOrigins);
+                configuration.setAllowedMethods(
+                                List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                configuration.setAllowedHeaders(List.of("*"));
+                configuration.setAllowCredentials(true);
 
-                .addFilterAfter(
-                        authFilter,
-                        SecurityWebFiltersOrder.AUTHENTICATION
-                )
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-                .build();
-    }
+                source.registerCorsConfiguration("/**", configuration);
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        configuration.setAllowedOrigins(
-                List.of("http://localhost:4200")
-        );
-
-        configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-        );
-
-        configuration.setAllowedHeaders(
-                List.of("*")
-        );
-
-        configuration.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
-
-        source.registerCorsConfiguration("/**", configuration);
-
-        return source;
-    }
+                return source;
+        }
 }

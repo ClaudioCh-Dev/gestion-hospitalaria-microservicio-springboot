@@ -16,6 +16,13 @@ services:
     ports:
       - '5434:5432'
 
+  redis:
+    image: redis:7.4
+    container_name: redis-hospital
+    restart: always
+    ports:
+      - "6379:6379"
+
   db-notification:
     image: mysql:8.4
     container_name: db-notification
@@ -350,6 +357,8 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
 
+      APP_ALLOWED_ORIGINS: http://localhost:4200
+
       SPRING_PROFILES_ACTIVE: oauth2
 
 
@@ -378,6 +387,15 @@ services:
       OTEL_LOGS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: otlp
+      REDIS_HOST: redis-hospital
+      REDIS_PORT: 6379
+      
+      MAILTRAP_HOST: ${MAILTRAP_HOST}
+      MAILTRAP_PORT: ${MAILTRAP_PORT}
+      MAILTRAP_USERNAME: ${MAILTRAP_USERNAME}
+      MAILTRAP_PASSWORD: ${MAILTRAP_PASSWORD}
+      MAILTRAP_FROM: ${MAILTRAP_FROM}
+      FRONTEND_URL: ${FRONTEND_URL}
 
       SPRING_PROFILES_ACTIVE: default
 

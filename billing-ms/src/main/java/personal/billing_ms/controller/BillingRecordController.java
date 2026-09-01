@@ -7,19 +7,24 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.service.IBillingRecordService;
 
 @RestController
-@RequestMapping("/billing")
 @RequiredArgsConstructor
+@RequestMapping("/crud")
 public class BillingRecordController {
 
     private final IBillingRecordService billingRecordService;
 
     @PostMapping
+    @PreAuthorize("@auth.hasPermission('BILLING_CREATE')")
     public ResponseEntity<BillingRecord> createBilling(
             @Valid @RequestBody CreateBillingRequest request) {
 
@@ -29,20 +34,28 @@ public class BillingRecordController {
     }
 
     @GetMapping("/patient/{patientId}")
+    @PreAuthorize("@auth.hasPermission('BILLING_READ_BY_PATIENT')")
     public ResponseEntity<List<BillingRecord>> getBillingByPatient(
             @PathVariable Long patientId) {
 
         return ResponseEntity.ok(
-                billingRecordService.getBillingByPatient(patientId)
-        );
+                billingRecordService.getBillingByPatient(patientId));
     }
 
     @PatchMapping("/{id}/pay")
+    @PreAuthorize("@auth.hasPermission('BILLING_PAY')")
     public ResponseEntity<BillingRecord> payBilling(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                billingRecordService.payBilling(id)
-        );
+                billingRecordService.payBilling(id));
+    }
+
+    @GetMapping
+    @PreAuthorize("@auth.hasPermission('BILLING_READ')")
+    public ResponseEntity<List<BillingRecord>> getBillings() {
+
+        return ResponseEntity.ok(
+                billingRecordService.getBillings());
     }
 }

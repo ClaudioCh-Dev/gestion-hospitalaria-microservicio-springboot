@@ -5,15 +5,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import personal.appointment_ms.config.DoctorFeignConfig;
-import personal.appointment_ms.dto.DoctorResponse;
+import personal.appointment_ms.client.dto.DoctorResponse;
+import personal.appointment_ms.client.fallback.DoctorClientFallbackFactory;
 
-@FeignClient(
-        name = "doctor-ms",
-        configuration = DoctorFeignConfig.class,
-        fallback = DoctorClientFallback.class
-)
+@FeignClient(name = "doctor-ms", configuration = DoctorFeignConfig.class, fallbackFactory = DoctorClientFallbackFactory.class)
 public interface DoctorClient {
 
-    @GetMapping(path = "/doctors/{id}")
+    @GetMapping(path = "/doctors/crud/{id}")
     DoctorResponse findById(@PathVariable("id") Long id);
 }

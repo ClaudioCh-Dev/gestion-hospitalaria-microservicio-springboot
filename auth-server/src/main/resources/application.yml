@@ -2,6 +2,21 @@ spring:
   application:
     name: auth-server
 
+  mail:
+    host: ${MAILTRAP_HOST:sandbox.smtp.mailtrap.io}
+    port: ${MAILTRAP_PORT:2525}
+    username: ${MAILTRAP_USERNAME}
+    password: ${MAILTRAP_PASSWORD}
+    from: ${MAILTRAP_FROM}
+    frontend:
+      url: ${FRONTEND_URL}
+    
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   config:
     import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
 
@@ -17,6 +32,10 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 
 
 server:
@@ -35,3 +54,9 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+
+auth:
+  jwt: 
+    access-token-expiration: 900
+  refresh-token:
+    expiration: 604800

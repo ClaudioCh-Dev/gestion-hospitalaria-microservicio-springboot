@@ -1,21 +1,21 @@
 <configuration>
 
     <conversionRule
-            conversionWord="clr"
-            converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+        conversionWord="clr"
+        converterClass="org.springframework.boot.logging.logback.ColorConverter" />
 
 
     <property name="CONSOLE_LOG_PATTERN"
-              value="%clr(%d{HH:mm:ss.SSS}){faint} 
+        value="%clr(%d{HH:mm:ss.SSS}){faint} 
                      %highlight(%-5level) 
                      %clr([%15.15thread]){blue} 
                      %clr(%logger{36}){cyan} 
                      %clr([traceId=%X{traceId}]){yellow} 
-                     - %msg%n"/>
+                     - %msg%n" />
 
 
     <appender name="CONSOLE"
-              class="ch.qos.logback.core.ConsoleAppender">
+        class="ch.qos.logback.core.ConsoleAppender">
 
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -28,42 +28,42 @@
     <springProfile name="default">
 
         <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE" />
         </root>
 
     </springProfile>
 
 
     <!-- Gateway con seguridad OAuth2/JWT -->
-<springProfile name="oauth2">
+    <springProfile name="oauth2">
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
 
-    <logger name="org.springframework.cloud.gateway" level="DEBUG"/>
-    <logger name="org.springframework.security" level="DEBUG"/>
-    <logger name="reactor.netty.http.client" level="DEBUG"/>
+        <logger name="org.springframework.cloud.gateway" level="DEBUG" />
+        <logger name="org.springframework.security" level="DEBUG" />
+        <logger name="reactor.netty.http.client" level="DEBUG" />
 
-</springProfile>
+    </springProfile>
 
 
     <!-- Producción -->
     <springProfile name="prod">
 
         <root level="WARN">
-            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="CONSOLE" />
         </root>
 
     </springProfile>
 
     <!-- Desarrollo -->
-<springProfile name="dev">
+    <springProfile name="dev">
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE" />
+        </root>
 
-</springProfile>
+    </springProfile>
 
 </configuration>

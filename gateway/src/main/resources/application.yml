@@ -1,14 +1,16 @@
 spring:
   application:
     name: gateway
+
   profiles:
-    default: oauth2   # o eureka-on-cb, eureka-on, eureka-off
+    default: oauth2
 
   security:
     oauth2:
       resourceserver:
         jwt:
           jwk-set-uri: ${AUTH_SERVER_JWKS_URI:http://localhost:3000/auth-server/.well-known/jwks.json}
+
 server:
   port: 4040
 
@@ -17,4 +19,81 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://ms-registry-server:8761/eureka}
     fetch-registry: true
-  
+
+cors:
+  allowed-origins: ${APP_ALLOWED_ORIGINS:http://localhost:4200}
+resilience4j:
+
+  # ==========================================
+  # TIME LIMITER
+  # ==========================================
+
+  timelimiter:
+    instances:
+
+      patient-circuitbreaker:
+        timeoutDuration:  4s
+
+      doctor-circuitbreaker:
+        timeoutDuration:  4s
+
+      appointment-circuitbreaker:
+        timeoutDuration: 4s
+
+      billing-circuitbreaker:
+        timeoutDuration: 4s
+
+      notification-circuitbreaker:
+        timeoutDuration: 4s
+
+      medical-record-listener-circuitbreaker:
+        timeoutDuration: 4s
+
+  # ==========================================
+  # CIRCUIT BREAKER
+  # ==========================================
+
+  circuitbreaker:
+    instances:
+
+      patient-circuitbreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      doctor-circuitbreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      appointment-circuitbreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      billing-circuitbreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      notification-circuitbreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+      medical-record-listener-circuitbreaker:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3

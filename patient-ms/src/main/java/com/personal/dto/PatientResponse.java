@@ -2,6 +2,8 @@ package com.personal.dto;
 
 import java.time.LocalDate;
 
+import com.personal.enums.Gender;
+
 public record PatientResponse(
 
         Long id,
@@ -11,6 +13,8 @@ public record PatientResponse(
         String firstName,
 
         String lastName,
+        
+        Gender gender,
 
         LocalDate birthDate,
 
@@ -19,4 +23,5 @@ public record PatientResponse(
         String email,
 
         Boolean active
+
 ) {}

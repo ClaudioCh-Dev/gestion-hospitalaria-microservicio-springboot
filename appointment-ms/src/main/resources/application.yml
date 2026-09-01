@@ -15,19 +15,36 @@ spring:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
 
       bindings:
+      
         appointment-created-out-0:
           destination: appointment-created
           content-type: application/json
 
-        appointment-confirmed-out-0:
-          destination: appointment-confirmed
-          content-type: application/json
-        appointment-completed-out-0:
-          destination: appointment-completed
+        appointment-updated-status-out-0:
+          destination: appointment-updated-status
           content-type: application/json
 
-        appointment-canceled-out-0:
-          destination: appointment-canceled
+        appointment-created-type-out-0:
+          destination: appointment-created-type
+          content-type: application/json
+
+
+        doctorCreatedConsumer-in-0:
+          destination: doctor-created
+          group: appointment-ms-group
+          content-type: application/json
+        doctorUpdatedConsumer-in-0:
+          destination: doctor-updated
+          group: appointment-ms-group
+          content-type: application/json
+
+        patientCreatedConsumer-in-0:
+          destination: patient-created
+          group: appointment-ms-group
+          content-type: application/json
+        patientUpdatedConsumer-in-0:
+          destination: patient-updated
+          group: appointment-ms-group
           content-type: application/json
     openfeign:
       circuitbreaker:
@@ -59,18 +76,22 @@ resilience4j:
       patient-ms:
         baseConfig: default
         ignoreExceptions:
-          - personal.appointment_ms.exceptions.PatientNotFoundException
+          - personal.shared.exception.BusinessException
           - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
           - feign.FeignException.UnprocessableEntity
 
       doctor-ms:
         baseConfig: default
         ignoreExceptions:
-          - personal.appointment_ms.exceptions.DoctorNotFoundException
+          - personal.shared.exception.BusinessException
           - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
           - feign.FeignException.UnprocessableEntity
 server:
   port: 8081
+  servlet:
+    context-path: /appointments
 
 
 eureka:

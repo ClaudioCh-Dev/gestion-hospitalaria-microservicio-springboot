@@ -1,5 +1,8 @@
 package com.personal.dto;
 
+import com.personal.enums.BloodType;
+import com.personal.enums.Gender;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -7,27 +10,27 @@ import java.time.LocalDate;
 
 public record PatientRequest(
 
-        @NotBlank
+        @NotBlank(message = "El número de documento es obligatorio")
         String documentNumber,
 
-        @NotBlank
+        @NotBlank(message = "El nombre es obligatorio")
         String firstName,
 
-        @NotBlank
+        @NotBlank(message = "El apellido es obligatorio")
         String lastName,
 
         LocalDate birthDate,
 
-        String gender,
+        Gender gender,
 
         String phone,
 
-        @Email
+        @Email(message = "El correo electrónico no tiene un formato válido")
         String email,
 
         String address,
 
-        String bloodType,
+        BloodType bloodType,
 
         String allergies
 

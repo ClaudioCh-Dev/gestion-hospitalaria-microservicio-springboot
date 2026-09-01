@@ -4,22 +4,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import feign.codec.ErrorDecoder;
-import personal.appointment_ms.exceptions.PatientNotFoundException;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 public class PatientFeignConfig {
 
     @Bean
-    public ErrorDecoder patientErrorDecoder() {
-        return (methodKey, response) -> {
-
-            if (response.status() == 404) {
-                return new PatientNotFoundException();
-            }
-
-            return new ErrorDecoder.Default()
-                    .decode(methodKey, response);
-        };
+    public ErrorDecoder patientErrorDecoder(ObjectMapper objectMapper) {
+        return new GlobalFeignErrorDecoder(objectMapper);
     }
-
 }

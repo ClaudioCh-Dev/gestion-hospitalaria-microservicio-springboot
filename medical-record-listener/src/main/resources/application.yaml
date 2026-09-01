@@ -1,31 +1,52 @@
 server:
   port: 8081
 
+  servlet:
+    context-path: /medical-records
+
 spring:
+
   application:
     name: medical-record-listener
 
-  profiles:
-    default: prod
-
-  config:
-    import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
-
-  mongodb:
-    uri: ${db.url:mongodb://sa:sa@localhost:27017/medical_records}
   cloud:
+
     function:
-      definition: appointmentCompletedConsumer
+      definition: medicalRecordProcessor
 
     stream:
+
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
 
       bindings:
-        appointmentCompletedConsumer-in-0:
-          destination: appointment-completed
-          group: medical-record-listener-group
+        appointmentStateProcessor-in-0:
+          destination: appointment-created
+          group: medical-record-appointment-created
+          content-type: application/json
+
+        appointmentStateProcessor-in-1:
+          destination: appointment-updated-status
+          group: medical-record-appointment-updated
+          content-type: application/json
+
+        appointmentStateProcessor-out-0:
+          destination: appointment-state
+          content-type: application/json
+
+        medicalRecordProcessor-in-0:
+          destination: appointment-state
+          group: medical-record-processor
+          content-type: application/json
+
+        medicalRecordProcessor-in-1:
+          destination: payment-update-status
+          group: medical-record-payment
+          content-type: application/json
+
+        medicalRecordProcessor-out-0:
+          destination: medical-record-ready
           content-type: application/json
 
 eureka:

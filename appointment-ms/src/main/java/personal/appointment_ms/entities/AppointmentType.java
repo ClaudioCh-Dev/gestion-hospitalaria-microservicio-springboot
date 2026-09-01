@@ -1,7 +1,5 @@
 package personal.appointment_ms.entities;
 
-import java.math.BigDecimal;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,14 +23,11 @@ public class AppointmentType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false, length = 150, unique = true)
     private String title;
 
     @Column(columnDefinition = "TEXT")
     private String description;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal price;
 
     @Column(nullable = false)
     @Builder.Default

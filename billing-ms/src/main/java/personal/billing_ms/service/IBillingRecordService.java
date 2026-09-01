@@ -12,7 +12,11 @@ public interface IBillingRecordService {
 
     List<BillingRecord> getBillingByPatient(Long patientId);
 
+    List<BillingRecord> getBillings();
+
     BillingRecord payBilling(Long id);
+    
+    BillingRecord cancelBillingRecord(Long appointmentId);
     
     BillingRecord createBillingFromAppointment(AppointmentEventRequest event);
 }

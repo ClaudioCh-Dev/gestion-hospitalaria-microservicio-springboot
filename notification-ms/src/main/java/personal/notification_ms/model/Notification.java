@@ -9,7 +9,6 @@ import lombok.Builder;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -24,30 +23,12 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long appointmentId;
+    private String type;        // APPOINTMENT_CREATED, PAYMENT_FAILED, etc.
+    private String title;
+    private String message;
 
-    private Long patientId;
-
-    private String patientName;
-
-    private Long doctorId;
-
-    private String doctorName;
-
-    private String specialty;
-
-    private String eventType;
-
-    private String status;
-
-    private String reason;
-
-    private LocalDateTime scheduledAt;
-
-    private BigDecimal amount;
-
-    private boolean doctorRead;
-    private boolean adminRead;
+    private String referenceType; // APPOINTMENT, PAYMENT, PATIENT, etc.
+    private Long referenceId;     // ID del recurso relacionado
 
     private LocalDateTime createdAt;
 }

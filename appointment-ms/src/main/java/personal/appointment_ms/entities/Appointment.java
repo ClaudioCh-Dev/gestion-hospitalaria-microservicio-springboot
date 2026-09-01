@@ -1,9 +1,12 @@
 package personal.appointment_ms.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -11,10 +14,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "appointments")
@@ -44,7 +51,13 @@ public class Appointment {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @Column(length = 20)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(
+        name = "status",
+        nullable = false,
+        columnDefinition = "appointment_status"
+    )
     @Builder.Default
     private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
