@@ -137,6 +137,10 @@ MAILTRAP_PASSWORD=<password-mailtrap>
 MAILTRAP_FROM=no-reply@demomailtrap.co
 
 FRONTEND_URL=https://localhost:4200
+
+# Cookie del refresh token: false en desarrollo (http), true en producción (https)
+REFRESH_COOKIE_SECURE=false
+REFRESH_COOKIE_SAME_SITE=Lax
 ```
 
 | Variable | La usa | Para qué |
@@ -144,6 +148,7 @@ FRONTEND_URL=https://localhost:4200
 | `CONFIG_GIT_URI` / `CONFIG_GIT_USERNAME` / `CONFIG_GIT_TOKEN` | `ms-config-server` | Clonar el repo de configuración |
 | `MAILTRAP_*` | `auth-server` | Enviar correos (recuperar contraseña, etc.) |
 | `FRONTEND_URL` | `auth-server` | Links que van dentro de los correos |
+| `REFRESH_COOKIE_SECURE` / `REFRESH_COOKIE_SAME_SITE` | `auth-server` | Atributos de la cookie `refresh_token`. Sin HTTPS usa `false` / `Lax`; en producción `true` / `Strict` (valor por defecto si no se define) |
 
 > El `.env` está en `.gitignore`: **nunca lo subas**. El resto de variables (URLs de Eureka, Kafka, OTEL…) ya vienen fijadas en `docker-compose.yml`.
 
@@ -263,6 +268,7 @@ docker compose down -v                    # apagar y borrar volúmenes
 | `ms-config-server` falla con `No ref ... main` | El repo de config no tiene rama `main`. |
 | Un microservicio intenta conectarse a `localhost:5434` y se reinicia en bucle | No recibió su config (config-server caído o falta `<servicio>.yml` en el repo). Revisa el paso 7.1. |
 | `auth-server` → `No se encontró private-key-pkcs8.pem` | Falta el paso 4: genera la llave y ejecuta `docker compose build auth-server`. |
+| El refresh token no llega (`Missing cookie 'refresh_token'`) | Sin HTTPS pon `REFRESH_COOKIE_SECURE=false` en el `.env` y `docker compose up -d auth-server`. Desde el front, las llamadas a login/refresh/logout deben ir con `withCredentials: true`. |
 | El gateway responde `401` | Falta el header `Authorization: Bearer <token>` o el token expiró (dura 15 min). |
 | El gateway responde con el *fallback* | El servicio aún no se registró en Eureka; espera ~1 min y reintenta. |
 | Puerto ya en uso | Otro Postgres/MySQL/Redis local ocupa el puerto; detenlo o cambia el puerto de host en `docker-compose.yml`. |

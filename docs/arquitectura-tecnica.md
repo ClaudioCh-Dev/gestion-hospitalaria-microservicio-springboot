@@ -148,7 +148,7 @@ Solo `auth-server` — almacena los refresh tokens.
 
 **Rutas públicas en el gateway** (no requieren JWT): `/auth-server/**` y `/fallback/**`. Todo lo demás exige un JWT válido.
 
-**Tokens:** access token con expiración de **900s (15 min)**, refresh token de **604800s (7 días)**.
+**Tokens:** access token con expiración de **900s (15 min)**, refresh token de **604800s (7 días)**. El refresh token viaja en la cookie `refresh_token` (HttpOnly, `path=/auth-server/auth/refresh-token`); `Secure` y `SameSite` se configuran con `auth.refresh-token.cookie.*` (por defecto `true` / `Strict`; en desarrollo `REFRESH_COOKIE_SECURE=false` o perfil `dev` del Config Server).
 
 **Roles sembrados actualmente** (`auth-server/.../config/DataSeeder.java`): solo **ADMIN** y **DOCTOR** tienen datos de ejemplo cargados. Hay decenas de permisos individuales definidos (`PATIENT_*`, `APPOINTMENT_*`, `APPOINTMENT_TYPE_*`, `BILLING_*`, `BILLING_TARIFF_*`, `DOCTOR_*`, `SPECIALTY_*`, `MEDICAL_RECORD_*`, `NOTIFICATION_*`, `USER_*`) que se pueden asignar a nuevos roles según se necesite.
 

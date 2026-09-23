@@ -29,7 +29,7 @@ Spring Cloud Config resuelve los archivos por `{application}-{profile}.yml`:
 
 ```
 appointment-ms.yml             appointment-ms-dev.yml             appointment-ms-prod.yml
-auth-server.yml                                                   auth-server-prod.yml
+auth-server.yml                auth-server-dev.yml                auth-server-prod.yml
 billing-ms.yml                 billing-ms-dev.yml                 billing-ms-prod.yml
 doctor-ms.yml                  doctor-ms-dev.yml                  doctor-ms-prod.yml
 medical-record-listener.yml    medical-record-listener-dev.yml    medical-record-listener-prod.yml
@@ -149,6 +149,33 @@ mail:
 
 > El envío de correos del `auth-server` se configura realmente con las variables `MAILTRAP_*`
 > del `.env` del proyecto de microservicios. **No subas credenciales reales** a este repo.
+
+#### Cookie del refresh token
+
+El refresh token viaja en la cookie `refresh_token` (HttpOnly). Sus atributos se controlan con
+`auth.refresh-token.cookie.*`; el `application.yml` del auth-server trae los valores de producción
+(`secure: true`, `same-site: Strict`) y cada perfil los puede sobrescribir:
+
+```yaml
+# auth-server-dev.yml — desarrollo sin HTTPS (Postman, http://IP-local, Safari)
+auth:
+  refresh-token:
+    cookie:
+      secure: false
+      same-site: Lax
+```
+
+```yaml
+# auth-server-prod.yml — producción (solo HTTPS)
+auth:
+  refresh-token:
+    cookie:
+      secure: true
+      same-site: Strict
+```
+
+> Con el perfil `default` (el de `docker-compose.yml`) no se lee ninguno de los dos: ahí manda la variable
+> `REFRESH_COOKIE_SECURE` del `.env` (`false` para desarrollo).
 
 ---
 

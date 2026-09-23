@@ -60,3 +60,11 @@ auth:
     access-token-expiration: 900
   refresh-token:
     expiration: 604800
+    # Cookie del refresh token. Por defecto valores de produccion (HTTPS);
+    # en desarrollo se sobrescriben desde el Config Server (auth-server-dev.yml)
+    # o con la variable REFRESH_COOKIE_SECURE=false.
+    cookie:
+      secure: ${REFRESH_COOKIE_SECURE:true}
+      same-site: ${REFRESH_COOKIE_SAME_SITE:Strict}
+      # context-path (/auth-server) + /auth/refresh-token
+      path: /auth-server/auth/refresh-token

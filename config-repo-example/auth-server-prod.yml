@@ -5,3 +5,10 @@ mail:
   host: smtp.gmail.com
   username: your-email@gmail.com
   password: your-password
+
+# Produccion: solo HTTPS
+auth:
+  refresh-token:
+    cookie:
+      secure: true
+      same-site: Strict

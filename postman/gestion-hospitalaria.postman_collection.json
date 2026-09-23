@@ -274,7 +274,7 @@
 								"refresh-token"
 							]
 						},
-						"description": "Emite un nuevo access token a partir de la cookie `refresh_token`.\n\nLa cookie real es `Secure` y con `path=/auth/refresh-token`, así que Postman no la reenvía sola por HTTP: por eso se manda explícitamente en el header `Cookie` usando la variable que guardó Login.",
+						"description": "Emite un nuevo access token a partir de la cookie `refresh_token` (`path=/auth-server/auth/refresh-token`).\n\nCon `REFRESH_COOKIE_SECURE=false` (desarrollo) Postman guarda y reenvía la cookie solo. Si la cookie es `Secure` y llamas por `http://`, Postman no la envía: por eso además se manda explícitamente en el header `Cookie` con la variable que guardó Login.",
 						"auth": {
 							"type": "noauth"
 						}
@@ -322,7 +322,8 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));",
+									"if (pm.response.code === 204) pm.collectionVariables.set('refresh_token', '');"
 								]
 							}
 						}
