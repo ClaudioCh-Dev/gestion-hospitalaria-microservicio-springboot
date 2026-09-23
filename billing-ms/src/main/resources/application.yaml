@@ -10,9 +10,15 @@ spring:
 
   cloud:
     function:
-      definition: appointmentCompletedConsumer
+      # Deben coincidir con los @Bean de listeners/AppointmentListener.java
+      definition: appointmentCreatedConsumer;appointmentUpdatedStatusConsumer;appointmentCreatedTypeConsumer
 
     stream:
+      # OJO: no usar "output-bindings" aquí. Junto con function.definition, Spring
+      # Cloud Stream trata el canal como un Supplier y lanza ClassCastException en
+      # el poller. StreamBridge crea el binding "paymentUpdateStatusProducer-out-0"
+      # en el primer send, usando la config de "bindings" de abajo.
+
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
@@ -26,7 +32,7 @@ spring:
           content-type: application/json
           consumer:
             max-attempts: 3
-        
+
         appointmentUpdatedStatusConsumer-in-0:
           destination: appointment-updated-status
           group: billing-ms
@@ -44,6 +50,11 @@ spring:
         paymentUpdateStatusProducer-out-0:
           destination: payment-update-status
           content-type: application/json
+
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
   datasource:
     username: ${db.username:postgres}
     password: ${db.password:123456}
@@ -51,6 +62,37 @@ spring:
     hikari:
       connection-timeout: ${db.connection-timeout:30000}
       maximum-pool-size: ${db.maximum-pool-size:10}
+
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 4s
+
+    instances:
+      appointment-ms:
+        baseConfig: default
+
+  circuitbreaker:
+
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 2
+
+    instances:
+
+      appointment-ms:
+        baseConfig: default
+        ignoreExceptions:
+          - personal.shared.exception.BusinessException
+          - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
+          - feign.FeignException.UnprocessableEntity
 
 server:
   port: 8081
