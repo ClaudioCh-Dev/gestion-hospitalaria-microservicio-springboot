@@ -22,7 +22,7 @@
 				"type": "text/javascript",
 				"exec": [
 					"// aviso si se llama a un endpoint protegido sin haber hecho Login",
-					"if (!pm.collectionVariables.get('access_token') && !pm.request.url.toString().includes('/auth/')) {",
+					"if (!pm.variables.get('access_token') && !pm.request.url.toString().includes('/auth/')) {",
 					"    console.warn('access_token vacío: ejecuta primero 00 · Auth → Login (admin)');",
 					"}"
 				]
@@ -32,7 +32,7 @@
 	"item": [
 		{
 			"name": "00 · Auth",
-			"description": "Autenticación contra `auth-server` (pasando por el gateway; `/auth-server/**` es ruta pública).\n\n1. Ejecuta **Login**: guarda automáticamente `access_token` y `refresh_token` en las variables de la colección.\n2. Todas las demás peticiones heredan `Authorization: Bearer {{access_token}}` desde la colección.\n3. El access token dura **15 min** (`auth.jwt.access-token-expiration: 900`). Cuando expire usa **Refresh Token** o vuelve a hacer Login.\n\nUsuarios que crea el `DataSeeder` al arrancar:\n\n| Email | Password | Rol |\n|---|---|---|\n| `admin@example.com` | `123456` | ADMIN (todos los permisos) |\n| `doctor@example.com` | `123456` | DOCTOR |",
+			"description": "Autenticación contra `auth-server` (pasando por el gateway; `/auth-server/**` es ruta pública).\n\n1. Ejecuta **Login**: guarda automáticamente `access_token` y `refresh_token` (en el entorno activo, como *secret*, y en las variables de la colección).\n2. Todas las demás peticiones heredan `Authorization: Bearer {{access_token}}` desde la colección.\n3. El access token dura **15 min** (`auth.jwt.access-token-expiration: 900`). Cuando expire usa **Refresh Token** o vuelve a hacer Login.\n\nUsuarios que crea el `DataSeeder` al arrancar:\n\n| Email | Password | Rol |\n|---|---|---|\n| `admin@example.com` | `123456` | ADMIN (todos los permisos) |\n| `doctor@example.com` | `123456` | DOCTOR |",
 			"item": [
 				{
 					"name": "Login (admin)",
@@ -50,7 +50,7 @@
 								"login"
 							]
 						},
-						"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en las variables de la colección.",
+						"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en el entorno activo (tipo *secret*, se ven como `***`) y en las variables de la colección.",
 						"auth": {
 							"type": "noauth"
 						},
@@ -81,7 +81,7 @@
 										"login"
 									]
 								},
-								"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en las variables de la colección.",
+								"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en el entorno activo (tipo *secret*, se ven como `***`) y en las variables de la colección.",
 								"auth": {
 									"type": "noauth"
 								},
@@ -114,14 +114,20 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
+									"// Guarda el token en el entorno activo (tipo secret -> se muestra como ***) y en la colección",
+									"// (para que funcione también sin entorno o con Newman).",
+									"const setToken = (key, value) => {",
+									"    if (pm.environment.name) pm.environment.set(key, value);",
+									"    pm.collectionVariables.set(key, value);",
+									"};",
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
 									"if (pm.response.code === 200) {",
-									"    pm.collectionVariables.set('access_token', pm.response.json().accessToken);",
+									"    setToken('access_token', pm.response.json().accessToken);",
 									"    const setCookie = pm.response.headers.all()",
 									"        .filter(h => h.key.toLowerCase() === 'set-cookie')",
 									"        .map(h => h.value).join(';');",
 									"    const m = setCookie.match(/refresh_token=([^;]+)/);",
-									"    if (m) pm.collectionVariables.set('refresh_token', m[1]);",
+									"    if (m) setToken('refresh_token', m[1]);",
 									"}"
 								]
 							}
@@ -165,8 +171,14 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
+									"// Guarda el token en el entorno activo (tipo secret -> se muestra como ***) y en la colección",
+									"// (para que funcione también sin entorno o con Newman).",
+									"const setToken = (key, value) => {",
+									"    if (pm.environment.name) pm.environment.set(key, value);",
+									"    pm.collectionVariables.set(key, value);",
+									"};",
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
-									"if (pm.response.code === 200) pm.collectionVariables.set('access_token', pm.response.json().accessToken);"
+									"if (pm.response.code === 200) setToken('access_token', pm.response.json().accessToken);"
 								]
 							}
 						}
@@ -286,11 +298,17 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
+									"// Guarda el token en el entorno activo (tipo secret -> se muestra como ***) y en la colección",
+									"// (para que funcione también sin entorno o con Newman).",
+									"const setToken = (key, value) => {",
+									"    if (pm.environment.name) pm.environment.set(key, value);",
+									"    pm.collectionVariables.set(key, value);",
+									"};",
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
 									"if (pm.response.code === 200) {",
-									"    pm.collectionVariables.set('access_token', pm.response.json().accessToken);",
+									"    setToken('access_token', pm.response.json().accessToken);",
 									"    const m = (pm.response.headers.get('Set-Cookie') || '').match(/refresh_token=([^;]+)/);",
-									"    if (m) pm.collectionVariables.set('refresh_token', m[1]);",
+									"    if (m) setToken('refresh_token', m[1]);",
 									"}"
 								]
 							}
@@ -322,8 +340,14 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
+									"// Guarda el token en el entorno activo (tipo secret -> se muestra como ***) y en la colección",
+									"// (para que funcione también sin entorno o con Newman).",
+									"const setToken = (key, value) => {",
+									"    if (pm.environment.name) pm.environment.set(key, value);",
+									"    pm.collectionVariables.set(key, value);",
+									"};",
 									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));",
-									"if (pm.response.code === 204) pm.collectionVariables.set('refresh_token', '');"
+									"if (pm.response.code === 204) setToken('refresh_token', '');"
 								]
 							}
 						}
@@ -5156,7 +5180,7 @@
 								"login"
 							]
 						},
-						"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en las variables de la colección.",
+						"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en el entorno activo (tipo *secret*, se ven como `***`) y en las variables de la colección.",
 						"auth": {
 							"type": "noauth"
 						},
@@ -5177,14 +5201,20 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
+									"// Guarda el token en el entorno activo (tipo secret -> se muestra como ***) y en la colección",
+									"// (para que funcione también sin entorno o con Newman).",
+									"const setToken = (key, value) => {",
+									"    if (pm.environment.name) pm.environment.set(key, value);",
+									"    pm.collectionVariables.set(key, value);",
+									"};",
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
 									"if (pm.response.code === 200) {",
-									"    pm.collectionVariables.set('access_token', pm.response.json().accessToken);",
+									"    setToken('access_token', pm.response.json().accessToken);",
 									"    const setCookie = pm.response.headers.all()",
 									"        .filter(h => h.key.toLowerCase() === 'set-cookie')",
 									"        .map(h => h.value).join(';');",
 									"    const m = setCookie.match(/refresh_token=([^;]+)/);",
-									"    if (m) pm.collectionVariables.set('refresh_token', m[1]);",
+									"    if (m) setToken('refresh_token', m[1]);",
 									"}"
 								]
 							}
