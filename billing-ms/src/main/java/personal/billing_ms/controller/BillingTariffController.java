@@ -1,5 +1,7 @@
 package personal.billing_ms.controller;
 
+import personal.billing_ms.docs.BillingTariffApiDocs;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -18,10 +20,11 @@ import personal.billing_ms.service.IBillingTariffService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/tariffs")
-public class BillingTariffController {
+public class BillingTariffController implements BillingTariffApiDocs {
 
     private final IBillingTariffService billingTariffService;
 
+    @Override
     @PostMapping
     @PreAuthorize("@auth.hasPermission('BILLING_TARIFF_CREATE')")
     public ResponseEntity<BillingTariffResponse> createTariff(
@@ -32,6 +35,7 @@ public class BillingTariffController {
                 .body(billingTariffService.createTariff(request));
     }
 
+    @Override
     @PutMapping("/{appointmentTypeId}")
     @PreAuthorize("@auth.hasPermission('BILLING_TARIFF_UPDATE')")
     public ResponseEntity<BillingTariffResponse> updateTariff(
@@ -44,6 +48,7 @@ public class BillingTariffController {
                         request));
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("@auth.hasPermission('BILLING_TARIFF_READ')")
     public ResponseEntity<List<BillingTariffResponse>> getTariffs() {
@@ -52,6 +57,7 @@ public class BillingTariffController {
                 billingTariffService.getTariffs());
     }
 
+    @Override
     @GetMapping("/{appointmentTypeId}")
     @PreAuthorize("@auth.hasPermission('BILLING_TARIFF_READ')")
     public ResponseEntity<BillingTariffResponse> getTariff(
@@ -62,6 +68,7 @@ public class BillingTariffController {
                         appointmentTypeId));
     }
 
+    @Override
     @GetMapping("/{appointmentTypeId}/price")
     @PreAuthorize("@auth.hasPermission('BILLING_TARIFF_READ')")
     public ResponseEntity<BigDecimal> getPriceByAppointmentTypeId(

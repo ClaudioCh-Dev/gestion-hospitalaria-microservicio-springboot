@@ -1,5 +1,7 @@
 package personal.notification_ms.controller;
 
+import personal.notification_ms.docs.NotificationApiDocs;
+
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
@@ -15,10 +17,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crud")
-public class NotificationController {
+public class NotificationController implements NotificationApiDocs {
 
     private final INotificationService service;
 
+    @Override
     @PreAuthorize("@auth.hasPermission('NOTIFICATION_CREATE')")
     @PostMapping
     public ResponseEntity<NotificationResponse> save(
@@ -29,6 +32,7 @@ public class NotificationController {
         );
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('NOTIFICATION_READ_DOCTOR')")
     @GetMapping("/doctor/{doctorId}")
     public ResponseEntity<List<NotificationResponse>> findMyDoctorNotifications(
@@ -39,6 +43,7 @@ public class NotificationController {
         );
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('NOTIFICATION_READ_ADMIN')")
     @GetMapping("/admin")
     public ResponseEntity<List<NotificationResponse>> findForAdmin() {
@@ -48,6 +53,7 @@ public class NotificationController {
         );
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('NOTIFICATION_MARK_READ_DOCTOR')")
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Void> markAsRead(

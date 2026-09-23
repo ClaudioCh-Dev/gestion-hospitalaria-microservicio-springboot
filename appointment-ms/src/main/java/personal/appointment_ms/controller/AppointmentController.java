@@ -1,8 +1,11 @@
 package personal.appointment_ms.controller;
 
+import personal.appointment_ms.docs.AppointmentApiDocs;
+
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -23,10 +26,11 @@ import personal.appointment_ms.service.IAppointmentService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crud")
-public class AppointmentController {
+public class AppointmentController implements AppointmentApiDocs {
 
     private final IAppointmentService appointmentService;
 
+    @Override
     @PostMapping
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_CREATE')")
     public ResponseEntity<AppointmentResponse> createAppointment(
@@ -40,16 +44,18 @@ public class AppointmentController {
                 .body(response);
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
     public ResponseEntity<Page<AppointmentResponse>> getAppointments(
             @PageableDefault(size = 10, sort = "createdAt")
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
 
         return ResponseEntity.ok(
                 appointmentService.getAppointments(pageable));
     }
 
+    @Override
     @GetMapping("/{id}")
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
     public ResponseEntity<AppointmentResponse> getAppointmentById(
@@ -59,6 +65,7 @@ public class AppointmentController {
                 appointmentService.getAppointmentById(id));
     }
 
+    @Override
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ_BY_PATIENT')")
     public ResponseEntity<List<AppointmentResponse>> getAppointmentsByPatient(
@@ -68,6 +75,7 @@ public class AppointmentController {
                 appointmentService.getAppointmentsByPatient(patientId));
     }
 
+    @Override
     @GetMapping("/doctor/{doctorId}")
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ_BY_DOCTOR')")
     public ResponseEntity<List<AppointmentResponse>> getAppointmentsByDoctor(
@@ -77,6 +85,7 @@ public class AppointmentController {
                 appointmentService.getAppointmentsByDoctor(doctorId));
     }
 
+    @Override
     @GetMapping("/date/{date}")
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
     public ResponseEntity<List<AppointmentResponse>> getAppointmentsByDate(
@@ -86,6 +95,7 @@ public class AppointmentController {
                 appointmentService.getAppointmentsByDate(date));
     }
 
+    @Override
     @PatchMapping("/{id}/status")
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_UPDATE_STATUS')")
     public ResponseEntity<AppointmentResponse> updateStatus(
@@ -96,6 +106,7 @@ public class AppointmentController {
                 appointmentService.updateStatus(id, request));
     }
 
+    @Override
     @DeleteMapping("/{id}")
     @PreAuthorize("@auth.hasPermission('APPOINTMENT_CANCEL')")
     public ResponseEntity<Void> cancelAppointment(

@@ -1,5 +1,8 @@
 package personal.billing_ms.controller;
 
+import personal.billing_ms.docs.BillingRecordApiDocs;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,10 +21,11 @@ import personal.billing_ms.service.IBillingRecordService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crud")
-public class BillingRecordController {
+public class BillingRecordController implements BillingRecordApiDocs {
 
     private final IBillingRecordService billingRecordService;
 
+    @Override
     @PostMapping
     @PreAuthorize("@auth.hasPermission('BILLING_CREATE')")
     public ResponseEntity<BillingRecordResponse> createBilling(
@@ -32,11 +36,12 @@ public class BillingRecordController {
                 .body(billingRecordService.createBilling(request));
     }
 
+    @Override
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("@auth.hasPermission('BILLING_READ_BY_PATIENT')")
     public ResponseEntity<Page<BillingRecordResponse>> getBillingByPatient(
             @PathVariable Long patientId,
-            Pageable pageable
+            @ParameterObject Pageable pageable
     ) {
         return ResponseEntity.ok(
                 billingRecordService.getBillingByPatient(
@@ -46,16 +51,18 @@ public class BillingRecordController {
         );
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("@auth.hasPermission('BILLING_READ')")
     public ResponseEntity<Page<BillingRecordResponse>> getBillings(
-            Pageable pageable
+            @ParameterObject Pageable pageable
     ) {
         return ResponseEntity.ok(
                 billingRecordService.getBillings(pageable)
         );
     }
 
+    @Override
     @PatchMapping("/{id}/pay")
     @PreAuthorize("@auth.hasPermission('BILLING_PAY')")
     public ResponseEntity<BillingRecordResponse> payBilling(

@@ -1,5 +1,7 @@
 package personal.doctor_ms.controller;
 
+import personal.doctor_ms.docs.SpecialtyApiDocs;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -16,10 +18,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/specialties")
-public class SpecialtyController {
+public class SpecialtyController implements SpecialtyApiDocs {
 
     private final IDoctorService doctorService;
 
+    @Override
     @GetMapping
     @PreAuthorize("@auth.hasPermission('SPECIALTY_READ')")
     public ResponseEntity<List<SpecialtyResponse>> findAllSpecialties() {
@@ -28,6 +31,7 @@ public class SpecialtyController {
         );
     }
 
+    @Override
     @PostMapping
     @PreAuthorize("@auth.hasPermission('SPECIALTY_CREATE')")
     public ResponseEntity<SpecialtyResponse> createSpecialty(

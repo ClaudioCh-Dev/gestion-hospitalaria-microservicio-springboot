@@ -1,4 +1,4 @@
-package com.personal.config;
+package personal.billing_ms.config;
 
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +15,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import personal.shared.docs.ErrorExamples;
 
 @Configuration
-@OpenAPIDefinition(info = @Info(title = "Patient API", version = "1.0", description = "API for managing patients"))
+@OpenAPIDefinition(info = @Info(title = "Billing API", version = "1.0", description = "API para la facturación de citas y gestión de tarifas"))
 public class OpenApiConfig {
 
     /**

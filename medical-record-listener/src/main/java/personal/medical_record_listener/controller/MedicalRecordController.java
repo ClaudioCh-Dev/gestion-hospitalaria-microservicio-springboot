@@ -1,5 +1,8 @@
 package personal.medical_record_listener.controller;
 
+import personal.medical_record_listener.docs.MedicalRecordApiDocs;
+
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -15,25 +18,27 @@ import personal.medical_record_listener.service.IMedicalRecordService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crud")
-public class MedicalRecordController {
+public class MedicalRecordController implements MedicalRecordApiDocs {
 
     private final IMedicalRecordService service;
 
+    @Override
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ_BY_PATIENT')")
     public ResponseEntity<Page<MedicalRecordResponse>> findByPatientId(
             @PathVariable Long patientId,
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
 
         return ResponseEntity.ok(
                 service.findByPatientId(patientId, pageable)
         );
     }
 
+    @Override
     @GetMapping
     @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ')")
     public ResponseEntity<Page<MedicalRecordResponse>> findAll(
-            Pageable pageable) {
+            @ParameterObject Pageable pageable) {
 
         return ResponseEntity.ok(
                 service.findAll(pageable)

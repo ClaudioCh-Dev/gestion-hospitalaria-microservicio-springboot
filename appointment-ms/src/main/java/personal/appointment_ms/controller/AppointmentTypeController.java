@@ -1,5 +1,7 @@
 package personal.appointment_ms.controller;
 
+import personal.appointment_ms.docs.AppointmentTypeApiDocs;
+
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -18,10 +20,11 @@ import personal.appointment_ms.service.IAppointmentTypeService;
 @RestController
 @RequestMapping("/appointment-types")
 @RequiredArgsConstructor
-public class AppointmentTypeController {
+public class AppointmentTypeController implements AppointmentTypeApiDocs {
 
         private final IAppointmentTypeService appointmentTypeService;
 
+        @Override
         @PostMapping
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_CREATE')")
         public ResponseEntity<AppointmentTypeResponse> create(
@@ -34,6 +37,7 @@ public class AppointmentTypeController {
                                 .body(response);
         }
 
+        @Override
         @GetMapping
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_READ')")
         public ResponseEntity<List<AppointmentTypeResponse>> findAll() {
@@ -42,6 +46,7 @@ public class AppointmentTypeController {
                                 appointmentTypeService.findAll());
         }
 
+        @Override
         @GetMapping("/{id}")
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_READ')")
         public ResponseEntity<AppointmentTypeResponse> findById(
@@ -51,6 +56,7 @@ public class AppointmentTypeController {
                                 appointmentTypeService.findById(id));
         }
 
+        @Override
         @PutMapping("/{id}")
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_UPDATE')")
         public ResponseEntity<AppointmentTypeResponse> update(
@@ -61,6 +67,7 @@ public class AppointmentTypeController {
                                 appointmentTypeService.update(id, request));
         }
 
+        @Override
         @DeleteMapping("/{id}")
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_DELETE')")
         public ResponseEntity<Void> deactivate(

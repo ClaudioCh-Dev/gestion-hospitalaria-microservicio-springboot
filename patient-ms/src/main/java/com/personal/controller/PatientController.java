@@ -1,5 +1,6 @@
 package com.personal.controller;
 
+import com.personal.docs.PatientApiDocs;
 import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
@@ -8,6 +9,7 @@ import com.personal.service.IPatientService;
 
 import jakarta.validation.Valid;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/crud")
-public class PatientController {
+public class PatientController implements PatientApiDocs {
 
     private final IPatientService patientService;
 
@@ -25,17 +27,19 @@ public class PatientController {
         this.patientService = patientService;
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('PATIENT_READ')")
     @GetMapping
     public ResponseEntity<Page<PatientResponse>> findAll(
         @RequestParam(required = false) Gender gender,  
-        Pageable pageable) {
+        @ParameterObject Pageable pageable) {
 
         Page<PatientResponse> patients = patientService.findAll(pageable,gender);
 
         return ResponseEntity.ok(patients);
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('PATIENT_READ')")
     @GetMapping("/{id}")
     public ResponseEntity<PatientDetailResponse> findById(
@@ -46,6 +50,7 @@ public class PatientController {
         return ResponseEntity.ok(patient);
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('PATIENT_READ')")
     @GetMapping("/document/{documentNumber}")
     public ResponseEntity<PatientResponse> findByDocumentNumber(
@@ -56,6 +61,7 @@ public class PatientController {
         return ResponseEntity.ok(patient);
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('PATIENT_CREATE')")
     @PostMapping
     public ResponseEntity<PatientResponse> create(
@@ -68,6 +74,7 @@ public class PatientController {
                 .body(createdPatient);
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('PATIENT_UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<PatientResponse> update(
@@ -79,6 +86,7 @@ public class PatientController {
         return ResponseEntity.ok(updatedPatient);
     }
 
+    @Override
     @PreAuthorize("@auth.hasPermission('PATIENT_DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
