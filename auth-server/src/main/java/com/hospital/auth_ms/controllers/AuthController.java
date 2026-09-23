@@ -1,7 +1,5 @@
 package com.hospital.auth_ms.controllers;
 
-import java.time.Duration;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +14,7 @@ import com.hospital.auth_ms.dtos.authentication.AuthTokenDto;
 import com.hospital.auth_ms.dtos.authentication.ClaimsDto;
 import com.hospital.auth_ms.dtos.authentication.TokenDto;
 import com.hospital.auth_ms.dtos.authentication.UserDto;
+import com.hospital.auth_ms.helpers.RefreshCookieHelper;
 import com.hospital.auth_ms.services.IAuthService;
 
 import lombok.AllArgsConstructor;
@@ -26,6 +25,7 @@ import lombok.AllArgsConstructor;
 public class AuthController {
 
     private final IAuthService authService;
+    private final RefreshCookieHelper refreshCookieHelper;
 
     // =========================
     // LOGIN
@@ -39,7 +39,7 @@ public class AuthController {
                 this.authService.login(user);
 
         ResponseCookie refreshCookie =
-                createRefreshCookie(tokens.getRefreshToken());
+                refreshCookieHelper.create(tokens.getRefreshToken());
 
         TokenDto response = TokenDto.builder()
                 .accessToken(tokens.getAccessToken())
@@ -72,13 +72,13 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     public ResponseEntity<TokenDto> refreshToken(
-            @CookieValue("refresh_token") String refreshToken) {
+            @CookieValue(RefreshCookieHelper.COOKIE_NAME) String refreshToken) {
 
         AuthTokenDto tokens =
                 this.authService.refreshToken(refreshToken);
 
         ResponseCookie refreshCookie =
-                createRefreshCookie(tokens.getRefreshToken());
+                refreshCookieHelper.create(tokens.getRefreshToken());
 
         TokenDto response = TokenDto.builder()
                 .accessToken(tokens.getAccessToken())
@@ -99,37 +99,13 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
 
-        ResponseCookie cookie = ResponseCookie
-                .from("refresh_token", "")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Strict")
-                .path("/auth/refresh-token")
-                .maxAge(Duration.ZERO)
-                .build();
+        ResponseCookie cookie = refreshCookieHelper.clear();
 
         return ResponseEntity.noContent()
                 .header(
                         HttpHeaders.SET_COOKIE,
                         cookie.toString()
                 )
-                .build();
-    }
-
-    // =========================
-    // REFRESH COOKIE
-    // =========================
-
-    private ResponseCookie createRefreshCookie(
-            String refreshToken) {
-
-        return ResponseCookie
-                .from("refresh_token", refreshToken)
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Strict")
-                .path("/auth/refresh-token")
-                .maxAge(Duration.ofDays(7))
                 .build();
     }
 }

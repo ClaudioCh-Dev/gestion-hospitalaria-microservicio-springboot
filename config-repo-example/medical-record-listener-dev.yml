@@ -1,0 +1,7 @@
+# La conexión real a Mongo se toma de MONGO_URI (application.yaml del servicio);
+# este valor queda como referencia.
+db:
+  url: mongodb://sa:sa@mongo-hospital:27017/medical_records?authSource=admin
+
+scalar:
+  enabled: true

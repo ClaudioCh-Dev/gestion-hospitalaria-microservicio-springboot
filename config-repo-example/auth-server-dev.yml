@@ -1,0 +1,6 @@
+# Desarrollo: sin HTTPS (Postman, http://IP-local, Safari)
+auth:
+  refresh-token:
+    cookie:
+      secure: false
+      same-site: Lax

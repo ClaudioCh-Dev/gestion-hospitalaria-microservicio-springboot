@@ -1,0 +1,10 @@
+# Valores que reemplazan los placeholders ${db.*} del application.yaml de notification-ms
+db:
+  url: jdbc:mysql://db-notification:3306/notification_db
+  username: root
+  password: 123456
+  connection-timeout: 20000
+  maximum-pool-size: 5
+
+scalar:
+  enabled: false
