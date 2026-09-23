@@ -1,22 +1,25 @@
 package personal.billing_ms.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import personal.billing_ms.dto.AppointmentEventRequest;
+import personal.billing_ms.dto.BillingRecordResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
-import personal.billing_ms.entities.BillingRecord;
 
 public interface IBillingRecordService {
 
-    BillingRecord createBilling(CreateBillingRequest request);
+    BillingRecordResponse createBilling(CreateBillingRequest request);
 
-    List<BillingRecord> getBillingByPatient(Long patientId);
+    Page<BillingRecordResponse> getBillings(Pageable pageable);
 
-    List<BillingRecord> getBillings();
+    Page<BillingRecordResponse> getBillingByPatient(
+            Long patientId,
+            Pageable pageable);
 
-    BillingRecord payBilling(Long id);
-    
-    BillingRecord cancelBillingRecord(Long appointmentId);
-    
-    BillingRecord createBillingFromAppointment(AppointmentEventRequest event);
+    BillingRecordResponse payBilling(Long id);
+
+    BillingRecordResponse cancelBillingRecord(Long appointmentId);
+
+    BillingRecordResponse createBillingFromAppointment(AppointmentEventRequest event);
 }

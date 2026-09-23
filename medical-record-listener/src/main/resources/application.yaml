@@ -9,16 +9,43 @@ spring:
   application:
     name: medical-record-listener
 
+  # MongoDB: en Boot 4 las propiedades de conexion son spring.mongodb.*
+  # (spring.data.mongodb.uri se ignora). Se deja tambien la antigua por compatibilidad.
+  mongodb:
+    uri: ${MONGO_URI:mongodb://sa:sa@mongo-db:27017/medical_records?authSource=admin}
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://sa:sa@mongo-db:27017/medical_records?authSource=admin}
+  
+  profiles:
+    default: default
+
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_HOST:http://localhost:7777}"
+
   cloud:
 
     function:
-      definition: medicalRecordProcessor
+      definition: appointmentStateProcessor;medicalRecordProcessor;medicalRecordReadyConsumer
 
     stream:
 
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
+
+        # Binder de Kafka Streams (KStream): NO hereda la config de kafka.binder
+        streams:
+          binder:
+            brokers: ${KAFKA_BROKER:kafka-hospital:29092}
+            functions:
+              # Cada topología necesita su propio application.id
+              # (si no, ambas usan spring.application.name y comparten
+              # /tmp/kafka-streams/medical-record-listener -> lock conflict)
+              appointmentStateProcessor:
+                applicationId: medical-record-appointment-state
+              medicalRecordProcessor:
+                applicationId: medical-record-ready-processor
 
       bindings:
         appointmentStateProcessor-in-0:
@@ -47,6 +74,11 @@ spring:
 
         medicalRecordProcessor-out-0:
           destination: medical-record-ready
+          content-type: application/json
+
+        medicalRecordReadyConsumer-in-0:
+          destination: medical-record-ready
+          group: medical-record-ready
           content-type: application/json
 
 eureka:

@@ -36,6 +36,13 @@ public class PatientClientFallbackFactory
                 );
             }
 
+            if (cause instanceof java.util.concurrent.TimeoutException) {
+                throw new BusinessException(
+                    AppointmentErrorCode.PATIENT_SERVICE_UNAVAILABLE,
+                    "Patient MS no respondió a tiempo"
+                );
+            }
+
             throw new BusinessException(
                 AppointmentErrorCode.PATIENT_SERVICE_UNAVAILABLE,
                 "No fue posible comunicarse con Patient MS"

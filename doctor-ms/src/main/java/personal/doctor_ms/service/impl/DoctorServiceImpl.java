@@ -23,150 +23,169 @@ import personal.shared.event.DoctorCreatedEvent;
 import personal.shared.event.DoctorUpdateEvent;
 import personal.shared.exception.BusinessException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class DoctorServiceImpl implements IDoctorService {
 
-        private final DoctorRepository doctorRepository;
-        private final SpecialtyRepository specialtyRepository;
-        private final DoctorMapper doctorMapper;
-        private final SpecialtyMapper specialtyMapper;
-        private final UserClient userClient;
-        private final DoctorPublisher doctorPublisher;
+    private final DoctorRepository doctorRepository;
+    private final SpecialtyRepository specialtyRepository;
+    private final DoctorMapper doctorMapper;
+    private final SpecialtyMapper specialtyMapper;
+    private final UserClient userClient;
+    private final DoctorPublisher doctorPublisher;
 
-        @Override
-        public Page<DoctorResponse> findAll(Pageable pageable) {
+    @Override
+    public Page<DoctorResponse> findAll(Pageable pageable) {
+        return doctorRepository.findAll(pageable)
+                .map(doctorMapper::toResponse);
+    }
 
-                return doctorRepository.findAll(pageable)
-                                .map(doctorMapper::toResponse);
+    @Override
+    public DoctorResponse findById(Long id) {
+
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        DoctorErrorCode.DOCTOR_NOT_FOUND,
+                        "Doctor no encontrado"
+                ));
+
+        return doctorMapper.toResponse(doctor);
+    }
+
+    @Override
+    public Page<DoctorResponse> findBySpecialty(
+            Long specialtyId,
+            Pageable pageable
+    ) {
+        return doctorRepository
+                .findBySpecialtyId(specialtyId, pageable)
+                .map(doctorMapper::toResponse);
+    }
+
+    @Override
+    public DoctorResponse create(CreateDoctorRequest request) {
+
+        if (doctorRepository.existsByEmail(request.email())) {
+            throw new BusinessException(
+                    DoctorErrorCode.DOCTOR_ALREADY_EXISTS,
+                    "El correo electrónico ya está registrado"
+            );
         }
 
-        @Override
-        public DoctorResponse findById(Long id) {
+        // 1. Verificar especialidad
+        Specialty specialty = specialtyRepository
+                .findById(request.specialtyId())
+                .orElseThrow(() -> new BusinessException(
+                        DoctorErrorCode.SPECIALTY_NOT_FOUND,
+                        "Especialidad no encontrada"
+                ));
 
-                Doctor doctor = doctorRepository.findById(id)
-                                .orElseThrow(() -> new BusinessException(
-                                                DoctorErrorCode.DOCTOR_NOT_FOUND,
-                                                "Doctor no encontrado"));
+        // 2. Crear usuario en Auth Server
+        CreateDoctorRequestClient userRequest =
+                new CreateDoctorRequestClient(request.email());
 
-                return doctorMapper.toResponse(doctor);
-        }
+        UserResponse user = userClient.createDoctor(userRequest);
 
-        @Override
-        public Page<DoctorResponse> findBySpecialty(
-                        Long specialtyId,
-                        Pageable pageable) {
+        // 3. Crear doctor asociado al usuario
+        Doctor doctor = Doctor.builder()
+                .userId(user.id())
+                .licenseNumber(request.licenseNumber())
+                .firstName(request.firstName())
+                .lastName(request.lastName())
+                .email(request.email())
+                .phone(request.phone())
+                .specialty(specialty)
+                .scheduleStart(request.scheduleStart())
+                .scheduleEnd(request.scheduleEnd())
+                .build();
 
-                return doctorRepository.findBySpecialtyId(specialtyId, pageable)
-                                .map(doctorMapper::toResponse);
-        }
+        // 4. Guardar doctor
+        Doctor savedDoctor = doctorRepository.save(doctor);
 
-        @Override
-        public DoctorResponse create(CreateDoctorRequest request) {
+        // 5. Publicar evento
+        doctorPublisher.publishDoctorCreated(
+                new DoctorCreatedEvent(
+                        savedDoctor.getId(),
+                        savedDoctor.getLicenseNumber(),
+                        savedDoctor.getFirstName(),
+                        savedDoctor.getLastName(),
+                        savedDoctor.getEmail(),
+                        savedDoctor.getPhone(),
+                        savedDoctor.getUserId(),
+                        savedDoctor.getSpecialty().getName()
+                )
+        );
 
+        return doctorMapper.toResponse(savedDoctor);
+    }
 
-                if (doctorRepository.existsByEmail(request.email())) {
-                        throw new BusinessException(
-                                        DoctorErrorCode.DOCTOR_ALREADY_EXISTS,
-                                        "El correo electrónico ya está registrado");
-                }
+    @Override
+    public List<SpecialtyResponse> findAllSpecialties() {
+        return specialtyRepository.findAll()
+                .stream()
+                .map(specialtyMapper::toResponse)
+                .toList();
+    }
 
-                // 1. Verificar especialidad
-                Specialty specialty = specialtyRepository
-                                .findById(request.specialtyId())
-                                .orElseThrow(() -> new BusinessException(
-                                                DoctorErrorCode.SPECIALTY_NOT_FOUND,
-                                                "Especialidad no encontrada"));
+    @Override
+    public SpecialtyResponse createSpecialty(
+            CreateSpecialtyRequest request
+    ) {
+        Specialty specialty = Specialty.builder()
+                .name(request.name())
+                .description(request.description())
+                .build();
 
-                // 2. Crear usuario en Auth Server
-                CreateDoctorRequestClient userRequest = new CreateDoctorRequestClient(request.email());
-                UserResponse user = userClient.createDoctor(userRequest);
+        return specialtyMapper.toResponse(
+                specialtyRepository.save(specialty)
+        );
+    }
 
-                // 3. Crear doctor asociado al usuario
-                Doctor doctor = Doctor.builder()
-                                .userId(user.id())
-                                .licenseNumber(request.licenseNumber())
-                                .firstName(request.firstName())
-                                .lastName(request.lastName())
-                                .email(request.email())
-                                .phone(request.phone())
-                                .specialty(specialty)
-                                .scheduleStart(request.scheduleStart())
-                                .scheduleEnd(request.scheduleEnd())
-                                .build();
+    @Override
+    public DoctorResponse update(
+            Long id,
+            UpdateDoctorRequest request
+    ) {
 
-                // 4. Publicar evento de doctor creado
-                doctorPublisher.publishDoctorCreated(
-                                new DoctorCreatedEvent(
-                                                doctor.getId(),
-                                                doctor.getLicenseNumber(),
-                                                doctor.getFirstName(),
-                                                doctor.getLastName(),
-                                                doctor.getEmail(),
-                                                doctor.getPhone(),
-                                                doctor.getUserId(),
-                                                doctor.getSpecialty().getName()));
+        Doctor doctor = doctorRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        DoctorErrorCode.DOCTOR_NOT_FOUND,
+                        "Doctor no encontrado"
+                ));
 
-                return doctorMapper.toResponse(
-                                doctorRepository.save(doctor));
-        }
+        Specialty specialty = specialtyRepository
+                .findById(request.specialtyId())
+                .orElseThrow(() -> new BusinessException(
+                        DoctorErrorCode.SPECIALTY_NOT_FOUND,
+                        "Especialidad no encontrada"
+                ));
 
-        @Override
-        public Page<SpecialtyResponse> findAllSpecialties(Pageable pageable) {
+        doctor.setFirstName(request.firstName());
+        doctor.setLastName(request.lastName());
+        doctor.setEmail(request.email());
+        doctor.setPhone(request.phone());
+        doctor.setSpecialty(specialty);
+        doctor.setScheduleStart(request.scheduleStart());
+        doctor.setScheduleEnd(request.scheduleEnd());
+        doctor.setActive(request.active());
 
-                return specialtyRepository.findAll(pageable)
-                                .map(specialtyMapper::toResponse);
-        }
+        doctorPublisher.publishDoctorUpdated(
+                new DoctorUpdateEvent(
+                        doctor.getId(),
+                        doctor.getLicenseNumber(),
+                        doctor.getFirstName(),
+                        doctor.getLastName(),
+                        doctor.getEmail(),
+                        doctor.getPhone(),
+                        doctor.getUserId(),
+                        doctor.getSpecialty().getName()
+                )
+        );
 
-        @Override
-        public SpecialtyResponse createSpecialty(
-                        CreateSpecialtyRequest request) {
-
-                Specialty specialty = Specialty.builder()
-                                .name(request.name())
-                                .description(request.description())
-                                .build();
-
-                return specialtyMapper.toResponse(
-                                specialtyRepository.save(specialty));
-        }
-
-        @Override
-        public DoctorResponse update(
-                        Long id,
-                        UpdateDoctorRequest request) {
-
-                Doctor doctor = doctorRepository.findById(id)
-                                .orElseThrow(() -> new BusinessException(
-                                                DoctorErrorCode.DOCTOR_NOT_FOUND,
-                                                "Doctor no encontrado"));
-
-                Specialty specialty = specialtyRepository.findById(request.specialtyId())
-                                .orElseThrow(() -> new BusinessException(
-                                                DoctorErrorCode.SPECIALTY_NOT_FOUND,
-                                                "Especialidad no encontrada"));
-
-                doctor.setFirstName(request.firstName());
-                doctor.setLastName(request.lastName());
-                doctor.setEmail(request.email());
-                doctor.setPhone(request.phone());
-                doctor.setSpecialty(specialty);
-                doctor.setScheduleStart(request.scheduleStart());
-                doctor.setScheduleEnd(request.scheduleEnd());
-                doctor.setActive(request.active());
-
-                doctorPublisher.publishDoctorUpdated(
-                                new DoctorUpdateEvent(
-                                                doctor.getId(),
-                                                doctor.getLicenseNumber(),
-                                                doctor.getFirstName(),
-                                                doctor.getLastName(),
-                                                doctor.getEmail(),
-                                                doctor.getPhone(),
-                                                doctor.getUserId(),
-                                                doctor.getSpecialty().getName()));
-
-                return doctorMapper.toResponse(
-                                doctorRepository.save(doctor));
-        }
+        return doctorMapper.toResponse(
+                doctorRepository.save(doctor)
+        );
+    }
 }

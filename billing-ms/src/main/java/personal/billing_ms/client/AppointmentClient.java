@@ -5,11 +5,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import personal.billing_ms.client.dto.AppointmentResponse;
+import personal.billing_ms.client.fallback.AppointmentClientFallbackFactory;
 import personal.billing_ms.config.AppointmentFeignConfig;
 
 @FeignClient(
         name = "appointment-ms",
-        configuration = AppointmentFeignConfig.class
+        configuration = AppointmentFeignConfig.class,
+        fallbackFactory = AppointmentClientFallbackFactory.class
 )
 public interface AppointmentClient {
 

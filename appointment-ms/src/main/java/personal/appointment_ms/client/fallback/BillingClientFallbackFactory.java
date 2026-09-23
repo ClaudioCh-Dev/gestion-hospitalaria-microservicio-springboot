@@ -20,9 +20,11 @@ public class BillingClientFallbackFactory
     @Override
     public BillingClient create(Throwable cause) {
 
-        log.warn(
-            "Fallback BillingClient. cause={}",
-            cause.getClass().getSimpleName()
+       log.warn(
+            "Fallback BillingClient. cause={} message={}",
+            cause.getClass().getName(),
+            cause.getMessage(),
+            cause
         );
 
         return appointmentTypeId -> {
@@ -35,6 +37,13 @@ public class BillingClientFallbackFactory
                 throw new BusinessException(
                     AppointmentErrorCode.BILLING_SERVICE_UNAVAILABLE,
                     "Billing MS temporalmente no disponible"
+                );
+            }
+
+            if (cause instanceof java.util.concurrent.TimeoutException) {
+                throw new BusinessException(
+                    AppointmentErrorCode.BILLING_SERVICE_UNAVAILABLE,
+                    "Billing MS no respondió a tiempo"
                 );
             }
 

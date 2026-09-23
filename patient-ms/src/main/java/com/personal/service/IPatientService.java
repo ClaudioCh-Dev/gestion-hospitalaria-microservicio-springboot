@@ -3,12 +3,14 @@ package com.personal.service;
 import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
+import com.personal.enums.Gender;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface IPatientService {
 
-    Page<PatientResponse> findAll(Pageable pageable);
+    Page<PatientResponse> findAll(Pageable pageable, Gender gender);
 
     PatientDetailResponse findById(Long id);
 

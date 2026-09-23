@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import personal.shared.exception.BusinessException;
 import personal.shared.exception.GenericErrorCode;
 
+import java.nio.file.AccessDeniedException;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -29,8 +31,13 @@ public class GlobalExceptionHandler {
         public ProblemDetail handleBusinessException(
                         BusinessException ex) {
 
+                HttpStatus status = HttpStatus.resolve(ex.getStatus());
+                if (status == null) {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+
                 ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.valueOf(ex.getStatus()),
+                                status,
                                 ex.getMessage());
 
                 problem.setProperty("code", ex.getCode());
@@ -180,15 +187,68 @@ public class GlobalExceptionHandler {
                                 "Feign error path={} status={} message={}",
                                 request.getRequestURI(),
                                 ex.status(),
-                                ex.getMessage());
+                                ex.getMessage(),
+                                ex);
+
+                // status <= 0 significa que nunca hubo respuesta HTTP real
+                // (timeout, conexión rechazada, host no resuelto, etc.)
+                if (ex.status() <= 0) {
+
+                        boolean isTimeout = ex.getCause() instanceof java.net.SocketTimeoutException;
+
+                        ProblemDetail timeoutProblem = ProblemDetail.forStatusAndDetail(
+                                        isTimeout ? HttpStatus.GATEWAY_TIMEOUT : HttpStatus.SERVICE_UNAVAILABLE,
+                                        isTimeout
+                                                        ? "El servicio dependiente no respondió a tiempo"
+                                                        : "No fue posible comunicarse con el servicio dependiente");
+
+                        timeoutProblem.setProperty(
+                                        "code",
+                                        isTimeout
+                                                        ? GenericErrorCode.SERVICE_TIMEOUT.name()
+                                                        : GenericErrorCode.SERVICE_UNAVAILABLE.name());
+
+                        return timeoutProblem;
+                }
+
+                // Si el status no es un HttpStatus válido (códigos no estándar)
+                // evitamos que HttpStatus.valueOf lance IllegalArgumentException.
+                HttpStatus status = HttpStatus.resolve(ex.status());
+                if (status == null) {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                }
 
                 ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.valueOf(ex.status()),
-                                "Error al comunicarse con el servicio de autenticación");
+                                status,
+                                "Error al comunicarse con un servicio dependiente");
 
                 problem.setProperty(
                                 "code",
                                 GenericErrorCode.INTERNAL_ERROR.name());
+
+                return problem;
+        }
+
+        // =========================================================
+        // 403 - ACCESS DENIED
+        // =========================================================
+        @ExceptionHandler(AccessDeniedException.class)
+        public ProblemDetail handleAccessDenied(
+                        AccessDeniedException ex,
+                        HttpServletRequest request) {
+
+                log.warn(
+                                "Access denied path={} message={}",
+                                request.getRequestURI(),
+                                ex.getMessage());
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.FORBIDDEN,
+                                "No tienes permisos para realizar esta operación");
+
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.ACCESS_DENIED.name());
 
                 return problem;
         }

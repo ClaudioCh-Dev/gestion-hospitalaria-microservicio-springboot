@@ -7,12 +7,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+
 import personal.billing_ms.dto.BillingTariffResponse;
 import personal.billing_ms.dto.CreateBillingTariffRequest;
 import personal.billing_ms.dto.UpdateBillingTariffRequest;
 import personal.billing_ms.entities.BillingTariff;
 import personal.billing_ms.repositories.BillingTariffRepository;
 import personal.billing_ms.service.IBillingTariffService;
+import personal.billing_ms.exceptions.BillingErrorCode;
+
+import personal.shared.exception.BusinessException;
 
 @Service
 @RequiredArgsConstructor
@@ -23,14 +27,17 @@ public class BillingTariffServiceImpl implements IBillingTariffService {
 
     @Override
     public BillingTariffResponse createTariff(
-            CreateBillingTariffRequest request) {
+            CreateBillingTariffRequest request
+    ) {
 
         if (billingTariffRepository.existsById(
-                request.appointmentTypeId())) {
-
-            throw new IllegalArgumentException(
-                    "A tariff already exists for appointment type: "
-                            + request.appointmentTypeId());
+                request.appointmentTypeId()
+        )) {
+            throw new BusinessException(
+                    BillingErrorCode.BILLING_TARIFF_ALREADY_EXISTS,
+                    "Ya existe una tarifa para el tipo de cita: "
+                            + request.appointmentTypeId()
+            );
         }
 
         BillingTariff tariff = BillingTariff.builder()
@@ -40,25 +47,30 @@ public class BillingTariffServiceImpl implements IBillingTariffService {
                 .build();
 
         return toResponse(
-                billingTariffRepository.save(tariff));
+                billingTariffRepository.save(tariff)
+        );
     }
 
     @Override
     public BillingTariffResponse updateTariff(
             Long appointmentTypeId,
-            UpdateBillingTariffRequest request) {
+            UpdateBillingTariffRequest request
+    ) {
 
         BillingTariff tariff = billingTariffRepository
                 .findById(appointmentTypeId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Tariff not found for appointment type: "
-                                + appointmentTypeId));
+                .orElseThrow(() -> new BusinessException(
+                        BillingErrorCode.BILLING_TARIFF_NOT_FOUND,
+                        "Tarifa no encontrada para el tipo de cita: "
+                                + appointmentTypeId
+                ));
 
         tariff.setPrice(request.price());
         tariff.setCurrency(request.currency());
 
         return toResponse(
-                billingTariffRepository.save(tariff));
+                billingTariffRepository.save(tariff)
+        );
     }
 
     @Override
@@ -74,13 +86,16 @@ public class BillingTariffServiceImpl implements IBillingTariffService {
     @Override
     @Transactional(readOnly = true)
     public BillingTariffResponse getTariff(
-            Long appointmentTypeId) {
+            Long appointmentTypeId
+    ) {
 
         BillingTariff tariff = billingTariffRepository
                 .findById(appointmentTypeId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Tariff not found for appointment type: "
-                                + appointmentTypeId));
+                .orElseThrow(() -> new BusinessException(
+                        BillingErrorCode.BILLING_TARIFF_NOT_FOUND,
+                        "Tarifa no encontrada para el tipo de cita: "
+                                + appointmentTypeId
+                ));
 
         return toResponse(tariff);
     }
@@ -88,22 +103,27 @@ public class BillingTariffServiceImpl implements IBillingTariffService {
     @Override
     @Transactional(readOnly = true)
     public BigDecimal getPriceByAppointmentTypeId(
-            Long appointmentTypeId) {
+            Long appointmentTypeId
+    ) {
 
         return billingTariffRepository
                 .findById(appointmentTypeId)
-                .map(tariff -> tariff.getPrice())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Tariff not found for appointment type: "
-                                + appointmentTypeId));
+                .map(BillingTariff::getPrice)
+                .orElseThrow(() -> new BusinessException(
+                        BillingErrorCode.BILLING_TARIFF_NOT_FOUND,
+                        "Tarifa no encontrada para el tipo de cita: "
+                                + appointmentTypeId
+                ));
     }
 
     private BillingTariffResponse toResponse(
-            BillingTariff tariff) {
+            BillingTariff tariff
+    ) {
 
         return new BillingTariffResponse(
                 tariff.getBillingAppointmentTypeId(),
                 tariff.getPrice(),
-                tariff.getCurrency());
+                tariff.getCurrency()
+        );
     }
 }

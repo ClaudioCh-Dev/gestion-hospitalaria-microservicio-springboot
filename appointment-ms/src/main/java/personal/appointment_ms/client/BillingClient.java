@@ -11,7 +11,7 @@ import personal.appointment_ms.config.BillingFeignConfig;
 @FeignClient(name = "billing-ms", configuration = BillingFeignConfig.class, fallbackFactory = BillingClientFallbackFactory.class)
 public interface BillingClient {
 
-        @GetMapping("/tariffs/{appointmentTypeId}")
+        @GetMapping("/billings/tariffs/{appointmentTypeId}")
         BillingTariffResponse findTariffByAppointmentTypeId(
                         @PathVariable("appointmentTypeId") Long appointmentTypeId);
 }

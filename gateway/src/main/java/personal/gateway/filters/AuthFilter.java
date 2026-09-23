@@ -4,109 +4,143 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-
 import org.springframework.stereotype.Component;
-
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
-import org.springframework.http.HttpHeaders;
-
 import reactor.core.publisher.Mono;
 
-// TODO Implementar autenticación **service-to-service con OAuth2 Client Credentials** entre `doctor-ms` y `auth-server`, utilizando un **Service Token independiente del JWT del usuario**, con scopes específicos para proteger los endpoints internos.
+// TODO Implementar autenticación service-to-service con OAuth2 Client Credentials
+// entre doctor-ms y auth-server, utilizando un Service Token independiente
+// del JWT del usuario, con scopes específicos para proteger los endpoints internos.
 
 @Component
 public class AuthFilter implements WebFilter {
 
-        private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
 
-        private static final String USER_ID_HEADER = "X-User-Id";
-        private static final String ROLE_HEADER = "X-Role";
-        private static final String PERMISSIONS_HEADER = "X-Permissions";
+    private static final String USER_ID_HEADER = "X-User-Id";
+    private static final String ROLE_HEADER = "X-Role";
+    private static final String PERMISSIONS_HEADER = "X-Permissions";
 
-        @Override
-        public Mono<Void> filter(
-                        ServerWebExchange exchange,
-                        WebFilterChain chain) {
+    @Override
+    public Mono<Void> filter(
+            ServerWebExchange exchange,
+            WebFilterChain chain) {
 
-                log.info(
-                                "🔥 AUTH FILTER: {}",
-                                exchange.getRequest().getPath());
+        log.info(
+                "🔥 AUTH FILTER: {}",
+                exchange.getRequest().getPath()
+        );
 
-                return exchange.getPrincipal()
-                                .cast(Authentication.class)
+        return exchange.getPrincipal()
+                .cast(Authentication.class)
+                .flatMap(authentication -> {
 
-                                .flatMap(authentication -> {
+                    log.info(
+                            "🔥 AUTHENTICATION: {}",
+                            authentication
+                    );
 
-                                        log.info(
-                                                        "🔥 AUTHENTICATION: {}",
-                                                        authentication);
+                    if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
 
-                                        if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
+                        log.warn(
+                                "Authentication no es JwtAuthenticationToken"
+                        );
 
-                                                log.warn("Authentication no es JwtAuthenticationToken");
+                        return chain.filter(exchange);
+                    }
 
-                                                return chain.filter(exchange);
-                                        }
+                    var jwt = jwtAuth.getToken();
 
-                                        var jwt = jwtAuth.getToken();
+                    String userId = jwt.getClaimAsString("userId");
+                    String username = jwt.getSubject();
+                    String role = jwt.getClaimAsString("role");
 
-                                        String userId = jwt.getClaimAsString("userId");
+                    List<String> permissions =
+                            jwt.getClaimAsStringList("permissions");
 
-                                        String username = jwt.getSubject();
+                    log.info("=================================");
+                    log.info("JWT autenticado correctamente");
+                    log.info("UserId: {}", userId);
+                    log.info("Username: {}", username);
+                    log.info("Role: {}", role);
+                    log.info("Permissions: {}", permissions);
 
-                                        String role = jwt.getClaimAsString("role");
+                    /*
+                     * Conservamos el Authorization original.
+                     */
+                    String authorization = exchange.getRequest()
+                            .getHeaders()
+                            .getFirst(HttpHeaders.AUTHORIZATION);
 
-                                        List<String> permissions = jwt.getClaimAsStringList("permissions");
+                    /*
+                     * Creamos una nueva request.
+                     *
+                     * IMPORTANTE:
+                     * No modificamos directamente los headers
+                     * obtenidos desde exchange.getRequest().
+                     */
+                    ServerHttpRequest mutatedRequest = exchange.getRequest()
+                            .mutate()
+                            .headers(headers -> {
 
-                                        log.info("=================================");
-                                        log.info("JWT autenticado correctamente");
-                                        log.info("UserId: {}", userId);
-                                        log.info("Username: {}", username);
-                                        log.info("Role: {}", role);
-                                        log.info("Permissions: {}", permissions);
+                                headers.remove(USER_ID_HEADER);
+                                headers.remove(ROLE_HEADER);
+                                headers.remove(PERMISSIONS_HEADER);
 
-                                        String authorization = exchange.getRequest()
-                                                        .getHeaders()
-                                                        .getFirst(HttpHeaders.AUTHORIZATION);
+                                if (authorization != null) {
+                                    headers.set(
+                                            HttpHeaders.AUTHORIZATION,
+                                            authorization
+                                    );
+                                }
 
-                                        ServerWebExchange mutatedExchange = exchange.mutate()
-                                                        .request(request -> request.headers(headers -> {
+                                if (userId != null) {
+                                    headers.set(
+                                            USER_ID_HEADER,
+                                            userId
+                                    );
+                                }
 
-                                                                headers.remove(USER_ID_HEADER);
-                                                                headers.remove(ROLE_HEADER);
-                                                                headers.remove(PERMISSIONS_HEADER);
+                                if (role != null) {
+                                    headers.set(
+                                            ROLE_HEADER,
+                                            role
+                                    );
+                                }
 
-                                                                if (authorization != null) {
-                                                                        headers.set(HttpHeaders.AUTHORIZATION,
-                                                                                        authorization);
-                                                                }
+                                if (permissions != null) {
+                                    headers.set(
+                                            PERMISSIONS_HEADER,
+                                            String.join(",", permissions)
+                                    );
+                                }
+                            })
+                            .build();
 
-                                                                if (userId != null) {
-                                                                        headers.set(USER_ID_HEADER, userId);
-                                                                }
+                    /*
+                     * Creamos un nuevo Exchange con la request modificada.
+                     */
+                    ServerWebExchange mutatedExchange = exchange
+                            .mutate()
+                            .request(mutatedRequest)
+                            .build();
 
-                                                                if (role != null) {
-                                                                        headers.set(ROLE_HEADER, role);
-                                                                }
-
-                                                                if (permissions != null) {
-                                                                        headers.set(PERMISSIONS_HEADER,
-                                                                                        String.join(",", permissions));
-                                                                }
-
-                                                        }))
-                                                        .build();
-                                        return chain.filter(mutatedExchange);
-                                })
-                                .switchIfEmpty(
-                                                // NO hay JWT → dejamos que Spring Security
-                                                // se encargue de rechazar la petición
-                                                chain.filter(exchange));
-        }
+                    return chain.filter(mutatedExchange);
+                })
+                .switchIfEmpty(
+                        /*
+                         * No hay JWT.
+                         * Dejamos que Spring Security se encargue
+                         * de rechazar la petición.
+                         */
+                        chain.filter(exchange)
+                );
+    }
 }

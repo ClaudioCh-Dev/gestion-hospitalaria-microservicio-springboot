@@ -1,9 +1,12 @@
 package personal.doctor_ms.controller;
 
+import personal.doctor_ms.docs.DoctorApiDocs;
+
 import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,18 +21,20 @@ import personal.doctor_ms.service.IDoctorService;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/crud")
-public class DoctorController {
+public class DoctorController implements DoctorApiDocs {
 
         private final IDoctorService doctorService;
 
+        @Override
         @GetMapping()
         @PreAuthorize("@auth.hasPermission('DOCTOR_READ')")
         public ResponseEntity<Page<DoctorResponse>> findAll(
-                        Pageable pageable) {
+                        @ParameterObject Pageable pageable) {
                 return ResponseEntity.ok(
                                 doctorService.findAll(pageable));
         }
 
+        @Override
         @GetMapping("/{id}")
         @PreAuthorize("@auth.hasPermission('DOCTOR_READ')")
         public ResponseEntity<DoctorResponse> findById(
@@ -38,15 +43,17 @@ public class DoctorController {
                                 doctorService.findById(id));
         }
 
+        @Override
         @GetMapping("/specialty/{specialtyId}")
         @PreAuthorize("@auth.hasPermission('DOCTOR_READ_BY_SPECIALTY')")
         public ResponseEntity<Page<DoctorResponse>> findBySpecialty(
                         @PathVariable Long specialtyId,
-                        Pageable pageable) {
+                        @ParameterObject Pageable pageable) {
                 return ResponseEntity.ok(
                                 doctorService.findBySpecialty(specialtyId, pageable));
         }
 
+        @Override
         @PostMapping()
         @PreAuthorize("@auth.hasPermission('DOCTOR_CREATE')")
         public ResponseEntity<DoctorResponse> create(
@@ -55,6 +62,7 @@ public class DoctorController {
                                 .body(doctorService.create(request));
         }
 
+        @Override
         @PutMapping("/{id}")
         @PreAuthorize("@auth.hasPermission('DOCTOR_UPDATE')")
         public ResponseEntity<DoctorResponse> update(

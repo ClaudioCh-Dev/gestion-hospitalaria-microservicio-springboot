@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import personal.doctor_ms.client.config.UserFeignConfig;
 import personal.doctor_ms.client.dto.CreateDoctorRequestClient;
 import personal.doctor_ms.client.dto.UserResponse;
+import personal.doctor_ms.client.fallback.UserClientFallbackFactory;
 
 @FeignClient(
         name = "auth-server",
-        configuration = UserFeignConfig.class
+        configuration = UserFeignConfig.class,
+        fallbackFactory = UserClientFallbackFactory.class
 )
 public interface UserClient {
 

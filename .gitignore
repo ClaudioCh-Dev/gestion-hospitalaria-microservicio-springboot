@@ -84,6 +84,7 @@ dist/
 # ==========================
 docs/hospital-ms-concepto.md
 docs/hospital-ms-guide.md
+docs/informe-manejo-excepciones.md
 
 
 *.pem
