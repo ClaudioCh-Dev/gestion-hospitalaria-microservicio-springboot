@@ -3,6 +3,7 @@ package com.personal.controller;
 import com.personal.dto.PatientDetailResponse;
 import com.personal.dto.PatientRequest;
 import com.personal.dto.PatientResponse;
+import com.personal.enums.Gender;
 import com.personal.service.IPatientService;
 
 import jakarta.validation.Valid;
@@ -26,9 +27,11 @@ public class PatientController {
 
     @PreAuthorize("@auth.hasPermission('PATIENT_READ')")
     @GetMapping
-    public ResponseEntity<Page<PatientResponse>> findAll(Pageable pageable) {
+    public ResponseEntity<Page<PatientResponse>> findAll(
+        @RequestParam(required = false) Gender gender,  
+        Pageable pageable) {
 
-        Page<PatientResponse> patients = patientService.findAll(pageable);
+        Page<PatientResponse> patients = patientService.findAll(pageable,gender);
 
         return ResponseEntity.ok(patients);
     }

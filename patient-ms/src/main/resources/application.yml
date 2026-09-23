@@ -10,6 +10,11 @@ spring:
 
   cloud:
     stream:
+      # Crea los bindings de StreamBridge al ARRANCAR (no en el primer send).
+      # Sin esto, el primer POST paga la creacion del producer Kafka + topic
+      # y supera el timeout de 4s del gateway -> fallback aunque si se guardo.
+      output-bindings: patient-created;patient-updated
+
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}

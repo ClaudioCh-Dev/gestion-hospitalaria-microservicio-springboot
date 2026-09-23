@@ -27,6 +27,10 @@ public class AuthController {
 
     private final IAuthService authService;
 
+    // =========================
+    // LOGIN
+    // =========================
+
     @PostMapping("/login")
     public ResponseEntity<TokenDto> jwtCreate(
             @RequestBody UserDto user) {
@@ -49,6 +53,10 @@ public class AuthController {
                 .body(response);
     }
 
+    // =========================
+    // VALIDATE JWT
+    // =========================
+
     @PostMapping("/validate-jwt")
     public ResponseEntity<ClaimsDto> jwtValidate(
             @RequestHeader("access-token") String accessToken) {
@@ -57,6 +65,10 @@ public class AuthController {
                 this.authService.validateToken(accessToken)
         );
     }
+
+    // =========================
+    // REFRESH TOKEN
+    // =========================
 
     @PostMapping("/refresh-token")
     public ResponseEntity<TokenDto> refreshToken(
@@ -79,6 +91,34 @@ public class AuthController {
                 )
                 .body(response);
     }
+
+    // =========================
+    // LOGOUT
+    // =========================
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+
+        ResponseCookie cookie = ResponseCookie
+                .from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/auth/refresh-token")
+                .maxAge(Duration.ZERO)
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(
+                        HttpHeaders.SET_COOKIE,
+                        cookie.toString()
+                )
+                .build();
+    }
+
+    // =========================
+    // REFRESH COOKIE
+    // =========================
 
     private ResponseCookie createRefreshCookie(
             String refreshToken) {

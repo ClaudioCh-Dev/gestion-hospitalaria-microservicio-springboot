@@ -9,6 +9,7 @@ import com.personal.mapper.PatientMapper;
 import com.personal.repository.IPatientRepository;
 import com.personal.service.IPatientService;
 import com.personal.streams.PatientPublisher;
+import com.personal.enums.Gender;
 
 import personal.shared.event.PatientCreateEvent;
 import personal.shared.event.PatientUpdateEvent;
@@ -37,8 +38,8 @@ public class PatientServiceImpl implements IPatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PatientResponse> findAll(Pageable pageable) {
-        return patientRepository.findAllResponses(pageable);
+    public Page<PatientResponse> findAll(Pageable pageable, Gender gender) {
+        return patientRepository.findAllResponses(gender, pageable);
     }
 
     @Override

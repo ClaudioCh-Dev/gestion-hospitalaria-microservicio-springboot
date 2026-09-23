@@ -10,6 +10,9 @@ spring:
 
   cloud:
     stream:
+      # Crea los bindings de StreamBridge al ARRANCAR (no en el primer send)
+      output-bindings: appointment-created;appointment-updated-status;appointment-created-type
+
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
@@ -60,6 +63,19 @@ spring:
       maximum-pool-size: ${db.maximum-pool-size:10}
 
 resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 4s
+
+    instances:
+      patient-ms:
+        baseConfig: default
+      doctor-ms:
+        baseConfig: default
+      billing-ms:
+        baseConfig: default
+
   circuitbreaker:
 
     configs:
@@ -88,11 +104,20 @@ resilience4j:
           - feign.FeignException.BadRequest
           - feign.FeignException.NotFound
           - feign.FeignException.UnprocessableEntity
+
+      billing-ms:
+        baseConfig: default
+        ignoreExceptions:
+          - personal.shared.exception.BusinessException
+          - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
+          - feign.FeignException.UnprocessableEntity
+
+
 server:
   port: 8081
   servlet:
     context-path: /appointments
-
 
 eureka:
   instance:

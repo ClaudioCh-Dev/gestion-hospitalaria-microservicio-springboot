@@ -10,6 +10,9 @@ spring:
 
   cloud:
     stream:
+      # Crea los bindings de StreamBridge al ARRANCAR (no en el primer send)
+      output-bindings: doctor-created;doctor-updated
+
       kafka:
         binder:
           brokers: ${KAFKA_BROKER:kafka-hospital:29092}
@@ -22,6 +25,9 @@ spring:
           destination: doctor-updated
           content-type: application/json
 
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
   datasource:
     username: ${db.username:postgres}
@@ -31,6 +37,36 @@ spring:
       connection-timeout: ${db.connection-timeout:30000}
       maximum-pool-size: ${db.maximum-pool-size:10}
 
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 4s
+
+    instances:
+      auth-server:
+        baseConfig: default
+
+  circuitbreaker:
+
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 5
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 2
+
+    instances:
+
+      auth-server:
+        baseConfig: default
+        ignoreExceptions:
+          - personal.shared.exception.BusinessException
+          - feign.FeignException.BadRequest
+          - feign.FeignException.NotFound
+          - feign.FeignException.UnprocessableEntity
 
 server:
   port: 8081

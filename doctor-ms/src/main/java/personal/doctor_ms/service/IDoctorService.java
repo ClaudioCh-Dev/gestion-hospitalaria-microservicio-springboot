@@ -1,13 +1,15 @@
 package personal.doctor_ms.service;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import personal.doctor_ms.dtos.CreateDoctorRequest;
 import personal.doctor_ms.dtos.CreateSpecialtyRequest;
 import personal.doctor_ms.dtos.DoctorResponse;
 import personal.doctor_ms.dtos.SpecialtyResponse;
-import personal.doctor_ms.dtos.UpdateDoctorRequest; 
+import personal.doctor_ms.dtos.UpdateDoctorRequest;
+
+import java.util.List;
 
 public interface IDoctorService {
 
@@ -15,14 +17,21 @@ public interface IDoctorService {
 
     DoctorResponse findById(Long id);
 
-    Page<DoctorResponse> findBySpecialty(Long specialtyId, Pageable pageable);
+    Page<DoctorResponse> findBySpecialty(
+            Long specialtyId,
+            Pageable pageable
+    );
 
     DoctorResponse create(CreateDoctorRequest request);
 
-    DoctorResponse update(Long id, UpdateDoctorRequest request);
+    DoctorResponse update(
+            Long id,
+            UpdateDoctorRequest request
+    );
 
-    Page<SpecialtyResponse> findAllSpecialties(Pageable pageable);
+    List<SpecialtyResponse> findAllSpecialties();
 
-    SpecialtyResponse createSpecialty(CreateSpecialtyRequest request);
-    
+    SpecialtyResponse createSpecialty(
+            CreateSpecialtyRequest request
+    );
 }

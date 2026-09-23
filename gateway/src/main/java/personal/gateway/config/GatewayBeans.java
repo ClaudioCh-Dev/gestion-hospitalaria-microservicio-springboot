@@ -1,7 +1,5 @@
 package personal.gateway.config;
 
-import java.util.Set;
-
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 
@@ -97,8 +95,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "patient-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback?service=patient-ms")))
                                                 .uri("lb://patient-ms"))
@@ -109,8 +105,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "doctor-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback?service=doctor-ms")))
                                                 .uri("lb://doctor-ms"))
@@ -121,8 +115,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "appointment-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback?service=appointment-ms")))
                                                 .uri("lb://appointment-ms"))
@@ -133,8 +125,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "billing-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback?service=billing-ms")))
                                                 .uri("lb://billing-ms"))
@@ -173,8 +163,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "patient-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback")))
                                                 .uri("lb://patient-ms"))
@@ -192,8 +180,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "doctor-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback")))
                                                 .uri("lb://doctor-ms"))
@@ -211,8 +197,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "appointment-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback")))
                                                 .uri("lb://appointment-ms"))
@@ -230,8 +214,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "billing-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback")))
                                                 .uri("lb://billing-ms"))
@@ -249,8 +231,6 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "notification-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback")))
                                                 .uri("lb://notification-ms"))
@@ -268,11 +248,9 @@ public class GatewayBeans {
                                                                 .circuitBreaker(config -> config
                                                                                 .setName(
                                                                                                 "medical-record-listener-circuitbreaker")
-                                                                                .setStatusCodes(
-                                                                                                Set.of("500"))
                                                                                 .setFallbackUri(
                                                                                                 "forward:/fallback")))
-                                                .uri("lb://medical-record-listener-ms"))
+                                                .uri("lb://medical-record-listener"))
 
                                 .build();
         }

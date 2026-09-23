@@ -1,5 +1,6 @@
 package personal.appointment_ms.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -24,73 +25,84 @@ import personal.appointment_ms.service.IAppointmentService;
 @RequestMapping("/crud")
 public class AppointmentController {
 
-        private final IAppointmentService appointmentService;
+    private final IAppointmentService appointmentService;
 
-        @PostMapping
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_CREATE')")
-        public ResponseEntity<AppointmentResponse> createAppointment(
-                        @Valid @RequestBody CreateAppointmentRequest request) {
+    @PostMapping
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_CREATE')")
+    public ResponseEntity<AppointmentResponse> createAppointment(
+            @Valid @RequestBody CreateAppointmentRequest request) {
 
-                AppointmentResponse response = appointmentService.createAppointment(request);
+        AppointmentResponse response =
+                appointmentService.createAppointment(request);
 
-                return ResponseEntity
-                                .status(HttpStatus.CREATED)
-                                .body(response);
-        }
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
 
-        @GetMapping
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
-        public ResponseEntity<Page<AppointmentResponse>> getAppointments(
-                        @PageableDefault(size = 10, sort = "createdAt") Pageable pageable) {
+    @GetMapping
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
+    public ResponseEntity<Page<AppointmentResponse>> getAppointments(
+            @PageableDefault(size = 10, sort = "createdAt")
+            Pageable pageable) {
 
-                return ResponseEntity.ok(
-                                appointmentService.getAppointments(pageable));
-        }
+        return ResponseEntity.ok(
+                appointmentService.getAppointments(pageable));
+    }
 
-        @GetMapping("/{id}")
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
-        public ResponseEntity<AppointmentResponse> getAppointmentById(
-                        @PathVariable Long id) {
+    @GetMapping("/{id}")
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
+    public ResponseEntity<AppointmentResponse> getAppointmentById(
+            @PathVariable Long id) {
 
-                return ResponseEntity.ok(
-                                appointmentService.getAppointmentById(id));
-        }
+        return ResponseEntity.ok(
+                appointmentService.getAppointmentById(id));
+    }
 
-        @GetMapping("/patient/{patientId}")
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ_BY_PATIENT')")
-        public ResponseEntity<List<AppointmentResponse>> getAppointmentsByPatient(
-                        @PathVariable Long patientId) {
+    @GetMapping("/patient/{patientId}")
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ_BY_PATIENT')")
+    public ResponseEntity<List<AppointmentResponse>> getAppointmentsByPatient(
+            @PathVariable Long patientId) {
 
-                return ResponseEntity.ok(
-                                appointmentService.getAppointmentsByPatient(patientId));
-        }
+        return ResponseEntity.ok(
+                appointmentService.getAppointmentsByPatient(patientId));
+    }
 
-        @GetMapping("/doctor/{doctorId}")
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ_BY_DOCTOR')")
-        public ResponseEntity<List<AppointmentResponse>> getAppointmentsByDoctor(
-                        @PathVariable Long doctorId) {
+    @GetMapping("/doctor/{doctorId}")
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ_BY_DOCTOR')")
+    public ResponseEntity<List<AppointmentResponse>> getAppointmentsByDoctor(
+            @PathVariable Long doctorId) {
 
-                return ResponseEntity.ok(
-                                appointmentService.getAppointmentsByDoctor(doctorId));
-        }
+        return ResponseEntity.ok(
+                appointmentService.getAppointmentsByDoctor(doctorId));
+    }
 
-        @PatchMapping("/{id}/status")
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_UPDATE_STATUS')")
-        public ResponseEntity<AppointmentResponse> updateStatus(
-                        @PathVariable Long id,
-                        @Valid @RequestBody UpdateAppointmentStatusRequest request) {
+    @GetMapping("/date/{date}")
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_READ')")
+    public ResponseEntity<List<AppointmentResponse>> getAppointmentsByDate(
+            @PathVariable LocalDate date) {
 
-                return ResponseEntity.ok(
-                                appointmentService.updateStatus(id, request));
-        }
+        return ResponseEntity.ok(
+                appointmentService.getAppointmentsByDate(date));
+    }
 
-        @DeleteMapping("/{id}")
-        @PreAuthorize("@auth.hasPermission('APPOINTMENT_CANCEL')")
-        public ResponseEntity<Void> cancelAppointment(
-                        @PathVariable Long id) {
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_UPDATE_STATUS')")
+    public ResponseEntity<AppointmentResponse> updateStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateAppointmentStatusRequest request) {
 
-                appointmentService.cancelAppointment(id);
+        return ResponseEntity.ok(
+                appointmentService.updateStatus(id, request));
+    }
 
-                return ResponseEntity.noContent().build();
-        }
+    @DeleteMapping("/{id}")
+    @PreAuthorize("@auth.hasPermission('APPOINTMENT_CANCEL')")
+    public ResponseEntity<Void> cancelAppointment(
+            @PathVariable Long id) {
+
+        appointmentService.cancelAppointment(id);
+
+        return ResponseEntity.noContent().build();
+    }
 }

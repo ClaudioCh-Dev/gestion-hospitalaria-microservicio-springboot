@@ -6,12 +6,16 @@ import lombok.extern.slf4j.Slf4j;
 import personal.shared.exception.BusinessException;
 import personal.shared.exception.GenericErrorCode;
 
+import java.nio.file.AccessDeniedException;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 @Slf4j
@@ -33,8 +37,13 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
 
+        HttpStatus status = HttpStatus.resolve(ex.getStatus());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                HttpStatus.valueOf(ex.getStatus()),
+                status,
                 ex.getMessage()
         );
 
@@ -68,7 +77,65 @@ public class GlobalExceptionHandler {
 
         problem.setProperty(
                 "code",
-                GenericErrorCode.VALIDATION_ERROR
+                GenericErrorCode.VALIDATION_ERROR.name()
+        );
+
+        return problem;
+    }
+
+    // =========================================================
+    // 400 - JSON MAL FORMADO
+    // =========================================================
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ProblemDetail handleInvalidRequestBody(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+
+        log.warn(
+                "Invalid request body path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "El cuerpo de la petición no tiene un formato válido"
+        );
+
+        problem.setProperty(
+                "code",
+                GenericErrorCode.INVALID_REQUEST_BODY.name()
+        );
+
+        return problem;
+    }
+
+    // =========================================================
+    // 400 - TIPO DE PARAMETRO INCORRECTO
+    // =========================================================
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ProblemDetail handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex,
+            HttpServletRequest request
+    ) {
+
+        log.warn(
+                "Parameter type mismatch path={} parameter={}",
+                request.getRequestURI(),
+                ex.getName()
+        );
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "El parámetro '" + ex.getName() + "' tiene un formato inválido"
+        );
+
+        problem.setProperty(
+                "code",
+                GenericErrorCode.INVALID_PARAMETER.name()
         );
 
         return problem;
@@ -97,7 +164,7 @@ public class GlobalExceptionHandler {
 
         problem.setProperty(
                 "code",
-                GenericErrorCode.DATA_INTEGRITY_ERROR
+                GenericErrorCode.DATA_INTEGRITY_ERROR.name()
         );
 
         return problem;
@@ -126,7 +193,36 @@ public class GlobalExceptionHandler {
 
         problem.setProperty(
                 "code",
-                GenericErrorCode.INVALID_ARGUMENT
+                GenericErrorCode.INVALID_ARGUMENT.name()
+        );
+
+        return problem;
+    }
+
+    // =========================================================
+    // 403 - ACCESS DENIED
+    // =========================================================
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+
+        log.warn(
+                "Access denied path={} message={}",
+                request.getRequestURI(),
+                ex.getMessage()
+        );
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.FORBIDDEN,
+                "No tienes permisos para realizar esta operación"
+        );
+
+        problem.setProperty(
+                "code",
+                GenericErrorCode.ACCESS_DENIED.name()
         );
 
         return problem;
@@ -155,7 +251,7 @@ public class GlobalExceptionHandler {
 
         problem.setProperty(
                 "code",
-                GenericErrorCode.INTERNAL_ERROR
+                GenericErrorCode.INTERNAL_ERROR.name()
         );
 
         return problem;

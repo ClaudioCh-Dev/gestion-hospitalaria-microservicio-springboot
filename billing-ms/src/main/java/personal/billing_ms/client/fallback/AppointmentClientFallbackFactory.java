@@ -1,4 +1,4 @@
-package personal.appointment_ms.client.fallback;
+package personal.billing_ms.client.fallback;
 
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
@@ -7,27 +7,27 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 import lombok.extern.slf4j.Slf4j;
 
-import personal.appointment_ms.client.BillingClient;
-import personal.appointment_ms.exceptions.AppointmentErrorCode;
+import personal.billing_ms.client.AppointmentClient;
+import personal.billing_ms.exceptions.BillingErrorCode;
 
 import personal.shared.exception.BusinessException;
 
 @Slf4j
 @Component
-public class BillingClientFallbackFactory
-        implements FallbackFactory<BillingClient> {
+public class AppointmentClientFallbackFactory
+        implements FallbackFactory<AppointmentClient> {
 
     @Override
-    public BillingClient create(Throwable cause) {
+    public AppointmentClient create(Throwable cause) {
 
-       log.warn(
-            "Fallback BillingClient. cause={} message={}",
+        log.warn(
+            "Fallback AppointmentClient. cause={} message={}",
             cause.getClass().getName(),
             cause.getMessage(),
             cause
         );
 
-        return appointmentTypeId -> {
+        return id -> {
 
             if (cause instanceof BusinessException ex) {
                 throw ex;
@@ -35,21 +35,21 @@ public class BillingClientFallbackFactory
 
             if (cause instanceof CallNotPermittedException) {
                 throw new BusinessException(
-                    AppointmentErrorCode.BILLING_SERVICE_UNAVAILABLE,
-                    "Billing MS temporalmente no disponible"
+                    BillingErrorCode.APPOINTMENT_SERVICE_UNAVAILABLE,
+                    "Appointment MS temporalmente no disponible"
                 );
             }
 
             if (cause instanceof java.util.concurrent.TimeoutException) {
                 throw new BusinessException(
-                    AppointmentErrorCode.BILLING_SERVICE_UNAVAILABLE,
-                    "Billing MS no respondió a tiempo"
+                    BillingErrorCode.APPOINTMENT_SERVICE_UNAVAILABLE,
+                    "Appointment MS no respondió a tiempo"
                 );
             }
 
             throw new BusinessException(
-                AppointmentErrorCode.BILLING_SERVICE_UNAVAILABLE,
-                "No fue posible comunicarse con Billing MS"
+                BillingErrorCode.APPOINTMENT_SERVICE_UNAVAILABLE,
+                "No fue posible comunicarse con Appointment MS"
             );
         };
     }

@@ -1,5 +1,6 @@
 package personal.appointment_ms.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -25,6 +26,9 @@ public interface IAppointmentService {
 
     List<AppointmentResponse> getAppointmentsByDoctor(
             Long doctorId);
+
+    List<AppointmentResponse> getAppointmentsByDate(
+            LocalDate date);
 
     AppointmentResponse updateStatus(
             Long id,

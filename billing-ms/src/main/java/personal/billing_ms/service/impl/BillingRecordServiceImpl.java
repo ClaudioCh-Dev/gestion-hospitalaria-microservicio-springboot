@@ -1,8 +1,9 @@
 package personal.billing_ms.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import personal.billing_ms.client.AppointmentClient;
 import personal.billing_ms.client.dto.AppointmentResponse;
 import personal.billing_ms.dto.AppointmentEventRequest;
+import personal.billing_ms.dto.BillingRecordResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.entities.BillingStatus;
@@ -18,13 +20,14 @@ import personal.billing_ms.exceptions.BillingErrorCode;
 import personal.billing_ms.repositories.BillingRepository;
 import personal.billing_ms.service.IBillingRecordService;
 import personal.billing_ms.streams.PaymentPublisher;
-import personal.shared.event.status.StatusPayment;
 import personal.shared.event.PaymentUpdateStatus;
+import personal.shared.event.status.StatusPayment;
 import personal.shared.exception.BusinessException;
 
 @Service
 @RequiredArgsConstructor
-public class BillingRecordServiceImpl implements IBillingRecordService {
+public class BillingRecordServiceImpl
+        implements IBillingRecordService {
 
     private final BillingRepository billingRepository;
     private final AppointmentClient appointmentClient;
@@ -32,8 +35,9 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
 
     @Override
     @Transactional
-    public BillingRecord createBilling(CreateBillingRequest request) {
-
+    public BillingRecordResponse createBilling(
+            CreateBillingRequest request
+    ) {
         AppointmentResponse appointment =
                 appointmentClient.findById(request.appointmentId());
 
@@ -45,33 +49,49 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
         billingRecord.setStatus(BillingStatus.PENDING);
         billingRecord.setIssuedAt(LocalDateTime.now());
 
-        return billingRepository.save(billingRecord);
+        return toResponse(billingRepository.save(billingRecord));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<BillingRecord> getBillingByPatient(Long patientId) {
+    public Page<BillingRecordResponse> getBillingByPatient(
+            Long patientId,
+            Pageable pageable
+    ) {
+        return billingRepository
+                .findByPatientId(patientId, pageable)
+                .map(this::toResponse);
+    }
 
-        return billingRepository.findByPatientId(patientId);
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BillingRecordResponse> getBillings(
+            Pageable pageable
+    ) {
+        return billingRepository
+                .findAll(pageable)
+                .map(this::toResponse);
     }
 
     @Override
     @Transactional
-    public BillingRecord payBilling(Long id) {
+    public BillingRecordResponse payBilling(Long id) {
 
-        BillingRecord billingRecord = billingRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        BillingErrorCode.BILLING_RECORD_NOT_FOUND,
-                        "Registro de facturación no encontrado"
-                ));
-        
-        if(billingRecord.getStatus() == BillingStatus.PAID) {
+        BillingRecord billingRecord =
+                billingRepository.findById(id)
+                        .orElseThrow(() -> new BusinessException(
+                                BillingErrorCode.BILLING_RECORD_NOT_FOUND,
+                                "Registro de facturación no encontrado"
+                        ));
+
+        if (billingRecord.getStatus() == BillingStatus.PAID) {
             throw new BusinessException(
                     BillingErrorCode.BILLING_RECORD_ALREADY_PAID,
                     "El registro de facturación ya se encuentra pagado"
             );
         }
-        if(billingRecord.getStatus() == BillingStatus.CANCELLED) {
+
+        if (billingRecord.getStatus() == BillingStatus.CANCELLED) {
             throw new BusinessException(
                     BillingErrorCode.BILLING_RECORD_ALREADY_CANCELLED,
                     "El registro de facturación ya se encuentra cancelado"
@@ -87,21 +107,20 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                         billingRecord.getAppointmentId(),
                         billingRecord.getAmount(),
                         "PEN",
-                        StatusPayment.valueOf(BillingStatus.PAID.name()),
+                        StatusPayment.PAID,
                         billingRecord.getIssuedAt(),
                         billingRecord.getPaidAt()
                 )
-                
         );
 
-        return billingRepository.save(billingRecord);
+        return toResponse(billingRepository.save(billingRecord));
     }
 
     @Override
     @Transactional
-    public BillingRecord createBillingFromAppointment(
-            AppointmentEventRequest event) {
-
+    public BillingRecordResponse createBillingFromAppointment(
+            AppointmentEventRequest event
+    ) {
         BillingRecord billingRecord = new BillingRecord();
 
         billingRecord.setAppointmentId(event.appointmentId());
@@ -110,36 +129,34 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
         billingRecord.setStatus(BillingStatus.PENDING);
         billingRecord.setIssuedAt(LocalDateTime.now());
 
-        return billingRepository.save(billingRecord);
+        return toResponse(billingRepository.save(billingRecord));
     }
 
     @Override
-    public List<BillingRecord> getBillings() {
-        return billingRepository.findAll();
-    }
+    @Transactional
+    public BillingRecordResponse cancelBillingRecord(Long appointmentId) {
 
-    @Override
-    public BillingRecord cancelBillingRecord(Long appointmentId) {
-        
-        BillingRecord billingRecord = billingRepository.findById(appointmentId)
-                .orElseThrow(() -> new BusinessException(
-                        BillingErrorCode.BILLING_RECORD_NOT_FOUND,
-                        "Registro de facturación no encontrado"
-                ));
+        BillingRecord billingRecord =
+                billingRepository.findById(appointmentId)
+                        .orElseThrow(() -> new BusinessException(
+                                BillingErrorCode.BILLING_RECORD_NOT_FOUND,
+                                "Registro de facturación no encontrado"
+                        ));
 
-        if(billingRecord.getStatus() == BillingStatus.PAID) {
+        if (billingRecord.getStatus() == BillingStatus.PAID) {
             throw new BusinessException(
                     BillingErrorCode.BILLING_RECORD_ALREADY_PAID,
                     "El registro de facturación ya se encuentra pagado"
             );
         }
-        if(billingRecord.getStatus() == BillingStatus.CANCELLED) {
+
+        if (billingRecord.getStatus() == BillingStatus.CANCELLED) {
             throw new BusinessException(
                     BillingErrorCode.BILLING_RECORD_ALREADY_CANCELLED,
                     "El registro de facturación ya se encuentra cancelado"
             );
         }
- 
+
         billingRecord.setStatus(BillingStatus.CANCELLED);
 
         paymentPublisher.publishPaymentUpdateStatus(
@@ -148,12 +165,27 @@ public class BillingRecordServiceImpl implements IBillingRecordService {
                         billingRecord.getAppointmentId(),
                         billingRecord.getAmount(),
                         "PEN",
-                        StatusPayment.valueOf(BillingStatus.CANCELLED.name()),
+                        StatusPayment.CANCELLED,
                         billingRecord.getIssuedAt(),
                         null
                 )
         );
-        
-        return billingRepository.save(billingRecord);
+
+        return toResponse(billingRepository.save(billingRecord));
+    }
+
+    private BillingRecordResponse toResponse(
+            BillingRecord billing
+    ) {
+        return new BillingRecordResponse(
+                billing.getId(),
+                billing.getAppointmentId(),
+                billing.getPatientId(),
+                billing.getAmount(),
+                billing.getCurrency(),
+                billing.getStatus(),
+                billing.getIssuedAt(),
+                billing.getPaidAt()
+        );
     }
 }

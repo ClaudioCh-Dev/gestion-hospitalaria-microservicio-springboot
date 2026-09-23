@@ -3,8 +3,6 @@ package personal.notification_ms.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import personal.notification_ms.dto.AdminNotificationResponse;
-import personal.notification_ms.dto.DoctorNotificationResponse;
 import personal.notification_ms.dto.NotificationRequest;
 import personal.notification_ms.dto.NotificationResponse;
 import personal.notification_ms.mapper.NotificationMapper;
@@ -39,13 +37,19 @@ public class NotificationServiceImpl implements INotificationService {
     }
 
     @Override
-    public List<DoctorNotificationResponse> findMyDoctorNotifications(Long doctorId) {
-        return repository.findDoctorNotifications(doctorId);
+    public List<NotificationResponse> findMyDoctorNotifications(Long doctorId) {
+        return repository.findDoctorNotifications(doctorId)
+                .stream()
+                .map(notificationMapper::toResponse)
+                .toList();
     }
 
     @Override
-    public List<AdminNotificationResponse> findForAdmin() {
-        return repository.findAdminNotifications();
+    public List<NotificationResponse> findForAdmin() {
+        return repository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(notificationMapper::toResponse)
+                .toList();
     }
 
     @Override

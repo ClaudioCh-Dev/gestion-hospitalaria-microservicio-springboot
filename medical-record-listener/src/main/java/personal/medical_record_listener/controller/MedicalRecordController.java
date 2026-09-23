@@ -1,7 +1,7 @@
 package personal.medical_record_listener.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,16 +21,22 @@ public class MedicalRecordController {
 
     @GetMapping("/patient/{patientId}")
     @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ_BY_PATIENT')")
-    public ResponseEntity<List<MedicalRecordResponse>> findByPatientId(
-            @PathVariable Long patientId) {
+    public ResponseEntity<Page<MedicalRecordResponse>> findByPatientId(
+            @PathVariable Long patientId,
+            Pageable pageable) {
+
         return ResponseEntity.ok(
-                service.findByPatientId(patientId));
+                service.findByPatientId(patientId, pageable)
+        );
     }
 
     @GetMapping
     @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ')")
-    public ResponseEntity<List<MedicalRecordResponse>> findAll() {
+    public ResponseEntity<Page<MedicalRecordResponse>> findAll(
+            Pageable pageable) {
+
         return ResponseEntity.ok(
-                service.findAll());
+                service.findAll(pageable)
+        );
     }
 }

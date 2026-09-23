@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import personal.shared.exception.BusinessException;
 import personal.shared.exception.GenericErrorCode;
 
+import java.nio.file.AccessDeniedException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -28,8 +30,13 @@ public class GlobalExceptionHandler {
         public ProblemDetail handleBusinessException(
                         BusinessException ex) {
 
+                HttpStatus status = HttpStatus.resolve(ex.getStatus());
+                if (status == null) {
+                        status = HttpStatus.INTERNAL_SERVER_ERROR;
+                }
+
                 ProblemDetail problem = ProblemDetail.forStatusAndDetail(
-                                HttpStatus.valueOf(ex.getStatus()),
+                                status,
                                 ex.getMessage());
 
                 problem.setProperty("code", ex.getCode());
@@ -77,10 +84,11 @@ public class GlobalExceptionHandler {
                         HttpMessageNotReadableException ex,
                         ServerHttpRequest request) {
 
-                log.warn(
+                log.error(
                                 "Invalid request body path={} message={}",
                                 request.getPath().value(),
-                                ex.getMessage());
+                                ex.getMessage(),
+                                ex);
 
                 ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                                 HttpStatus.BAD_REQUEST,
@@ -143,6 +151,30 @@ public class GlobalExceptionHandler {
                 problem.setProperty(
                                 "code",
                                 GenericErrorCode.INVALID_ARGUMENT.name());
+
+                return problem;
+        }
+
+        // =========================================================
+        // 403 - ACCESS DENIED
+        // =========================================================
+        @ExceptionHandler(AccessDeniedException.class)
+        public ProblemDetail handleAccessDenied(
+                        AccessDeniedException ex,
+                        ServerHttpRequest request) {
+
+                log.warn(
+                                "Access denied path={} message={}",
+                                request.getPath().value(),
+                                ex.getMessage());
+
+                ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                                HttpStatus.FORBIDDEN,
+                                "No tienes permisos para realizar esta operación");
+
+                problem.setProperty(
+                                "code",
+                                GenericErrorCode.ACCESS_DENIED.name());
 
                 return problem;
         }

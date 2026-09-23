@@ -1,15 +1,17 @@
 package personal.medical_record_listener.service.impl;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+
 import personal.medical_record_listener.dto.MedicalRecordResponse;
 import personal.medical_record_listener.exceptions.MedicalRecordErrorCode;
 import personal.medical_record_listener.model.MedicalRecord;
 import personal.medical_record_listener.repository.MedicalRecordRepository;
 import personal.medical_record_listener.service.IMedicalRecordService;
+
 import personal.shared.event.MedicalRecordReadyEvent;
 import personal.shared.exception.BusinessException;
 
@@ -21,7 +23,6 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
 
     // Guardar registro médico cuando la cita está COMPLETED
     // y el pago está PAID
-    
     @Override
     public void save(MedicalRecordReadyEvent event) {
 
@@ -41,12 +42,14 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
         repository.save(record);
     }
 
-    // Obtener todos los registros médicos de un paciente
+    // Obtener registros médicos de un paciente
     @Override
-    public List<MedicalRecordResponse> findByPatientId(Long patientId) {
+    public Page<MedicalRecordResponse> findByPatientId(
+            Long patientId,
+            Pageable pageable) {
 
-        List<MedicalRecord> records =
-                repository.findByPatientId(patientId);
+        Page<MedicalRecord> records =
+                repository.findByPatientId(patientId, pageable);
 
         if (records.isEmpty()) {
             throw new BusinessException(
@@ -55,19 +58,15 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
             );
         }
 
-        return records.stream()
-                .map(this::toResponse)
-                .toList();
+        return records.map(this::toResponse);
     }
 
     // Obtener todos los registros médicos
     @Override
-    public List<MedicalRecordResponse> findAll() {
+    public Page<MedicalRecordResponse> findAll(Pageable pageable) {
 
-        return repository.findAll()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return repository.findAll(pageable)
+                .map(this::toResponse);
     }
 
     private MedicalRecordResponse toResponse(

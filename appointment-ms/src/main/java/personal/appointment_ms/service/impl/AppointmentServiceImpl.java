@@ -1,6 +1,7 @@
 package personal.appointment_ms.service.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -210,6 +211,19 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 .stream()
                                 .map(this::toResponse)
                                 .toList();
+        }
+
+         @Override
+        public List<AppointmentResponse> getAppointmentsByDate(LocalDate date) {
+
+                LocalDateTime start = date.atStartOfDay();
+                LocalDateTime end = date.plusDays(1).atStartOfDay();
+
+                return appointmentRepository
+                        .findByScheduledAtGreaterThanEqualAndScheduledAtLessThan(start, end)
+                        .stream()
+                        .map(this::toResponse)
+                        .toList();
         }
 
         @Override
