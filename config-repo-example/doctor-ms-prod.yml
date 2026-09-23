@@ -1,0 +1,10 @@
+# Valores que reemplazan los placeholders ${db.*} del application.yml del servicio
+db:
+  url: jdbc:postgresql://db-hospital:5432/hospital_db
+  username: postgres
+  password: 123456
+  connection-timeout: 20000
+  maximum-pool-size: 5
+
+scalar:
+  enabled: false

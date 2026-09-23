@@ -1,0 +1,7 @@
+# El correo real se configura por variables de entorno (MAILTRAP_* en el .env).
+# Este bloque es solo de referencia.
+mail:
+  port: 587
+  host: smtp.gmail.com
+  username: your-email@gmail.com
+  password: your-password

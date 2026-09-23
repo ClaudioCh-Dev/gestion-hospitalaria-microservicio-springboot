@@ -1,0 +1,5648 @@
+{
+	"info": {
+		"_postman_id": "ba52ff3b-c370-4e70-988e-2a4f6c9e7c63",
+		"name": "Gestión Hospitalaria - Microservicios",
+		"description": "API del sistema de gestión hospitalaria (Spring Boot + Spring Cloud). Todas las peticiones pasan por el **API Gateway** (`http://localhost:4040`).\n\n### Cómo usarla\n1. Levanta el proyecto con Docker Compose (ver `README.md` del repo).\n2. Ejecuta **00 · Auth → Login (admin)**. El token queda en `{{access_token}}` y todas las peticiones lo envían como `Bearer` (auth heredada de la colección).\n3. Los *Create* guardan el `id` creado en variables (`patient_id`, `doctor_id`, `appointment_id`, …) y las peticiones siguientes las usan.\n4. Para probar todo el flujo de negocio ejecuta la carpeta **10 · Flujo completo** con el Runner.\n\n### Errores\nTodos los servicios responden errores como `ProblemDetail` (`application/problem+json`) con un campo `code`:\n```json\n{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}\n```\n`401` = falta el token o expiró · `403` = el rol no tiene el permiso · `503` = un servicio dependiente no responde (circuit breaker).\n\nCada petición trae **ejemplos de respuesta** (éxito y errores) en su panel *Examples*.\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// aviso si se llama a un endpoint protegido sin haber hecho Login",
+					"if (!pm.collectionVariables.get('access_token') && !pm.request.url.toString().includes('/auth/')) {",
+					"    console.warn('access_token vacío: ejecuta primero 00 · Auth → Login (admin)');",
+					"}"
+				]
+			}
+		}
+	],
+	"item": [
+		{
+			"name": "00 · Auth",
+			"description": "Autenticación contra `auth-server` (pasando por el gateway; `/auth-server/**` es ruta pública).\n\n1. Ejecuta **Login**: guarda automáticamente `access_token` y `refresh_token` en las variables de la colección.\n2. Todas las demás peticiones heredan `Authorization: Bearer {{access_token}}` desde la colección.\n3. El access token dura **15 min** (`auth.jwt.access-token-expiration: 900`). Cuando expire usa **Refresh Token** o vuelve a hacer Login.\n\nUsuarios que crea el `DataSeeder` al arrancar:\n\n| Email | Password | Rol |\n|---|---|---|\n| `admin@example.com` | `123456` | ADMIN (todos los permisos) |\n| `doctor@example.com` | `123456` | DOCTOR |",
+			"item": [
+				{
+					"name": "Login (admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/auth/login",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en las variables de la colección.",
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/auth/login",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										"auth",
+										"login"
+									]
+								},
+								"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en las variables de la colección.",
+								"auth": {
+									"type": "noauth"
+								},
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"accessToken\": \"eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsInJvbGUiOiJBRE1JTiJ9.firma...\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set('access_token', pm.response.json().accessToken);",
+									"    const setCookie = pm.response.headers.all()",
+									"        .filter(h => h.key.toLowerCase() === 'set-cookie')",
+									"        .map(h => h.value).join(';');",
+									"    const m = setCookie.match(/refresh_token=([^;]+)/);",
+									"    if (m) pm.collectionVariables.set('refresh_token', m[1]);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login (doctor)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/auth/login",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Igual que Login (admin) pero con el usuario DOCTOR, útil para probar respuestas **403** en endpoints de administración.",
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"doctor@example.com\",\n  \"password\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) pm.collectionVariables.set('access_token', pm.response.json().accessToken);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Validate Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "access-token",
+								"value": "{{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/auth/validate-jwt",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"auth",
+								"validate-jwt"
+							]
+						},
+						"description": "Valida un access token (header `access-token`, **sin** `Bearer`) y devuelve sus claims.",
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": [
+						{
+							"name": "200 - Claims",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "access-token",
+										"value": "{{access_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/auth/validate-jwt",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										"auth",
+										"validate-jwt"
+									]
+								},
+								"description": "Valida un access token (header `access-token`, **sin** `Bearer`) y devuelve sus claims.",
+								"auth": {
+									"type": "noauth"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"userId\": 1,\n  \"email\": \"admin@example.com\",\n  \"role\": \"ADMIN\",\n  \"permissions\": [\n    \"PATIENT_READ\",\n    \"PATIENT_CREATE\",\n    \"APPOINTMENT_CREATE\",\n    \"...\"\n  ]\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Cookie",
+								"value": "refresh_token={{refresh_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/auth/refresh-token",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"auth",
+								"refresh-token"
+							]
+						},
+						"description": "Emite un nuevo access token a partir de la cookie `refresh_token`.\n\nLa cookie real es `Secure` y con `path=/auth/refresh-token`, así que Postman no la reenvía sola por HTTP: por eso se manda explícitamente en el header `Cookie` usando la variable que guardó Login.",
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set('access_token', pm.response.json().accessToken);",
+									"    const m = (pm.response.headers.get('Set-Cookie') || '').match(/refresh_token=([^;]+)/);",
+									"    if (m) pm.collectionVariables.set('refresh_token', m[1]);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/auth/logout",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Borra la cookie `refresh_token`. Requiere estar autenticado. Responde **204**."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "JWKS (clave pública)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/.well-known/jwks.json",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								".well-known",
+								"jwks.json"
+							]
+						},
+						"description": "Clave pública RSA con la que el gateway verifica la firma de los JWT.",
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": [
+						{
+							"name": "200 - JWKS",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/.well-known/jwks.json",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										".well-known",
+										"jwks.json"
+									]
+								},
+								"description": "Clave pública RSA con la que el gateway verifica la firma de los JWT.",
+								"auth": {
+									"type": "noauth"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"keys\": [\n    {\n      \"kty\": \"RSA\",\n      \"e\": \"AQAB\",\n      \"kid\": \"...\",\n      \"n\": \"...\"\n    }\n  ]\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "01 · Users (auth-server)",
+			"description": "Gestión de usuarios del `auth-server`. Requiere permisos `USER_*` (rol ADMIN).\n\n- `roleId`: **1 = ADMIN**, **2 = DOCTOR** (orden en que los crea el `DataSeeder`).\n- Al crear un usuario se le envía un correo (Mailtrap) con un token de activación → **Activate User**.\n- Contraseñas nuevas: mínimo 8 caracteres, con mayúscula, minúscula, número y carácter especial (`@$!%*?&`).",
+			"item": [
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/users",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										"users"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 1,\n    \"email\": \"admin@example.com\",\n    \"roleId\": 1,\n    \"role\": \"ADMIN\"\n  },\n  {\n    \"id\": 2,\n    \"email\": \"doctor@example.com\",\n    \"roleId\": 2,\n    \"role\": \"DOCTOR\"\n  }\n]"
+						},
+						{
+							"name": "403 - Sin permiso",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/users",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										"users"
+									]
+								},
+								"description": ""
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"No tienes permisos para realizar esta operación\",\n  \"instance\": \"/crud\",\n  \"code\": \"ACCESS_DENIED\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/{{user_id}}",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"{{user_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users"
+							]
+						},
+						"description": "Crea un usuario inactivo y le envía el correo de activación.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"recepcion{{$randomInt}}@hospital.com\",\n  \"roleId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/users",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										"users"
+									]
+								},
+								"description": "Crea un usuario inactivo y le envía el correo de activación.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"recepcion{{$randomInt}}@hospital.com\",\n  \"roleId\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 3,\n  \"email\": \"recepcion@hospital.com\",\n  \"roleId\": 1,\n  \"role\": \"ADMIN\"\n}"
+						},
+						{
+							"name": "403 - Sin permiso",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_auth_server}}/auth-server/users",
+									"host": [
+										"{{url_auth_server}}"
+									],
+									"path": [
+										"auth-server",
+										"users"
+									]
+								},
+								"description": "Crea un usuario inactivo y le envía el correo de activación.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"recepcion{{$randomInt}}@hospital.com\",\n  \"roleId\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"No tienes permisos para realizar esta operación\",\n  \"instance\": \"/crud\",\n  \"code\": \"ACCESS_DENIED\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('user_id', pm.response.json().id);",
+									"    console.log('user_id =', pm.collectionVariables.get('user_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Doctor User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/doctor",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"doctor"
+							]
+						},
+						"description": "Crea un usuario con rol DOCTOR. `doctor-ms` lo llama internamente al registrar un médico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"doctor{{$randomInt}}@hospital.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('user_id', pm.response.json().id);",
+									"    console.log('user_id =', pm.collectionVariables.get('user_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/{{user_id}}",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"{{user_id}}"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"recepcion.editado@hospital.com\",\n  \"password\": \"Nueva123!\",\n  \"roleId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/{{user_id}}",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"{{user_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Activate User (token del correo)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/activate",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"activate"
+							]
+						},
+						"description": "Ruta pública. Activa la cuenta con el token que llega en el correo y fija la contraseña.",
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"<token-recibido-por-correo>\",\n  \"password\": \"Segura123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Resend Activation",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/resend-activation",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"resend-activation"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"recepcion@hospital.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Change My Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/users/change-password-me",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"users",
+								"change-password-me"
+							]
+						},
+						"description": "Cambia la contraseña del usuario del token actual. ⚠️ Si lo haces con `admin@example.com`, el Login de la colección dejará de funcionar hasta que actualices `admin_password`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"Nueva123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "02 · Doctors & Specialties",
+			"description": "`doctor-ms` (`/doctors/**`). `sql/data.sql` ya carga 5 especialidades, médicos de ejemplo, tipos de cita y tarifas.\n\nAl crear un médico, `doctor-ms` crea también su usuario en `auth-server` (rol DOCTOR) y publica el evento `doctor-created` en Kafka.",
+			"item": [
+				{
+					"name": "Get Specialties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/specialties",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"specialties"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/specialties",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"specialties"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Cardiología\",\n    \"description\": \"Diagnóstico y tratamiento de enfermedades del corazón\"\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Pediatría\",\n    \"description\": \"Atención médica de niños y adolescentes\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Specialty",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/specialties",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"specialties"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Urología {{$randomInt}}\",\n  \"description\": \"Diagnóstico y tratamiento del aparato urinario\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/specialties",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"specialties"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Urología {{$randomInt}}\",\n  \"description\": \"Diagnóstico y tratamiento del aparato urinario\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"name\": \"Cardiología\",\n  \"description\": \"Diagnóstico y tratamiento de enfermedades del corazón\"\n}"
+						},
+						{
+							"name": "400 - Validación",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/specialties",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"specialties"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Urología {{$randomInt}}\",\n  \"description\": \"Diagnóstico y tratamiento del aparato urinario\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('specialty_id', pm.response.json().id);",
+									"    console.log('specialty_id =', pm.collectionVariables.get('specialty_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Doctors",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud?page=0&size=10&sort=id,asc",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "id,asc"
+								}
+							]
+						},
+						"description": "Paginado (`page`, `size`, `sort`)."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud?page=0&size=10&sort=id,asc",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "id,asc"
+										}
+									]
+								},
+								"description": "Paginado (`page`, `size`, `sort`)."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 3,\n      \"licenseNumber\": \"CMP-045872\",\n      \"firstName\": \"Carlos\",\n      \"lastName\": \"Ramírez\",\n      \"email\": \"carlos.ramirez@hospital.com\",\n      \"phone\": \"912345678\",\n      \"userId\": 12,\n      \"specialtyId\": 1,\n      \"specialtyName\": \"Cardiología\",\n      \"scheduleStart\": \"08:00:00\",\n      \"scheduleEnd\": \"14:00:00\",\n      \"active\": true\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Doctor By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud/{{doctor_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud",
+								"{{doctor_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud/{{doctor_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud",
+										"{{doctor_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 3,\n  \"licenseNumber\": \"CMP-045872\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos.ramirez@hospital.com\",\n  \"phone\": \"912345678\",\n  \"userId\": 12,\n  \"specialtyId\": 1,\n  \"specialtyName\": \"Cardiología\",\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"14:00:00\",\n  \"active\": true\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud/{{doctor_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud",
+										"{{doctor_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Doctor no encontrado\",\n  \"instance\": \"/crud/99\",\n  \"code\": \"DOCTOR_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Doctors By Specialty",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud/specialty/{{specialty_id}}?page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud",
+								"specialty",
+								"{{specialty_id}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud/specialty/{{specialty_id}}?page=0&size=10",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud",
+										"specialty",
+										"{{specialty_id}}"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										}
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 3,\n      \"licenseNumber\": \"CMP-045872\",\n      \"firstName\": \"Carlos\",\n      \"lastName\": \"Ramírez\",\n      \"email\": \"carlos.ramirez@hospital.com\",\n      \"phone\": \"912345678\",\n      \"userId\": 12,\n      \"specialtyId\": 1,\n      \"specialtyName\": \"Cardiología\",\n      \"scheduleStart\": \"08:00:00\",\n      \"scheduleEnd\": \"14:00:00\",\n      \"active\": true\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						},
+						{
+							"name": "404 - Especialidad no existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud/specialty/{{specialty_id}}?page=0&size=10",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud",
+										"specialty",
+										"{{specialty_id}}"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										}
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Especialidad no encontrada\",\n  \"instance\": \"/crud\",\n  \"code\": \"SPECIALTY_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Doctor",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud"
+							]
+						},
+						"description": "`licenseNumber` se genera aleatorio en el *Pre-request* para no chocar con uno existente. Horario en formato `HH:mm:ss`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"licenseNumber\": \"{{doctor_license}}\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos{{$randomInt}}@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"18:00:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud"
+									]
+								},
+								"description": "`licenseNumber` se genera aleatorio en el *Pre-request* para no chocar con uno existente. Horario en formato `HH:mm:ss`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"licenseNumber\": \"{{doctor_license}}\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos{{$randomInt}}@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"18:00:00\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 3,\n  \"licenseNumber\": \"CMP-045872\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos.ramirez@hospital.com\",\n  \"phone\": \"912345678\",\n  \"userId\": 12,\n  \"specialtyId\": 1,\n  \"specialtyName\": \"Cardiología\",\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"14:00:00\",\n  \"active\": true\n}"
+						},
+						{
+							"name": "400 - Validación",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud"
+									]
+								},
+								"description": "`licenseNumber` se genera aleatorio en el *Pre-request* para no chocar con uno existente. Horario en formato `HH:mm:ss`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"licenseNumber\": \"{{doctor_license}}\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos{{$randomInt}}@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"18:00:00\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+						},
+						{
+							"name": "409 - Licencia duplicada",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud"
+									]
+								},
+								"description": "`licenseNumber` se genera aleatorio en el *Pre-request* para no chocar con uno existente. Horario en formato `HH:mm:ss`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"licenseNumber\": \"{{doctor_license}}\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos{{$randomInt}}@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"18:00:00\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"El correo electrónico ya está registrado\",\n  \"instance\": \"/crud\",\n  \"code\": \"DOCTOR_ALREADY_EXISTS\"\n}"
+						},
+						{
+							"name": "503 - auth-server caído",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud"
+									]
+								},
+								"description": "`licenseNumber` se genera aleatorio en el *Pre-request* para no chocar con uno existente. Horario en formato `HH:mm:ss`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"licenseNumber\": \"{{doctor_license}}\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos{{$randomInt}}@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"18:00:00\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Service Unavailable",
+							"code": 503,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Service Unavailable\",\n  \"status\": 503,\n  \"detail\": \"Auth Server temporalmente no disponible\",\n  \"instance\": \"/crud\",\n  \"code\": \"AUTH_SERVICE_UNAVAILABLE\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set('doctor_license', 'CMP-' + Math.floor(100000 + Math.random() * 900000));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('doctor_id', pm.response.json().id);",
+									"    console.log('doctor_id =', pm.collectionVariables.get('doctor_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Doctor",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud/{{doctor_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud",
+								"{{doctor_id}}"
+							]
+						},
+						"description": "`licenseNumber` no se puede modificar. `active: false` desactiva al médico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos.ramirez@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"09:00:00\",\n  \"scheduleEnd\": \"15:00:00\",\n  \"active\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/doctors/crud/{{doctor_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"doctors",
+										"crud",
+										"{{doctor_id}}"
+									]
+								},
+								"description": "`licenseNumber` no se puede modificar. `active: false` desactiva al médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos.ramirez@hospital.com\",\n  \"phone\": \"912345678\",\n  \"specialtyId\": 1,\n  \"scheduleStart\": \"09:00:00\",\n  \"scheduleEnd\": \"15:00:00\",\n  \"active\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 3,\n  \"licenseNumber\": \"CMP-045872\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramírez\",\n  \"email\": \"carlos.ramirez@hospital.com\",\n  \"phone\": \"912345678\",\n  \"userId\": 12,\n  \"specialtyId\": 1,\n  \"specialtyName\": \"Cardiología\",\n  \"scheduleStart\": \"08:00:00\",\n  \"scheduleEnd\": \"14:00:00\",\n  \"active\": true\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "03 · Patients",
+			"description": "`patient-ms` (`/patients/**`). Al crear/actualizar publica `patient-created` / `patient-updated` en Kafka (appointment-ms guarda una copia local).\n\n- `gender`: `MALE`, `FEMALE`\n- `bloodType`: `A_POSITIVE`, `A_NEGATIVE`, `B_POSITIVE`, `B_NEGATIVE`, `AB_POSITIVE`, `AB_NEGATIVE`, `O_POSITIVE`, `O_NEGATIVE`\n- `birthDate`: `yyyy-MM-dd`",
+			"item": [
+				{
+					"name": "Create Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud"
+							]
+						},
+						"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud"
+									]
+								},
+								"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"documentNumber\": \"74859612\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"gender\": \"FEMALE\",\n  \"birthDate\": \"1990-05-14\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.gonzales@mail.com\",\n  \"active\": true\n}"
+						},
+						{
+							"name": "400 - Validación",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud"
+									]
+								},
+								"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+						},
+						{
+							"name": "409 - Documento duplicado",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud"
+									]
+								},
+								"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"El número de documento ya está registrado\",\n  \"instance\": \"/crud\",\n  \"code\": \"PATIENT_DOCUMENT_ALREADY_EXISTS\"\n}"
+						},
+						{
+							"name": "409 - Email duplicado",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud"
+									]
+								},
+								"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"El correo electrónico ya está registrado\",\n  \"instance\": \"/crud\",\n  \"code\": \"PATIENT_EMAIL_ALREADY_EXISTS\"\n}"
+						},
+						{
+							"name": "403 - Sin permiso",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud"
+									]
+								},
+								"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Forbidden",
+							"code": 403,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Forbidden\",\n  \"status\": 403,\n  \"detail\": \"No tienes permisos para realizar esta operación\",\n  \"instance\": \"/crud\",\n  \"code\": \"ACCESS_DENIED\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// documento de 8 dígitos único para no chocar con pacientes existentes",
+									"pm.collectionVariables.set('patient_document', String(Math.floor(10000000 + Math.random() * 90000000)));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('patient_id', pm.response.json().id);",
+									"    console.log('patient_id =', pm.collectionVariables.get('patient_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Patients",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud?page=0&size=10&sort=id,desc",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "id,desc"
+								}
+							]
+						},
+						"description": "Paginado. Filtro opcional `gender=MALE|FEMALE` (ver *Get Patients By Gender*)."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud?page=0&size=10&sort=id,desc",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "id,desc"
+										}
+									]
+								},
+								"description": "Paginado. Filtro opcional `gender=MALE|FEMALE` (ver *Get Patients By Gender*)."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 1,\n      \"documentNumber\": \"74859612\",\n      \"firstName\": \"María\",\n      \"lastName\": \"Gonzales\",\n      \"gender\": \"FEMALE\",\n      \"birthDate\": \"1990-05-14\",\n      \"phone\": \"987654321\",\n      \"email\": \"maria.gonzales@mail.com\",\n      \"active\": true\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Patients By Gender",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud?gender=FEMALE&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "gender",
+									"value": "FEMALE"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Patient By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud/{{patient_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud",
+								"{{patient_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud/{{patient_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud",
+										"{{patient_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"documentNumber\": \"74859612\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.gonzales@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\",\n  \"active\": true,\n  \"createdAt\": \"2026-01-10T09:15:00\",\n  \"updatedAt\": \"2026-02-01T16:40:00\"\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud/{{patient_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud",
+										"{{patient_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Paciente no encontrado\",\n  \"instance\": \"/crud/99\",\n  \"code\": \"PATIENT_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Patient By Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud/document/{{patient_document}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud",
+								"document",
+								"{{patient_document}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud/document/{{patient_document}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud",
+										"document",
+										"{{patient_document}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"documentNumber\": \"74859612\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"gender\": \"FEMALE\",\n  \"birthDate\": \"1990-05-14\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.gonzales@mail.com\",\n  \"active\": true\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud/document/{{patient_document}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud",
+										"document",
+										"{{patient_document}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Paciente no encontrado\",\n  \"instance\": \"/crud/99\",\n  \"code\": \"PATIENT_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Patient",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud/{{patient_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud",
+								"{{patient_id}}"
+							]
+						},
+						"description": "Reemplaza todos los campos (mismo body que Create).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María Elena\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"999888777\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Brasil 456, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina, polen\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/patients/crud/{{patient_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"patients",
+										"crud",
+										"{{patient_id}}"
+									]
+								},
+								"description": "Reemplaza todos los campos (mismo body que Create).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María Elena\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"999888777\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Brasil 456, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina, polen\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 1,\n  \"documentNumber\": \"74859612\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"gender\": \"FEMALE\",\n  \"birthDate\": \"1990-05-14\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.gonzales@mail.com\",\n  \"active\": true\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete Patient",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud/{{patient_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud",
+								"{{patient_id}}"
+							]
+						},
+						"description": "Responde **204**. Ejecútalo al final: el resto del flujo usa `patient_id`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "04 · Appointment Types",
+			"description": "Tipos de cita de `appointment-ms` (`/appointments/appointment-types`). Al crear uno se publica `appointment-created-type` y `billing-ms` crea su tarifa con el `price` enviado.",
+			"item": [
+				{
+					"name": "Get Appointment Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/appointment-types",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"appointment-types"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 1,\n    \"title\": \"Control prenatal\",\n    \"description\": \"Seguimiento del embarazo\",\n    \"active\": true\n  },\n  {\n    \"id\": 2,\n    \"title\": \"Consulta general\",\n    \"description\": \"Atención médica general de 30 minutos\",\n    \"active\": true\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Appointment Type By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"appointment-types",
+								"{{appointment_type_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 2,\n  \"title\": \"Consulta general\",\n  \"description\": \"Atención médica general de 30 minutos\",\n  \"active\": true\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Tipo de cita no encontrado\",\n  \"instance\": \"/appointment-types/99\",\n  \"code\": \"APPOINTMENT_TYPE_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Appointment Type",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/appointment-types",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"appointment-types"
+							]
+						},
+						"description": "`price` > 0 (se usa para crear la tarifa en billing-ms).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Control {{$randomInt}}\",\n  \"description\": \"Control médico de 30 minutos\",\n  \"price\": 80.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types"
+									]
+								},
+								"description": "`price` > 0 (se usa para crear la tarifa en billing-ms).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Control {{$randomInt}}\",\n  \"description\": \"Control médico de 30 minutos\",\n  \"price\": 80.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 2,\n  \"title\": \"Consulta general\",\n  \"description\": \"Atención médica general de 30 minutos\",\n  \"active\": false\n}"
+						},
+						{
+							"name": "400 - Validación",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types"
+									]
+								},
+								"description": "`price` > 0 (se usa para crear la tarifa en billing-ms).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Control {{$randomInt}}\",\n  \"description\": \"Control médico de 30 minutos\",\n  \"price\": 80.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('appointment_type_id', pm.response.json().id);",
+									"    console.log('appointment_type_id =', pm.collectionVariables.get('appointment_type_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Appointment Type",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"appointment-types",
+								"{{appointment_type_id}}"
+							]
+						},
+						"description": "Solo `title`, `description` y `active`. El precio se cambia en **Billing Tariffs → Update Tariff**.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Consulta general\",\n  \"description\": \"Atención médica general de 45 minutos\",\n  \"active\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": "Solo `title`, `description` y `active`. El precio se cambia en **Billing Tariffs → Update Tariff**.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Consulta general\",\n  \"description\": \"Atención médica general de 45 minutos\",\n  \"active\": true\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 2,\n  \"title\": \"Consulta general\",\n  \"description\": \"Atención médica general de 30 minutos\",\n  \"active\": true\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Deactivate Appointment Type",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"appointment-types",
+								"{{appointment_type_id}}"
+							]
+						},
+						"description": "Baja lógica (`active = false`). Responde **204**."
+					},
+					"response": [
+						{
+							"name": "409 - Ya inactivo",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/appointment-types/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"appointment-types",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": "Baja lógica (`active = false`). Responde **204**."
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"El tipo de cita ya está inactivo\",\n  \"instance\": \"/appointment-types/2\",\n  \"code\": \"APPOINTMENT_TYPE_ALREADY_INACTIVE\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "05 · Billing Tariffs",
+			"description": "Tarifas de `billing-ms` (`/billings/tariffs`), una por tipo de cita. Normalmente se crean solas vía Kafka al crear un tipo de cita; estos endpoints sirven para consultarlas o ajustarlas.",
+			"item": [
+				{
+					"name": "Get Tariffs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/tariffs",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"tariffs"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"appointmentTypeId\": 1,\n    \"price\": 120.00,\n    \"currency\": \"PEN\"\n  },\n  {\n    \"appointmentTypeId\": 2,\n    \"price\": 80.00,\n    \"currency\": \"PEN\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Tariff By Appointment Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"tariffs",
+								"{{appointment_type_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"appointmentTypeId\": 2,\n  \"price\": 80.00,\n  \"currency\": \"PEN\"\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Tarifa no encontrada para el tipo de cita: 99\",\n  \"instance\": \"/tariffs/99\",\n  \"code\": \"BILLING_TARIFF_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Price By Appointment Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}/price",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"tariffs",
+								"{{appointment_type_id}}",
+								"price"
+							]
+						},
+						"description": "Devuelve solo el número (lo usa appointment-ms por Feign)."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}/price",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs",
+										"{{appointment_type_id}}",
+										"price"
+									]
+								},
+								"description": "Devuelve solo el número (lo usa appointment-ms por Feign)."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "80.00"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Tariff",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/tariffs",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"tariffs"
+							]
+						},
+						"description": "Falla con 400 si el tipo de cita ya tiene tarifa (p. ej. la creada por Kafka).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"price\": 80.00,\n  \"currency\": \"PEN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs"
+									]
+								},
+								"description": "Falla con 400 si el tipo de cita ya tiene tarifa (p. ej. la creada por Kafka).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"price\": 80.00,\n  \"currency\": \"PEN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"appointmentTypeId\": 2,\n  \"price\": 80.00,\n  \"currency\": \"PEN\"\n}"
+						},
+						{
+							"name": "400 - Ya existe",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs"
+									]
+								},
+								"description": "Falla con 400 si el tipo de cita ya tiene tarifa (p. ej. la creada por Kafka).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"price\": 80.00,\n  \"currency\": \"PEN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"Ya existe una tarifa para el tipo de cita: 2\",\n  \"instance\": \"/tariffs\",\n  \"code\": \"BILLING_TARIFF_ALREADY_EXISTS\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Update Tariff",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"tariffs",
+								"{{appointment_type_id}}"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"price\": 95.00,\n  \"currency\": \"PEN\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/tariffs/{{appointment_type_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"tariffs",
+										"{{appointment_type_id}}"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"price\": 95.00,\n  \"currency\": \"PEN\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"appointmentTypeId\": 2,\n  \"price\": 80.00,\n  \"currency\": \"PEN\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "06 · Appointments",
+			"description": "`appointment-ms` (`/appointments/crud`). Al crear valida por Feign que existan paciente, médico y tarifa, y publica `appointment-created` → `billing-ms` genera la factura (PENDING) y `notification-ms` la notificación.",
+			"item": [
+				{
+					"name": "Create Appointment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud"
+							]
+						},
+						"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									]
+								},
+								"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 10,\n  \"patientId\": 1,\n  \"doctorId\": 3,\n  \"scheduledAt\": \"2026-10-05T10:30:00\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"status\": \"SCHEDULED\",\n  \"notes\": \"Paciente con antecedentes de migraña\",\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}"
+						},
+						{
+							"name": "400 - Validación",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									]
+								},
+								"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+						},
+						{
+							"name": "404 - Paciente no existe",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									]
+								},
+								"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Paciente no encontrado\",\n  \"instance\": \"/crud\",\n  \"code\": \"PATIENT_NOT_FOUND\"\n}"
+						},
+						{
+							"name": "409 - Médico no disponible",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									]
+								},
+								"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"El doctor ya tiene una cita en ese horario\",\n  \"instance\": \"/crud\",\n  \"code\": \"DOCTOR_NOT_AVAILABLE\"\n}"
+						},
+						{
+							"name": "409 - Tipo de cita inactivo",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									]
+								},
+								"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"El tipo de cita no está activo\",\n  \"instance\": \"/crud\",\n  \"code\": \"APPOINTMENT_TYPE_NOT_ACTIVE\"\n}"
+						},
+						{
+							"name": "503 - patient-ms caído",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									]
+								},
+								"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Service Unavailable",
+							"code": 503,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Service Unavailable\",\n  \"status\": 503,\n  \"detail\": \"Patient MS temporalmente no disponible\",\n  \"instance\": \"/crud\",\n  \"code\": \"PATIENT_SERVICE_UNAVAILABLE\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// fecha futura aleatoria (1-180 días) entre 10:00 y 14:30, dentro del horario de los médicos de data.sql,",
+									"// para no chocar con otra cita del mismo médico. Formato yyyy-MM-ddTHH:mm:ss (LocalDateTime)",
+									"const d = new Date(); d.setDate(d.getDate() + 1 + Math.floor(Math.random() * 180));",
+									"const pad = n => String(n).padStart(2, '0');",
+									"const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;",
+									"const time = `${pad(10 + Math.floor(Math.random() * 5))}:${Math.random() < 0.5 ? '00' : '30'}:00`;",
+									"pm.collectionVariables.set('appointment_date', day);",
+									"pm.collectionVariables.set('scheduled_at', `${day}T${time}`);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('appointment_id', pm.response.json().id);",
+									"    console.log('appointment_id =', pm.collectionVariables.get('appointment_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Appointments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud?page=0&size=10&sort=createdAt,desc",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "createdAt,desc"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud?page=0&size=10&sort=createdAt,desc",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "createdAt,desc"
+										}
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 10,\n      \"patientId\": 1,\n      \"doctorId\": 3,\n      \"scheduledAt\": \"2026-10-05T10:30:00\",\n      \"durationMinutes\": 30,\n      \"reason\": \"Dolor de cabeza persistente\",\n      \"status\": \"SCHEDULED\",\n      \"notes\": \"Paciente con antecedentes de migraña\",\n      \"createdAt\": \"2026-09-23T17:45:00\"\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 10,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 10,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Appointment By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"{{appointment_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"{{appointment_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 10,\n  \"patientId\": 1,\n  \"doctorId\": 3,\n  \"scheduledAt\": \"2026-10-05T10:30:00\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"status\": \"SCHEDULED\",\n  \"notes\": \"Paciente con antecedentes de migraña\",\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"{{appointment_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Cita no encontrada\",\n  \"instance\": \"/crud/99\",\n  \"code\": \"APPOINTMENT_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Appointments By Patient",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/patient/{{patient_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"patient",
+								"{{patient_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/patient/{{patient_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"patient",
+										"{{patient_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 10,\n    \"patientId\": 1,\n    \"doctorId\": 3,\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"durationMinutes\": 30,\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"status\": \"SCHEDULED\",\n    \"notes\": \"Paciente con antecedentes de migraña\",\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Appointments By Doctor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/doctor/{{doctor_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"doctor",
+								"{{doctor_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/doctor/{{doctor_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"doctor",
+										"{{doctor_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 10,\n    \"patientId\": 1,\n    \"doctorId\": 3,\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"durationMinutes\": 30,\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"status\": \"SCHEDULED\",\n    \"notes\": \"Paciente con antecedentes de migraña\",\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Appointments By Date",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/date/{{appointment_date}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"date",
+								"{{appointment_date}}"
+							]
+						},
+						"description": "Fecha `yyyy-MM-dd`."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/date/{{appointment_date}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"date",
+										"{{appointment_date}}"
+									]
+								},
+								"description": "Fecha `yyyy-MM-dd`."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 10,\n    \"patientId\": 1,\n    \"doctorId\": 3,\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"durationMinutes\": 30,\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"status\": \"SCHEDULED\",\n    \"notes\": \"Paciente con antecedentes de migraña\",\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Confirm Appointment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"{{appointment_id}}",
+								"status"
+							]
+						},
+						"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CONFIRMED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"{{appointment_id}}",
+										"status"
+									]
+								},
+								"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"CONFIRMED\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 10,\n  \"patientId\": 1,\n  \"doctorId\": 3,\n  \"scheduledAt\": \"2026-10-05T10:30:00\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"status\": \"SCHEDULED\",\n  \"notes\": \"Paciente con antecedentes de migraña\",\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}"
+						},
+						{
+							"name": "409 - Mismo estado",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"{{appointment_id}}",
+										"status"
+									]
+								},
+								"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"CONFIRMED\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"No se puede cambiar el estado de la cita a el mismo estado\",\n  \"instance\": \"/crud/10/status\",\n  \"code\": \"APPOINTMENT_STATUS_ALREADY_SET\"\n}"
+						},
+						{
+							"name": "409 - Estado final",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"appointments",
+										"crud",
+										"{{appointment_id}}",
+										"status"
+									]
+								},
+								"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"CONFIRMED\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Conflict",
+							"code": 409,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Conflict\",\n  \"status\": 409,\n  \"detail\": \"No se puede cambiar el estado de una cita completada o cancelada.\",\n  \"instance\": \"/crud/10/status\",\n  \"code\": \"APPOINTMENT_STATUS_CANNOT_CHANGE\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Complete Appointment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"{{appointment_id}}",
+								"status"
+							]
+						},
+						"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"COMPLETED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Cancel Appointment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"{{appointment_id}}"
+							]
+						},
+						"description": "Pasa la cita a `CANCELLED`. Responde **204**. No se puede cancelar una cita `COMPLETED`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "07 · Billing",
+			"description": "Facturas de `billing-ms` (`/billings/crud`). Se crean **automáticamente** al crear una cita (estado `PENDING`); *Create Billing* es para crearlas a mano.\n\nEstados: `PENDING`, `PAID`, `CANCELLED`. Al pagar se publica `payment-update-status`.",
+			"item": [
+				{
+					"name": "Get Billings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud?page=0&size=10&sort=id,desc",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "id,desc"
+								}
+							]
+						},
+						"description": "El script guarda en `billing_id` la factura más reciente de la página."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud?page=0&size=10&sort=id,desc",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "id,desc"
+										}
+									]
+								},
+								"description": "El script guarda en `billing_id` la factura más reciente de la página."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 5,\n      \"appointmentId\": 10,\n      \"patientId\": 1,\n      \"amount\": 80.00,\n      \"currency\": \"PEN\",\n      \"status\": \"PENDING\",\n      \"issuedAt\": \"2026-09-23T17:45:00\",\n      \"paidAt\": null\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"const c = pm.response.json().content || [];",
+									"if (c.length) pm.collectionVariables.set('billing_id', c[0].id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Billings By Patient",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud/patient/{{patient_id}}?page=0&size=10&sort=id,desc",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud",
+								"patient",
+								"{{patient_id}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "id,desc"
+								}
+							]
+						},
+						"description": "Guarda en `billing_id` la primera factura del paciente."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud/patient/{{patient_id}}?page=0&size=10&sort=id,desc",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud",
+										"patient",
+										"{{patient_id}}"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "id,desc"
+										}
+									]
+								},
+								"description": "Guarda en `billing_id` la primera factura del paciente."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": 5,\n      \"appointmentId\": 10,\n      \"patientId\": 1,\n      \"amount\": 80.00,\n      \"currency\": \"PEN\",\n      \"status\": \"PENDING\",\n      \"issuedAt\": \"2026-09-23T17:45:00\",\n      \"paidAt\": null\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"const c = pm.response.json().content || [];",
+									"if (c.length) pm.collectionVariables.set('billing_id', c[0].id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Billing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud"
+							]
+						},
+						"description": "",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"appointmentId\": {{appointment_id}},\n  \"amount\": 80.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentId\": {{appointment_id}},\n  \"amount\": 80.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 5,\n  \"appointmentId\": 10,\n  \"patientId\": 1,\n  \"amount\": 80.00,\n  \"currency\": \"PEN\",\n  \"status\": \"PENDING\",\n  \"issuedAt\": \"2026-09-23T17:45:00\",\n  \"paidAt\": null\n}"
+						},
+						{
+							"name": "400 - Validación",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentId\": {{appointment_id}},\n  \"amount\": 80.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"firstName: El nombre es obligatorio\",\n  \"instance\": \"/crud\",\n  \"code\": \"VALIDATION_ERROR\"\n}"
+						},
+						{
+							"name": "404 - Cita no existe",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentId\": {{appointment_id}},\n  \"amount\": 80.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Cita no encontrada\",\n  \"instance\": \"/crud\",\n  \"code\": \"APPOINTMENT_NOT_FOUND\"\n}"
+						},
+						{
+							"name": "503 - appointment-ms caído",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud"
+									]
+								},
+								"description": "",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentId\": {{appointment_id}},\n  \"amount\": 80.00\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Service Unavailable",
+							"code": 503,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Service Unavailable\",\n  \"status\": 503,\n  \"detail\": \"Appointment MS temporalmente no disponible\",\n  \"instance\": \"/crud\",\n  \"code\": \"APPOINTMENT_SERVICE_UNAVAILABLE\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('billing_id', pm.response.json().id);",
+									"    console.log('billing_id =', pm.collectionVariables.get('billing_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Pay Billing",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud/{{billing_id}}/pay",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud",
+								"{{billing_id}}",
+								"pay"
+							]
+						},
+						"description": "Marca la factura como `PAID`."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud/{{billing_id}}/pay",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud",
+										"{{billing_id}}",
+										"pay"
+									]
+								},
+								"description": "Marca la factura como `PAID`."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 5,\n  \"appointmentId\": 10,\n  \"patientId\": 1,\n  \"amount\": 80.00,\n  \"currency\": \"PEN\",\n  \"status\": \"PAID\",\n  \"issuedAt\": \"2026-09-23T17:45:00\",\n  \"paidAt\": \"2026-09-24T09:10:00\"\n}"
+						},
+						{
+							"name": "404 - No existe",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud/{{billing_id}}/pay",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud",
+										"{{billing_id}}",
+										"pay"
+									]
+								},
+								"description": "Marca la factura como `PAID`."
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Registro de facturación no encontrado\",\n  \"instance\": \"/crud/99/pay\",\n  \"code\": \"BILLING_RECORD_NOT_FOUND\"\n}"
+						},
+						{
+							"name": "400 - Ya pagada",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud/{{billing_id}}/pay",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud",
+										"{{billing_id}}",
+										"pay"
+									]
+								},
+								"description": "Marca la factura como `PAID`."
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"El registro de facturación ya se encuentra pagado\",\n  \"instance\": \"/crud/5/pay\",\n  \"code\": \"BILLING_RECORD_ALREADY_PAID\"\n}"
+						},
+						{
+							"name": "400 - Cancelada",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud/{{billing_id}}/pay",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud",
+										"{{billing_id}}",
+										"pay"
+									]
+								},
+								"description": "Marca la factura como `PAID`."
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Bad Request\",\n  \"status\": 400,\n  \"detail\": \"El registro de facturación ya se encuentra cancelado\",\n  \"instance\": \"/crud/5/pay\",\n  \"code\": \"BILLING_RECORD_ALREADY_CANCELLED\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "08 · Notifications",
+			"description": "`notification-ms` (`/notifications/**`). Las notificaciones se generan solas desde los eventos de Kafka de citas y pacientes.\n\n- `type`: `APPOINTMENT_SCHEDULED`, `APPOINTMENT_CONFIRMED`, `APPOINTMENT_COMPLETED`, `APPOINTMENT_CANCELLED`\n- **SSE**: `GET /notifications/stream` mantiene la conexión abierta y emite eventos `notification`. En Postman se ve como stream; ábrelo y, en otra pestaña, crea o cambia de estado una cita.",
+			"item": [
+				{
+					"name": "Get Notifications (admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/notifications/crud/admin",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"notifications",
+								"crud",
+								"admin"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/notifications/crud/admin",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"notifications",
+										"crud",
+										"admin"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 25,\n    \"appointmentId\": 10,\n    \"patientId\": 1,\n    \"patientName\": \"María Gonzales\",\n    \"doctorId\": 3,\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\",\n    \"eventType\": \"APPOINTMENT_SCHEDULED\",\n    \"status\": \"SCHEDULED\",\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"amount\": 80.00,\n    \"patientRead\": false,\n    \"doctorRead\": false,\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"const b = pm.response.json();",
+									"if (b.length) pm.collectionVariables.set('notification_id', b[0].id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Notifications By Doctor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/notifications/crud/doctor/{{doctor_id}}",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"notifications",
+								"crud",
+								"doctor",
+								"{{doctor_id}}"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/notifications/crud/doctor/{{doctor_id}}",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"notifications",
+										"crud",
+										"doctor",
+										"{{doctor_id}}"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "[\n  {\n    \"id\": 25,\n    \"appointmentId\": 10,\n    \"patientId\": 1,\n    \"patientName\": \"María Gonzales\",\n    \"doctorId\": 3,\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\",\n    \"eventType\": \"APPOINTMENT_SCHEDULED\",\n    \"status\": \"SCHEDULED\",\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"amount\": 80.00,\n    \"patientRead\": false,\n    \"doctorRead\": false,\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create Notification",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/notifications/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"notifications",
+								"crud"
+							]
+						},
+						"description": "Creación manual (normalmente no hace falta: llegan por Kafka).",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"APPOINTMENT_SCHEDULED\",\n  \"title\": \"Nueva cita programada\",\n  \"message\": \"María Gonzales tiene una cita con Carlos Ramírez el 2026-10-05 a las 10:30\",\n  \"referenceType\": \"APPOINTMENT\",\n  \"referenceId\": 10,\n  \"metadata\": {\n    \"patientName\": \"María Gonzales\",\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\"\n  },\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [
+						{
+							"name": "201 - Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/notifications/crud",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"notifications",
+										"crud"
+									]
+								},
+								"description": "Creación manual (normalmente no hace falta: llegan por Kafka).",
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"type\": \"APPOINTMENT_SCHEDULED\",\n  \"title\": \"Nueva cita programada\",\n  \"message\": \"María Gonzales tiene una cita con Carlos Ramírez el 2026-10-05 a las 10:30\",\n  \"referenceType\": \"APPOINTMENT\",\n  \"referenceId\": 10,\n  \"metadata\": {\n    \"patientName\": \"María Gonzales\",\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\"\n  },\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"id\": 25,\n  \"appointmentId\": 10,\n  \"patientId\": 1,\n  \"patientName\": \"María Gonzales\",\n  \"doctorId\": 3,\n  \"doctorName\": \"Carlos Ramírez\",\n  \"specialty\": \"Cardiología\",\n  \"eventType\": \"APPOINTMENT_SCHEDULED\",\n  \"status\": \"SCHEDULED\",\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"scheduledAt\": \"2026-10-05T10:30:00\",\n  \"amount\": 80.00,\n  \"patientRead\": false,\n  \"doctorRead\": false,\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Mark Notification As Read",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/notifications/crud/{{notification_id}}/read",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"notifications",
+								"crud",
+								"{{notification_id}}",
+								"read"
+							]
+						},
+						"description": "Responde **204**."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Notification Stream (SSE)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "text/event-stream",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url_gateway}}/notifications/stream",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"notifications",
+								"stream"
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - Evento",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "text/event-stream",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{url_gateway}}/notifications/stream",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"notifications",
+										"stream"
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "text/event-stream"
+								}
+							],
+							"cookie": [],
+							"body": "event:notification\ndata:{\"type\":\"APPOINTMENT_SCHEDULED\",\"title\":\"Nueva cita programada\",\"message\":\"María Gonzales tiene una cita con Carlos Ramírez el 2026-10-05 a las 10:30\",\"referenceType\":\"APPOINTMENT\",\"referenceId\":10,\"metadata\":{\"patientName\":\"María Gonzales\",\"doctorName\":\"Carlos Ramírez\"},\"createdAt\":\"2026-09-23T17:45:00\"}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "09 · Medical Records",
+			"description": "`medical-record-listener` (`/medical-records/**`, MongoDB). El historial se genera **solo** con Kafka Streams cuando una cita está `COMPLETED` **y** su factura está `PAID` (ver carpeta *10 · Flujo completo*).",
+			"item": [
+				{
+					"name": "Get Medical Records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/medical-records/crud?page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"medical-records",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/medical-records/crud?page=0&size=10",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"medical-records",
+										"crud"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										}
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": \"66f1c2a9e4b0a12b3c4d5e6f\",\n      \"appointmentId\": 10,\n      \"patientId\": 1,\n      \"patientName\": \"María Gonzales\",\n      \"doctorId\": 3,\n      \"doctorName\": \"Carlos Ramírez\",\n      \"specialty\": \"Cardiología\",\n      \"scheduledAt\": \"2026-10-05T10:30:00\",\n      \"reason\": \"Dolor de cabeza persistente\",\n      \"status\": \"COMPLETED\",\n      \"amount\": 80.00\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Medical Records By Patient",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/medical-records/crud/patient/{{patient_id}}?page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"medical-records",
+								"crud",
+								"patient",
+								"{{patient_id}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/medical-records/crud/patient/{{patient_id}}?page=0&size=10",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"medical-records",
+										"crud",
+										"patient",
+										"{{patient_id}}"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										}
+									]
+								},
+								"description": ""
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"content\": [\n    {\n      \"id\": \"66f1c2a9e4b0a12b3c4d5e6f\",\n      \"appointmentId\": 10,\n      \"patientId\": 1,\n      \"patientName\": \"María Gonzales\",\n      \"doctorId\": 3,\n      \"doctorName\": \"Carlos Ramírez\",\n      \"specialty\": \"Cardiología\",\n      \"scheduledAt\": \"2026-10-05T10:30:00\",\n      \"reason\": \"Dolor de cabeza persistente\",\n      \"status\": \"COMPLETED\",\n      \"amount\": 80.00\n    }\n  ],\n  \"empty\": false,\n  \"first\": true,\n  \"last\": true,\n  \"number\": 0,\n  \"numberOfElements\": 1,\n  \"pageable\": {\n    \"offset\": 0,\n    \"pageNumber\": 0,\n    \"pageSize\": 20,\n    \"paged\": true,\n    \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n    \"unpaged\": false\n  },\n  \"size\": 20,\n  \"sort\": { \"empty\": true, \"sorted\": false, \"unsorted\": true },\n  \"totalElements\": 1,\n  \"totalPages\": 1\n}"
+						},
+						{
+							"name": "404 - Sin historial",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/medical-records/crud/patient/{{patient_id}}?page=0&size=10",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"medical-records",
+										"crud",
+										"patient",
+										"{{patient_id}}"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										}
+									]
+								},
+								"description": ""
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/problem+json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"type\": \"about:blank\",\n  \"title\": \"Not Found\",\n  \"status\": 404,\n  \"detail\": \"Historial médico no encontrado para el paciente\",\n  \"instance\": \"/crud/patient/99\",\n  \"code\": \"MEDICAL_RECORD_NOT_FOUND\"\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "10 · Flujo completo (Runner)",
+			"description": "Recorrido de punta a punta, pensado para ejecutarse con el **Collection Runner** (clic derecho en la carpeta → *Run folder*):\n\n1. Login como admin.\n2. Crea un paciente nuevo (documento aleatorio).\n3. Toma un tipo de cita activo (de los cargados por `sql/data.sql`) → su tarifa ya existe.\n4. Crea la cita (fecha futura aleatoria) con `doctor_id` (por defecto `1`). `billing-ms` crea la factura `PENDING` vía Kafka.\n5. Confirma la cita.\n6. La completa.\n7. Busca la factura del paciente y guarda `billing_id`.\n8. La paga → `payment-update-status`.\n9. `medical-record-listener` junta *cita COMPLETED + pago PAID* y guarda el historial en MongoDB.\n\nSi el paso 9 viene vacío, espera unos segundos y vuelve a ejecutarlo (Kafka Streams es asíncrono).",
+			"item": [
+				{
+					"name": "1. Login (admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_auth_server}}/auth-server/auth/login",
+							"host": [
+								"{{url_auth_server}}"
+							],
+							"path": [
+								"auth-server",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Devuelve el `accessToken` en el body y el refresh token en la cookie `refresh_token` (HttpOnly, 7 días).\n\nEl script de *Tests* guarda ambos en las variables de la colección.",
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set('access_token', pm.response.json().accessToken);",
+									"    const setCookie = pm.response.headers.all()",
+									"        .filter(h => h.key.toLowerCase() === 'set-cookie')",
+									"        .map(h => h.value).join(';');",
+									"    const m = setCookie.match(/refresh_token=([^;]+)/);",
+									"    if (m) pm.collectionVariables.set('refresh_token', m[1]);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "2. Create Patient",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud"
+							]
+						},
+						"description": "Guarda el `id` creado en `patient_id` y el documento en `patient_document`.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"documentNumber\": \"{{patient_document}}\",\n  \"firstName\": \"María\",\n  \"lastName\": \"Gonzales\",\n  \"birthDate\": \"1990-05-14\",\n  \"gender\": \"FEMALE\",\n  \"phone\": \"987654321\",\n  \"email\": \"maria.{{patient_document}}@mail.com\",\n  \"address\": \"Av. Arequipa 123, Lima\",\n  \"bloodType\": \"O_POSITIVE\",\n  \"allergies\": \"Penicilina\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// documento de 8 dígitos único para no chocar con pacientes existentes",
+									"pm.collectionVariables.set('patient_document', String(Math.floor(10000000 + Math.random() * 90000000)));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('patient_id', pm.response.json().id);",
+									"    console.log('patient_id =', pm.collectionVariables.get('patient_id'));",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "3. Get Appointment Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/appointment-types",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"appointment-types"
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"const t = pm.response.json().find(x => x.active);",
+									"if (t) pm.collectionVariables.set('appointment_type_id', t.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "4. Create Appointment (→ factura PENDING)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud"
+							]
+						},
+						"description": "Usa `patient_id`, `doctor_id` y `appointment_type_id` de las variables. `scheduled_at` se genera en el *Pre-request* (fecha futura aleatoria, 10:00–14:30) para no chocar con citas existentes del médico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"patientId\": {{patient_id}},\n  \"doctorId\": {{doctor_id}},\n  \"appointmentTypeId\": {{appointment_type_id}},\n  \"scheduledAt\": \"{{scheduled_at}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"notes\": \"Paciente con antecedentes de migraña\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// fecha futura aleatoria (1-180 días) entre 10:00 y 14:30, dentro del horario de los médicos de data.sql,",
+									"// para no chocar con otra cita del mismo médico. Formato yyyy-MM-ddTHH:mm:ss (LocalDateTime)",
+									"const d = new Date(); d.setDate(d.getDate() + 1 + Math.floor(Math.random() * 180));",
+									"const pad = n => String(n).padStart(2, '0');",
+									"const day = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;",
+									"const time = `${pad(10 + Math.floor(Math.random() * 5))}:${Math.random() < 0.5 ? '00' : '30'}:00`;",
+									"pm.collectionVariables.set('appointment_date', day);",
+									"pm.collectionVariables.set('scheduled_at', `${day}T${time}`);"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('appointment_id', pm.response.json().id);",
+									"    console.log('appointment_id =', pm.collectionVariables.get('appointment_id'));",
+									"}",
+									"// da tiempo a que Kafka propague el evento antes del siguiente paso",
+									"setTimeout(() => {}, 3000);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "5. Confirm Appointment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"{{appointment_id}}",
+								"status"
+							]
+						},
+						"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CONFIRMED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "6. Complete Appointment",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/appointments/crud/{{appointment_id}}/status",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"appointments",
+								"crud",
+								"{{appointment_id}}",
+								"status"
+							]
+						},
+						"description": "Estados: `SCHEDULED` → `CONFIRMED` → `COMPLETED`, o `CANCELLED`. `COMPLETED` y `CANCELLED` son finales.\n\nAl pasar a `COMPLETED` (y con la factura pagada) `medical-record-listener` genera el historial clínico.",
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"COMPLETED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"// da tiempo a que Kafka propague el evento antes del siguiente paso",
+									"setTimeout(() => {}, 3000);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "7. Get Billing del paciente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud/patient/{{patient_id}}?page=0&size=10&sort=id,desc",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud",
+								"patient",
+								"{{patient_id}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sort",
+									"value": "id,desc"
+								}
+							]
+						},
+						"description": "Guarda en `billing_id` la primera factura del paciente."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"const c = pm.response.json().content || [];",
+									"if (c.length) pm.collectionVariables.set('billing_id', c[0].id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "8. Pay Billing (→ historial clínico)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud/{{billing_id}}/pay",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud",
+								"{{billing_id}}",
+								"pay"
+							]
+						},
+						"description": "Marca la factura como `PAID`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"// da tiempo a que Kafka propague el evento antes del siguiente paso",
+									"setTimeout(() => {}, 3000);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "9. Get Medical Records By Patient",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/medical-records/crud/patient/{{patient_id}}?page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"medical-records",
+								"crud",
+								"patient",
+								"{{patient_id}}"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": ""
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "url_gateway",
+			"value": "http://localhost:4040",
+			"type": "string",
+			"description": "Gateway (entrada única)"
+		},
+		{
+			"key": "url_auth_server",
+			"value": "http://localhost:4040",
+			"type": "string",
+			"description": "auth-server. Por el gateway (4040) o directo (http://localhost:3000)"
+		},
+		{
+			"key": "admin_email",
+			"value": "admin@example.com",
+			"type": "string"
+		},
+		{
+			"key": "admin_password",
+			"value": "123456",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string",
+			"description": "Lo llena Login / Refresh Token"
+		},
+		{
+			"key": "refresh_token",
+			"value": "",
+			"type": "string",
+			"description": "Lo llena Login / Refresh Token"
+		},
+		{
+			"key": "user_id",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "specialty_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "doctor_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "doctor_license",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "patient_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "patient_document",
+			"value": "74859612",
+			"type": "string"
+		},
+		{
+			"key": "appointment_type_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "appointment_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "appointment_date",
+			"value": "",
+			"type": "string",
+			"description": "yyyy-MM-dd, lo llena Create Appointment"
+		},
+		{
+			"key": "scheduled_at",
+			"value": "",
+			"type": "string",
+			"description": "yyyy-MM-ddTHH:mm:ss, lo llena Create Appointment"
+		},
+		{
+			"key": "billing_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "notification_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
