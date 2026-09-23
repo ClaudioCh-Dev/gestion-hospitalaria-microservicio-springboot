@@ -3,7 +3,7 @@
 | Archivo | Qué es |
 |---|---|
 | `gestion-hospitalaria.postman_collection.json` | Colección con todos los endpoints (68 peticiones), ejemplos de respuesta y scripts |
-| `gestion-hospitalaria-local.postman_environment.json` | Entorno con las URLs para Docker local (opcional: la colección ya trae esas URLs como variables) |
+| `gestion-hospitalaria-local.postman_environment.json` | Entorno con las URLs para Docker local y `access_token` / `refresh_token` como variables **secret** (se muestran como `***`) |
 
 ## Importar
 
@@ -45,5 +45,5 @@ npx newman run postman/gestion-hospitalaria.postman_collection.json --folder "10
 | `url_gateway` | `http://localhost:4040` | |
 | `url_auth_server` | `http://localhost:4040` | Usa `http://localhost:3000` para ir directo al auth-server |
 | `admin_email` / `admin_password` | `admin@example.com` / `123456` | Usuario del `DataSeeder` |
-| `access_token` / `refresh_token` | — | Los llena Login |
+| `access_token` / `refresh_token` | — | Los llena Login. Con el entorno activo quedan ocultos (`***`); sin entorno se guardan en la colección |
 | `doctor_id`, `specialty_id`, `appointment_type_id` | `1` | Existen desde `sql/data.sql` |
