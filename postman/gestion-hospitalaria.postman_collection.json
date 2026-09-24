@@ -1180,6 +1180,51 @@
 					]
 				},
 				{
+					"name": "Search Doctors",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud?search=ramírez&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "ramírez"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Búsqueda parcial, sin distinguir mayúsculas, por nombre, apellido, colegiatura, correo o especialidad. Requiere `DOCTOR_READ`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));"
+								]
+							}
+						}
+					]
+				},
+				{
 					"name": "Get Doctor By ID",
 					"request": {
 						"method": "GET",
@@ -1391,6 +1436,53 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Search Doctors By Specialty",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/doctors/crud/specialty/{{specialty_id}}?search=carlos&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"doctors",
+								"crud",
+								"specialty",
+								"{{specialty_id}}"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "carlos"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Combina el filtro por especialidad con `search`. Requiere `DOCTOR_READ_BY_SPECIALTY`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));"
 								]
 							}
 						}
@@ -2058,6 +2150,51 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Search Patients",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/patients/crud?search=pérez&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"patients",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "pérez"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Búsqueda parcial, sin distinguir mayúsculas, por nombres, apellidos, nombre completo, DNI o correo. Se puede combinar con `gender`. Requiere `PATIENT_READ`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));"
 								]
 							}
 						}
@@ -4196,6 +4333,209 @@
 					]
 				},
 				{
+					"name": "Filter Billings (estado + orden)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud?status=PENDING&sort=issuedAt,desc&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "PENDING"
+								},
+								{
+									"key": "sort",
+									"value": "issuedAt,desc"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Filtra por estado (`PENDING`, `PAID`, `CANCELLED`) y ordena con el formato de Spring (`campo,asc|desc`). Requiere `BILLING_READ`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));",
+									"pm.test(\"Solo PENDING\", () => pm.response.json().content.forEach(b => pm.expect(b.status).to.eql(\"PENDING\")));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Search Billings (número)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud?search={{billing_id}}&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "{{billing_id}}"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "`search` acepta un número de factura, cita o paciente (billing-ms no guarda nombres). Un texto no numérico devuelve una página vacía. Requiere `BILLING_READ`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Billings By Patient IDs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud?patientIds={{patient_id}}&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "patientIds",
+									"value": "{{patient_id}}"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Filtra por varios pacientes (`patientIds=1,2,3`). El frontend lo usa para buscar facturas por nombre: primero busca los pacientes en patient-ms y luego envía sus IDs. Requiere `BILLING_READ`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Billing Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/billings/crud/summary",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"billings",
+								"crud",
+								"summary"
+							]
+						},
+						"description": "Cantidad y monto por estado, calculados en base de datos, y monto cobrado en el mes actual. Lo usan las estadísticas de Facturación y el dashboard. Requiere `BILLING_READ`."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/billings/crud/summary",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"billings",
+										"crud",
+										"summary"
+									]
+								},
+								"description": "Cantidad y monto por estado, calculados en base de datos, y monto cobrado en el mes actual. Lo usan las estadísticas de Facturación y el dashboard. Requiere `BILLING_READ`."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"totalCount\": 12,\n  \"totalAmount\": 1540.0,\n  \"pendingCount\": 3,\n  \"pendingAmount\": 360.0,\n  \"paidCount\": 8,\n  \"paidAmount\": 1100.0,\n  \"cancelledCount\": 1,\n  \"cancelledAmount\": 80.0,\n  \"paidThisMonthAmount\": 450.0\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Tiene los totales\", () => pm.expect(pm.response.json()).to.include.keys(\"totalCount\", \"pendingAmount\", \"paidThisMonthAmount\"));"
+								]
+							}
+						}
+					]
+				},
+				{
 					"name": "Get Billings By Patient",
 					"request": {
 						"method": "GET",
@@ -5028,6 +5368,118 @@
 								"type": "text/javascript",
 								"exec": [
 									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Search Medical Records",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/medical-records/crud?search=cardio&specialty=Cardiología&page=0&size=10",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"medical-records",
+								"crud"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "cardio"
+								},
+								{
+									"key": "specialty",
+									"value": "Cardiología"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								}
+							]
+						},
+						"description": "`search`: búsqueda parcial por paciente, médico, especialidad o motivo. `specialty`: especialidad exacta. Ambos opcionales. Requiere `MEDICAL_RECORD_READ`."
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Es una página\", () => pm.expect(pm.response.json()).to.have.property(\"content\"));"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Medical Records Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url_gateway}}/medical-records/crud/summary",
+							"host": [
+								"{{url_gateway}}"
+							],
+							"path": [
+								"medical-records",
+								"crud",
+								"summary"
+							]
+						},
+						"description": "Total de consultas, pacientes únicos, consultas completadas, ingresos y especialidades registradas (el frontend las usa como opciones del filtro). Requiere `MEDICAL_RECORD_READ`."
+					},
+					"response": [
+						{
+							"name": "200 - OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{url_gateway}}/medical-records/crud/summary",
+									"host": [
+										"{{url_gateway}}"
+									],
+									"path": [
+										"medical-records",
+										"crud",
+										"summary"
+									]
+								},
+								"description": "Total de consultas, pacientes únicos, consultas completadas, ingresos y especialidades registradas (el frontend las usa como opciones del filtro). Requiere `MEDICAL_RECORD_READ`."
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"totalRecords\": 6,\n  \"uniquePatients\": 4,\n  \"completedRecords\": 6,\n  \"totalAmount\": 720.0,\n  \"specialties\": [\n    \"Cardiología\",\n    \"Dermatología\",\n    \"Medicina General\"\n  ]\n}"
+						}
+					],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+									"pm.test(\"Tiene los totales\", () => pm.expect(pm.response.json()).to.include.keys(\"totalRecords\", \"uniquePatients\", \"specialties\"));"
 								]
 							}
 						}

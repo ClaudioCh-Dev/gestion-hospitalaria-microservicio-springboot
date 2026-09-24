@@ -13,13 +13,14 @@ import java.util.List;
 
 public interface IDoctorService {
 
-    Page<DoctorResponse> findAll(Pageable pageable);
+    Page<DoctorResponse> findAll(Pageable pageable, String search);
 
     DoctorResponse findById(Long id);
 
     Page<DoctorResponse> findBySpecialty(
             Long specialtyId,
-            Pageable pageable
+            Pageable pageable,
+            String search
     );
 
     DoctorResponse create(CreateDoctorRequest request);

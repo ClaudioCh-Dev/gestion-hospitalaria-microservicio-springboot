@@ -37,8 +37,8 @@ public class DoctorServiceImpl implements IDoctorService {
     private final DoctorPublisher doctorPublisher;
 
     @Override
-    public Page<DoctorResponse> findAll(Pageable pageable) {
-        return doctorRepository.findAll(pageable)
+    public Page<DoctorResponse> findAll(Pageable pageable, String search) {
+        return doctorRepository.search(null, toLikePattern(search), pageable)
                 .map(doctorMapper::toResponse);
     }
 
@@ -57,11 +57,21 @@ public class DoctorServiceImpl implements IDoctorService {
     @Override
     public Page<DoctorResponse> findBySpecialty(
             Long specialtyId,
-            Pageable pageable
+            Pageable pageable,
+            String search
     ) {
         return doctorRepository
-                .findBySpecialtyId(specialtyId, pageable)
+                .search(specialtyId, toLikePattern(search), pageable)
                 .map(doctorMapper::toResponse);
+    }
+
+    // "  Ana " -> "%ana%"; vacío -> null para que la consulta ignore el filtro
+    private String toLikePattern(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+
+        return "%" + search.trim().toLowerCase() + "%";
     }
 
     @Override

@@ -14,8 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+
 import personal.billing_ms.dto.BillingRecordResponse;
+import personal.billing_ms.dto.BillingSummaryResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
+import personal.billing_ms.entities.BillingStatus;
 import personal.shared.docs.ErrorExamples;
 
 /**
@@ -63,11 +67,24 @@ public interface BillingRecordApiDocs {
                     examples = @ExampleObject(value = ErrorExamples.INVALID_PARAMETER)))
     ResponseEntity<Page<BillingRecordResponse>> getBillingByPatient(Long patientId, Pageable pageable);
 
-    @Operation(summary = "Listar facturas", description = "Devuelve todas las facturas paginadas. Requiere BILLING_READ.")
+    @Operation(summary = "Listar facturas", description = "Devuelve las facturas paginadas, con filtros opcionales. Requiere BILLING_READ.")
+    @Parameter(name = "status", in = ParameterIn.QUERY, description = "Filtro opcional por estado", example = "PENDING")
+    @Parameter(name = "search", in = ParameterIn.QUERY, description = "Número de factura, cita o paciente (billing-ms no guarda nombres)", example = "12")
+    @Parameter(name = "patientIds", in = ParameterIn.QUERY, description = "IDs de pacientes; se usa para buscar por nombre resolviendo antes los IDs en patient-ms", example = "1,2,3")
     @ApiResponse(responseCode = "200", description = "Página de facturas",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = BillingExamples.BILLING_RECORD_PAGE)))
-    ResponseEntity<Page<BillingRecordResponse>> getBillings(Pageable pageable);
+    ResponseEntity<Page<BillingRecordResponse>> getBillings(
+            BillingStatus status,
+            String search,
+            List<Long> patientIds,
+            Pageable pageable);
+
+    @Operation(summary = "Resumen de facturación", description = "Cantidad y monto por estado, y monto cobrado en el mes actual. Requiere BILLING_READ.")
+    @ApiResponse(responseCode = "200", description = "Resumen de facturación",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = BillingSummaryResponse.class)))
+    ResponseEntity<BillingSummaryResponse> getSummary();
 
     @Operation(summary = "Pagar factura",
             description = "Marca la factura como PAID y publica el evento payment-update-status. Requiere BILLING_PAY.")

@@ -1,6 +1,12 @@
 package personal.billing_ms.service.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,10 +19,12 @@ import personal.billing_ms.client.AppointmentClient;
 import personal.billing_ms.client.dto.AppointmentResponse;
 import personal.billing_ms.dto.AppointmentEventRequest;
 import personal.billing_ms.dto.BillingRecordResponse;
+import personal.billing_ms.dto.BillingSummaryResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
 import personal.billing_ms.entities.BillingRecord;
 import personal.billing_ms.entities.BillingStatus;
 import personal.billing_ms.exceptions.BillingErrorCode;
+import personal.billing_ms.repositories.BillingRecordSpecifications;
 import personal.billing_ms.repositories.BillingRepository;
 import personal.billing_ms.service.IBillingRecordService;
 import personal.billing_ms.streams.PaymentPublisher;
@@ -66,11 +74,70 @@ public class BillingRecordServiceImpl
     @Override
     @Transactional(readOnly = true)
     public Page<BillingRecordResponse> getBillings(
-            Pageable pageable
+            Pageable pageable,
+            BillingStatus status,
+            String search,
+            List<Long> patientIds
     ) {
         return billingRepository
-                .findAll(pageable)
+                .findAll(
+                        BillingRecordSpecifications.filter(status, search, patientIds),
+                        pageable)
                 .map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BillingSummaryResponse getSummary() {
+
+        Map<BillingStatus, BillingRepository.StatusTotal> totals =
+                billingRepository.totalsByStatus()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                BillingRepository.StatusTotal::getStatus,
+                                Function.identity()));
+
+        LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+
+        BigDecimal paidThisMonth =
+                billingRepository.sumByStatusSince(BillingStatus.PAID, monthStart);
+
+        long pendingCount = countOf(totals, BillingStatus.PENDING);
+        long paidCount = countOf(totals, BillingStatus.PAID);
+        long cancelledCount = countOf(totals, BillingStatus.CANCELLED);
+
+        BigDecimal pendingAmount = amountOf(totals, BillingStatus.PENDING);
+        BigDecimal paidAmount = amountOf(totals, BillingStatus.PAID);
+        BigDecimal cancelledAmount = amountOf(totals, BillingStatus.CANCELLED);
+
+        return new BillingSummaryResponse(
+                pendingCount + paidCount + cancelledCount,
+                pendingAmount.add(paidAmount).add(cancelledAmount),
+                pendingCount,
+                pendingAmount,
+                paidCount,
+                paidAmount,
+                cancelledCount,
+                cancelledAmount,
+                paidThisMonth);
+    }
+
+    private long countOf(
+            Map<BillingStatus, BillingRepository.StatusTotal> totals,
+            BillingStatus status) {
+
+        BillingRepository.StatusTotal total = totals.get(status);
+
+        return total == null ? 0 : total.getCount();
+    }
+
+    private BigDecimal amountOf(
+            Map<BillingStatus, BillingRepository.StatusTotal> totals,
+            BillingStatus status) {
+
+        BillingRepository.StatusTotal total = totals.get(status);
+
+        return total == null ? BigDecimal.ZERO : total.getAmount();
     }
 
     @Override

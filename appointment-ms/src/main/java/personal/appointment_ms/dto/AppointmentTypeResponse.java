@@ -8,6 +8,8 @@ public record AppointmentTypeResponse(
 
         String description,
 
-        Boolean active
+        Boolean active,
+
+        String color
 ) {
 }

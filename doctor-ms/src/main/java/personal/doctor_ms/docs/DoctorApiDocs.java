@@ -26,11 +26,12 @@ import personal.shared.docs.ErrorExamples;
 @Tag(name = "Doctores", description = "Gestión de doctores del hospital")
 public interface DoctorApiDocs {
 
-    @Operation(summary = "Listar doctores", description = "Devuelve los doctores paginados. Requiere DOCTOR_READ.")
+    @Operation(summary = "Listar doctores", description = "Devuelve los doctores paginados. Permite buscar por texto. Requiere DOCTOR_READ.")
+    @Parameter(name = "search", in = ParameterIn.QUERY, description = "Búsqueda opcional por nombre, colegiatura, correo o especialidad (sin distinguir mayúsculas)", example = "ramírez")
     @ApiResponse(responseCode = "200", description = "Página de doctores",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = DoctorExamples.DOCTOR_PAGE)))
-    ResponseEntity<Page<DoctorResponse>> findAll(Pageable pageable);
+    ResponseEntity<Page<DoctorResponse>> findAll(String search, Pageable pageable);
 
     @Operation(summary = "Obtener doctor por ID", description = "Requiere DOCTOR_READ.")
     @Parameter(name = "id", in = ParameterIn.PATH, description = "ID del doctor", example = "3")
@@ -50,6 +51,7 @@ public interface DoctorApiDocs {
 
     @Operation(summary = "Doctores por especialidad", description = "Devuelve los doctores de una especialidad, paginados. Requiere DOCTOR_READ_BY_SPECIALTY.")
     @Parameter(name = "specialtyId", in = ParameterIn.PATH, description = "ID de la especialidad", example = "1")
+    @Parameter(name = "search", in = ParameterIn.QUERY, description = "Búsqueda opcional por nombre, colegiatura, correo o especialidad (sin distinguir mayúsculas)", example = "ramírez")
     @ApiResponse(responseCode = "200", description = "Página de doctores de la especialidad",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = DoctorExamples.DOCTOR_PAGE)))
@@ -57,7 +59,7 @@ public interface DoctorApiDocs {
             content = @Content(mediaType = ErrorExamples.PROBLEM_JSON,
                     schema = @Schema(implementation = ProblemDetail.class),
                     examples = @ExampleObject(value = ErrorExamples.INVALID_PARAMETER)))
-    ResponseEntity<Page<DoctorResponse>> findBySpecialty(Long specialtyId, Pageable pageable);
+    ResponseEntity<Page<DoctorResponse>> findBySpecialty(Long specialtyId, String search, Pageable pageable);
 
     @Operation(summary = "Registrar doctor",
             description = "Crea el doctor y su usuario de acceso en auth-server. Requiere DOCTOR_CREATE.",

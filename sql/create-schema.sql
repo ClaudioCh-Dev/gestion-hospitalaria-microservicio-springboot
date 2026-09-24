@@ -129,7 +129,8 @@ CREATE TABLE IF NOT EXISTS appointment_types (
     id           BIGSERIAL PRIMARY KEY,
     title        VARCHAR(150) NOT NULL UNIQUE,
     description  TEXT,
-    active       BOOLEAN NOT NULL DEFAULT TRUE
+    active       BOOLEAN NOT NULL DEFAULT TRUE,
+    color        VARCHAR(20) NOT NULL DEFAULT 'blue'
 );
 
 

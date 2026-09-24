@@ -2,7 +2,7 @@
 
 | Archivo | Qué es |
 |---|---|
-| `gestion-hospitalaria.postman_collection.json` | Colección con todos los endpoints (68 peticiones), ejemplos de respuesta y scripts |
+| `gestion-hospitalaria.postman_collection.json` | Colección con todos los endpoints (77 peticiones), ejemplos de respuesta y scripts |
 | `gestion-hospitalaria-local.postman_environment.json` | Entorno con las URLs para Docker local y `access_token` / `refresh_token` como variables **secret** (se muestran como `***`) |
 
 ## Importar

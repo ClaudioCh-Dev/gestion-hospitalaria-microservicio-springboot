@@ -56,33 +56,39 @@ INSERT INTO doctors (
 INSERT INTO appointment_types (
     title,
     description,
-    active
+    active,
+    color
 )
 VALUES
     (
         'Consulta General',
         'Consulta médica general',
-        true
+        true,
+        'blue'
     ),
     (
         'Consulta Especializada',
         'Consulta con médico especialista',
-        true
+        true,
+        'violet'
     ),
     (
         'Control Médico',
         'Control y seguimiento del paciente',
-        true
+        true,
+        'emerald'
     ),
     (
         'Primera Consulta',
         'Primera evaluación médica del paciente',
-        true
+        true,
+        'amber'
     ),
     (
         'Consulta de Emergencia',
         'Atención médica de emergencia',
-        true
+        true,
+        'rose'
     );
 
 

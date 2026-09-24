@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import personal.medical_record_listener.dto.MedicalRecordResponse;
+import personal.medical_record_listener.dto.MedicalRecordSummaryResponse;
 import personal.medical_record_listener.service.IMedicalRecordService;
 
 @RestController
@@ -38,10 +39,22 @@ public class MedicalRecordController implements MedicalRecordApiDocs {
     @GetMapping
     @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ')")
     public ResponseEntity<Page<MedicalRecordResponse>> findAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String specialty,
             @ParameterObject Pageable pageable) {
 
         return ResponseEntity.ok(
-                service.findAll(pageable)
+                service.findAll(pageable, search, specialty)
+        );
+    }
+
+    @Override
+    @GetMapping("/summary")
+    @PreAuthorize("@auth.hasPermission('MEDICAL_RECORD_READ')")
+    public ResponseEntity<MedicalRecordSummaryResponse> getSummary() {
+
+        return ResponseEntity.ok(
+                service.getSummary()
         );
     }
 }

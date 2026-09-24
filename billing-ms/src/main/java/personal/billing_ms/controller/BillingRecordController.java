@@ -3,6 +3,8 @@ package personal.billing_ms.controller;
 import personal.billing_ms.docs.BillingRecordApiDocs;
 
 import org.springdoc.core.annotations.ParameterObject;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -15,7 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import personal.billing_ms.dto.BillingRecordResponse;
+import personal.billing_ms.dto.BillingSummaryResponse;
 import personal.billing_ms.dto.CreateBillingRequest;
+import personal.billing_ms.entities.BillingStatus;
 import personal.billing_ms.service.IBillingRecordService;
 
 @RestController
@@ -55,10 +59,22 @@ public class BillingRecordController implements BillingRecordApiDocs {
     @GetMapping
     @PreAuthorize("@auth.hasPermission('BILLING_READ')")
     public ResponseEntity<Page<BillingRecordResponse>> getBillings(
+            @RequestParam(required = false) BillingStatus status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<Long> patientIds,
             @ParameterObject Pageable pageable
     ) {
         return ResponseEntity.ok(
-                billingRecordService.getBillings(pageable)
+                billingRecordService.getBillings(pageable, status, search, patientIds)
+        );
+    }
+
+    @Override
+    @GetMapping("/summary")
+    @PreAuthorize("@auth.hasPermission('BILLING_READ')")
+    public ResponseEntity<BillingSummaryResponse> getSummary() {
+        return ResponseEntity.ok(
+                billingRecordService.getSummary()
         );
     }
 

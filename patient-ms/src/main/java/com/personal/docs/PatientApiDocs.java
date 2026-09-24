@@ -28,8 +28,9 @@ import personal.shared.docs.ErrorExamples;
 @Tag(name = "Pacientes", description = "Gestión de pacientes del hospital")
 public interface PatientApiDocs {
 
-    @Operation(summary = "Listar pacientes", description = "Devuelve los pacientes paginados. Permite filtrar por género. Requiere PATIENT_READ.")
+    @Operation(summary = "Listar pacientes", description = "Devuelve los pacientes paginados. Permite filtrar por género y buscar por texto. Requiere PATIENT_READ.")
     @Parameter(name = "gender", in = ParameterIn.QUERY, description = "Filtro opcional por género", example = "FEMALE")
+    @Parameter(name = "search", in = ParameterIn.QUERY, description = "Búsqueda opcional por nombres, apellidos, DNI o correo (sin distinguir mayúsculas)", example = "pérez")
     @ApiResponse(responseCode = "200", description = "Página de pacientes",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = PatientExamples.PATIENT_PAGE)))
@@ -37,7 +38,7 @@ public interface PatientApiDocs {
             content = @Content(mediaType = ErrorExamples.PROBLEM_JSON,
                     schema = @Schema(implementation = ProblemDetail.class),
                     examples = @ExampleObject(value = ErrorExamples.INVALID_PARAMETER)))
-    ResponseEntity<Page<PatientResponse>> findAll(Gender gender, Pageable pageable);
+    ResponseEntity<Page<PatientResponse>> findAll(Gender gender, String search, Pageable pageable);
 
     @Operation(summary = "Obtener paciente por ID", description = "Devuelve el detalle completo del paciente. Requiere PATIENT_READ.")
     @Parameter(name = "id", in = ParameterIn.PATH, description = "ID del paciente", example = "1")
