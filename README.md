@@ -74,16 +74,6 @@ Detalle de versiones y de qué usa cada servicio en [`docs/arquitectura-tecnica.
 
 ---
 
-# 🎨 Frontend (planeado)
-
-La solución contará con un dashboard administrativo para el personal del hospital, con vistas para registrar pacientes, gestionar médicos, programar citas, ver agendas y gestionar pagos.
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/59c30420-a57e-4918-a090-b8dcdbbba7da" width="800"/>
-</p>
-
----
-
 # ▶️ Cómo levantar el proyecto
 
 Todo corre en Docker: bases de datos, Kafka, observabilidad y los servicios Spring. **No necesitas Java ni Maven instalados** — cada imagen compila su servicio (y la librería `hospital-shared`) dentro del contenedor.
