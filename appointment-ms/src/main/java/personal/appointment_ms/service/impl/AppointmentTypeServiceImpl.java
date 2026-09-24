@@ -11,6 +11,7 @@ import personal.appointment_ms.dto.AppointmentTypeResponse;
 import personal.appointment_ms.dto.CreateAppointmentTypeRequest;
 import personal.appointment_ms.dto.UpdateAppointmentTypeRequest;
 import personal.appointment_ms.entities.AppointmentType;
+import personal.appointment_ms.entities.AppointmentTypeColor;
 import personal.appointment_ms.exceptions.AppointmentErrorCode;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.service.IAppointmentTypeService;
@@ -34,6 +35,9 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
                 .title(request.title())
                 .description(request.description())
                 .active(false)
+                .color(request.color() != null
+                        ? request.color()
+                        : AppointmentTypeColor.DEFAULT)
                 .build();
 
         AppointmentType saved =
@@ -91,6 +95,10 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         appointmentType.setTitle(request.title());
         appointmentType.setDescription(request.description());
 
+        if (request.color() != null) {
+            appointmentType.setColor(request.color());
+        }
+
         AppointmentType updated =
                 appointmentTypeRepository.save(appointmentType);
 
@@ -127,7 +135,8 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
                 appointmentType.getId(),
                 appointmentType.getTitle(),
                 appointmentType.getDescription(),
-                appointmentType.getActive()
+                appointmentType.getActive(),
+                appointmentType.getColor()
         );
     }
 }

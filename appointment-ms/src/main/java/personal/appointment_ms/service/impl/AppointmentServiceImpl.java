@@ -274,6 +274,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 appointment.getId(),
                                 appointment.getPatientId(),
                                 appointment.getDoctorId(),
+                                // getId() de un proxy LAZY no dispara consulta
+                                appointment.getAppointmentType().getId(),
                                 appointment.getScheduledAt(),
                                 appointment.getDurationMinutes(),
                                 appointment.getReason(),

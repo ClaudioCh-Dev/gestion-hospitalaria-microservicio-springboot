@@ -12,6 +12,8 @@ public record AppointmentResponse(
 
         Long doctorId,
 
+        Long appointmentTypeId,
+
         LocalDateTime scheduledAt,
 
         Integer durationMinutes,

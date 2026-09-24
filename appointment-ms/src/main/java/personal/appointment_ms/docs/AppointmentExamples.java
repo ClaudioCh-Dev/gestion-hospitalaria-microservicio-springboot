@@ -34,7 +34,8 @@ public final class AppointmentExamples {
             {
               "title": "Consulta general",
               "description": "Atención médica general de 30 minutos",
-              "price": 80.00
+              "price": 80.00,
+              "color": "emerald"
             }
             """;
 
@@ -42,7 +43,8 @@ public final class AppointmentExamples {
             {
               "title": "Consulta general",
               "description": "Atención médica general de 45 minutos",
-              "active": true
+              "active": true,
+              "color": "emerald"
             }
             """;
 
@@ -55,6 +57,7 @@ public final class AppointmentExamples {
               "id": 10,
               "patientId": 1,
               "doctorId": 3,
+              "appointmentTypeId": 2,
               "scheduledAt": "2026-10-05T10:30:00",
               "durationMinutes": 30,
               "reason": "Dolor de cabeza persistente",
@@ -70,6 +73,7 @@ public final class AppointmentExamples {
                 "id": 10,
                 "patientId": 1,
                 "doctorId": 3,
+                "appointmentTypeId": 2,
                 "scheduledAt": "2026-10-05T10:30:00",
                 "durationMinutes": 30,
                 "reason": "Dolor de cabeza persistente",
@@ -87,6 +91,7 @@ public final class AppointmentExamples {
                   "id": 10,
                   "patientId": 1,
                   "doctorId": 3,
+                  "appointmentTypeId": 2,
                   "scheduledAt": "2026-10-05T10:30:00",
                   "durationMinutes": 30,
                   "reason": "Dolor de cabeza persistente",
@@ -120,7 +125,8 @@ public final class AppointmentExamples {
               "id": 2,
               "title": "Consulta general",
               "description": "Atención médica general de 30 minutos",
-              "active": true
+              "active": true,
+              "color": "emerald"
             }
             """;
 
@@ -129,7 +135,8 @@ public final class AppointmentExamples {
               "id": 2,
               "title": "Consulta general",
               "description": "Atención médica general de 30 minutos",
-              "active": false
+              "active": false,
+              "color": "emerald"
             }
             """;
 
@@ -139,13 +146,15 @@ public final class AppointmentExamples {
                 "id": 1,
                 "title": "Control prenatal",
                 "description": "Seguimiento del embarazo",
-                "active": true
+                "active": true,
+                "color": "violet"
               },
               {
                 "id": 2,
                 "title": "Consulta general",
                 "description": "Atención médica general de 30 minutos",
-                "active": true
+                "active": true,
+                "color": "emerald"
               }
             ]
             """;

@@ -32,4 +32,8 @@ public class AppointmentType {
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
+
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String color = AppointmentTypeColor.DEFAULT;
 }

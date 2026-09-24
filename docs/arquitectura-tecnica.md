@@ -119,7 +119,7 @@ Compartida por `patient-ms`, `doctor-ms`, `appointment-ms`, `billing-ms` (cada u
 - `patients` — id, document_number (único), first_name, last_name, birth_date, gender, phone, email (único), address, blood_type, allergies, active, created_at, updated_at
 - `specialties` — id, name (único), description
 - `doctors` — id, user_id, license_number (único), first_name, last_name, email (único), phone, specialty_id → specialties, schedule_start, schedule_end, active, created_at
-- `appointment_types` — id, title (único), description, active
+- `appointment_types` — id, title (único), description, active, color (gama de la paleta: blue, emerald, violet, amber, rose, cyan, indigo, orange, teal, pink; por defecto blue)
 - `doctors_appointment` / `patients_appointment` — réplicas locales de solo lectura en appointment-ms (id, full_name[, specialty]), alimentadas por Kafka (ver sección 3)
 - `appointments` — id, patient_id, doctor_id, scheduled_at, duration_minutes, reason, status, notes, appointment_type_id → appointment_types, created_at (índices por patient_id, doctor_id, appointment_type_id)
 - `billing_tariffs` — billing_appointment_type_id (PK), price, currency
