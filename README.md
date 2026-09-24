@@ -2,6 +2,7 @@
 
 <p align="center">
   <img width="1679" height="937" alt="image" src="https://github.com/user-attachments/assets/0809741b-8cf2-4d75-a4a3-34d8bcde9093" />
+  <img width="1678" height="937" alt="image" src="https://github.com/user-attachments/assets/54d85219-8b4e-48d4-8da4-84da0fa1ed61" />
 </p>
 
 ## 🔗 Frontend
