@@ -1,7 +1,7 @@
 # 🏥 Sistema de Gestión Hospitalaria — Microservicios
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/0a92bd98-71d1-4093-84d4-e45a4616e505" width="800"/>
+  <img width="1376" height="768" alt="image" src="https://github.com/user-attachments/assets/91c47e85-b4cf-42a3-b908-98d8e78e6d3b" />
 </p>
 
 ## 🔗 Frontend
