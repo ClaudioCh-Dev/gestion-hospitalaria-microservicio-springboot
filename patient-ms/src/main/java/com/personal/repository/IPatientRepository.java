@@ -38,8 +38,15 @@ public interface IPatientRepository extends JpaRepository<Patient, Long> {
                 )
                 FROM Patient p
                 WHERE (CAST(:gender AS string) IS NULL OR p.gender = :gender)
+                  AND (CAST(:search AS string) IS NULL
+                       OR LOWER(p.firstName) LIKE :search
+                       OR LOWER(p.lastName) LIKE :search
+                       OR LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :search
+                       OR p.documentNumber LIKE :search
+                       OR LOWER(COALESCE(p.email, '')) LIKE :search)
             """)
     Page<PatientResponse> findAllResponses(
             @Param("gender") Gender gender,
+            @Param("search") String search,
             Pageable pageable);
 }

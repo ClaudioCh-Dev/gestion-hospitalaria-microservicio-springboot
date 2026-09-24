@@ -31,10 +31,11 @@ public class PatientController implements PatientApiDocs {
     @PreAuthorize("@auth.hasPermission('PATIENT_READ')")
     @GetMapping
     public ResponseEntity<Page<PatientResponse>> findAll(
-        @RequestParam(required = false) Gender gender,  
+        @RequestParam(required = false) Gender gender,
+        @RequestParam(required = false) String search,
         @ParameterObject Pageable pageable) {
 
-        Page<PatientResponse> patients = patientService.findAll(pageable,gender);
+        Page<PatientResponse> patients = patientService.findAll(pageable, gender, search);
 
         return ResponseEntity.ok(patients);
     }

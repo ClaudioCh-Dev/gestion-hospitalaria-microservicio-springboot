@@ -38,8 +38,17 @@ public class PatientServiceImpl implements IPatientService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PatientResponse> findAll(Pageable pageable, Gender gender) {
-        return patientRepository.findAllResponses(gender, pageable);
+    public Page<PatientResponse> findAll(Pageable pageable, Gender gender, String search) {
+        return patientRepository.findAllResponses(gender, toLikePattern(search), pageable);
+    }
+
+    // "  Ana " -> "%ana%"; vacío -> null para que la consulta ignore el filtro
+    private String toLikePattern(String search) {
+        if (search == null || search.isBlank()) {
+            return null;
+        }
+
+        return "%" + search.trim().toLowerCase() + "%";
     }
 
     @Override

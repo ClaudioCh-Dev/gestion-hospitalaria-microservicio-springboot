@@ -29,9 +29,10 @@ public class DoctorController implements DoctorApiDocs {
         @GetMapping()
         @PreAuthorize("@auth.hasPermission('DOCTOR_READ')")
         public ResponseEntity<Page<DoctorResponse>> findAll(
+                        @RequestParam(required = false) String search,
                         @ParameterObject Pageable pageable) {
                 return ResponseEntity.ok(
-                                doctorService.findAll(pageable));
+                                doctorService.findAll(pageable, search));
         }
 
         @Override
@@ -48,9 +49,10 @@ public class DoctorController implements DoctorApiDocs {
         @PreAuthorize("@auth.hasPermission('DOCTOR_READ_BY_SPECIALTY')")
         public ResponseEntity<Page<DoctorResponse>> findBySpecialty(
                         @PathVariable Long specialtyId,
+                        @RequestParam(required = false) String search,
                         @ParameterObject Pageable pageable) {
                 return ResponseEntity.ok(
-                                doctorService.findBySpecialty(specialtyId, pageable));
+                                doctorService.findBySpecialty(specialtyId, pageable, search));
         }
 
         @Override

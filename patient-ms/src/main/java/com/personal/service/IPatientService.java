@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface IPatientService {
 
-    Page<PatientResponse> findAll(Pageable pageable, Gender gender);
+    Page<PatientResponse> findAll(Pageable pageable, Gender gender, String search);
 
     PatientDetailResponse findById(Long id);
 

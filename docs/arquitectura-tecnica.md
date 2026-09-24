@@ -37,23 +37,32 @@ Rutas relativas a cada `context-path` (ver tabla anterior). Todas pasan por el g
 - `AppointmentTypeController` (`/appointment-types`): `POST`, `GET`, `GET /{id}`, `PUT /{id}`, `DELETE /{id}`
 
 **billing-ms**
-- `BillingRecordController` (`/crud`): `POST /crud`, `GET /crud/patient/{patientId}`, `GET /crud`, `PATCH /crud/{id}/pay`
+- `BillingRecordController` (`/crud`): `POST /crud`, `GET /crud/patient/{patientId}`, `GET /crud?status&search&patientIds&sort`, `GET /crud/summary`, `PATCH /crud/{id}/pay`
 - `BillingTariffController` (`/tariffs`): `POST`, `PUT /{appointmentTypeId}`, `GET`, `GET /{appointmentTypeId}`, `GET /{appointmentTypeId}/price`
 
 **doctor-ms**
-- `DoctorController` (`/crud`): `GET`, `GET /{id}`, `GET /specialty/{specialtyId}`, `POST`, `PUT /{id}`
+- `DoctorController` (`/crud`): `GET ?search`, `GET /{id}`, `GET /specialty/{specialtyId}?search`, `POST`, `PUT /{id}`
 - `SpecialtyController` (`/specialties`): `GET`, `POST`
 
 **patient-ms**
-- `PatientController` (`/crud`): `GET`, `GET /{id}`, `GET /document/{documentNumber}`, `POST`, `PUT /{id}`, `DELETE /{id}`
+- `PatientController` (`/crud`): `GET ?gender&search`, `GET /{id}`, `GET /document/{documentNumber}`, `POST`, `PUT /{id}`, `DELETE /{id}`
 
 **notification-ms**
 - `NotificationController` (`/crud`): `POST`, `GET /doctor/{doctorId}`, `GET /admin`, `PATCH /{notificationId}/read`
 - `NotificationSseController`: `GET /stream` (Server-Sent Events, `text/event-stream` — notificaciones en tiempo real)
 
 **medical-record-listener**
-- `MedicalRecordController` (`/crud`): `GET /patient/{patientId}`, `GET`
+- `MedicalRecordController` (`/crud`): `GET /patient/{patientId}`, `GET ?search&specialty`, `GET /summary`
 - No expone `POST`: los registros se crean solo a partir de eventos de Kafka (ver sección 3).
+
+**Búsqueda y resúmenes**
+- `search` (opcional, paginado): coincidencia parcial sin distinguir mayúsculas.
+  - patient-ms: nombres, apellidos, nombre completo, DNI o correo (JPQL, combinable con `gender`).
+  - doctor-ms: nombre, colegiatura, correo o especialidad (JPQL, también en `/specialty/{specialtyId}`).
+  - medical-record-listener: paciente, médico, especialidad o motivo (regex en MongoDB), más `specialty` exacta.
+  - billing-ms: no guarda nombres, así que `search` solo acepta un número de factura, cita o paciente. Para buscar por nombre se envían los IDs de pacientes en `patientIds` (resueltos antes en patient-ms). `status` y `sort` se combinan con `JpaSpecificationExecutor`.
+- `GET /billings/crud/summary`: cantidad y monto por estado (`GROUP BY` en base de datos) y monto cobrado en el mes actual.
+- `GET /medical-records/crud/summary`: total de consultas, pacientes únicos, completadas, ingresos y especialidades registradas.
 
 **auth-server**
 - `AuthController` (`/auth`): `POST /login`, `POST /validate-jwt`, `POST /refresh-token`, `POST /logout`

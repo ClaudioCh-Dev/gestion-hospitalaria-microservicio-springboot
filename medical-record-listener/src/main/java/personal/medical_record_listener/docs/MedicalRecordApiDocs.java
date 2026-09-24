@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import personal.medical_record_listener.dto.MedicalRecordResponse;
+import personal.medical_record_listener.dto.MedicalRecordSummaryResponse;
 import personal.shared.docs.ErrorExamples;
 
 /**
@@ -39,9 +40,17 @@ public interface MedicalRecordApiDocs {
                     examples = @ExampleObject(value = MedicalRecordExamples.MEDICAL_RECORD_NOT_FOUND)))
     ResponseEntity<Page<MedicalRecordResponse>> findByPatientId(Long patientId, Pageable pageable);
 
-    @Operation(summary = "Listar historiales", description = "Devuelve todos los registros del historial, paginados. Requiere MEDICAL_RECORD_READ.")
+    @Operation(summary = "Listar historiales", description = "Devuelve los registros del historial paginados, con búsqueda y filtro por especialidad opcionales. Requiere MEDICAL_RECORD_READ.")
+    @Parameter(name = "search", in = ParameterIn.QUERY, description = "Búsqueda opcional por paciente, médico, especialidad o motivo (sin distinguir mayúsculas)", example = "cardio")
+    @Parameter(name = "specialty", in = ParameterIn.QUERY, description = "Filtro opcional por especialidad exacta", example = "Cardiología")
     @ApiResponse(responseCode = "200", description = "Página de historiales",
             content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(value = MedicalRecordExamples.MEDICAL_RECORD_PAGE)))
-    ResponseEntity<Page<MedicalRecordResponse>> findAll(Pageable pageable);
+    ResponseEntity<Page<MedicalRecordResponse>> findAll(String search, String specialty, Pageable pageable);
+
+    @Operation(summary = "Resumen del historial", description = "Total de consultas, pacientes únicos, consultas completadas, ingresos y especialidades registradas. Requiere MEDICAL_RECORD_READ.")
+    @ApiResponse(responseCode = "200", description = "Resumen del historial",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = MedicalRecordSummaryResponse.class)))
+    ResponseEntity<MedicalRecordSummaryResponse> getSummary();
 }
