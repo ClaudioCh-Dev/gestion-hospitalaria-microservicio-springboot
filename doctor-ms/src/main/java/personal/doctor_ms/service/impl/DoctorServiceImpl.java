@@ -17,6 +17,8 @@ import personal.doctor_ms.mapper.DoctorMapper;
 import personal.doctor_ms.mapper.SpecialtyMapper;
 import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
+import personal.doctor_ms.security.UserContext;
+import personal.doctor_ms.security.UserContextHolder;
 import personal.doctor_ms.service.IDoctorService;
 import personal.doctor_ms.stream.DoctorPublisher;
 import personal.shared.event.DoctorCreatedEvent;
@@ -24,6 +26,7 @@ import personal.shared.event.DoctorUpdateEvent;
 import personal.shared.exception.BusinessException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +52,22 @@ public class DoctorServiceImpl implements IDoctorService {
                 .orElseThrow(() -> new BusinessException(
                         DoctorErrorCode.DOCTOR_NOT_FOUND,
                         "Doctor no encontrado"
+                ));
+
+        return doctorMapper.toResponse(doctor);
+    }
+
+    @Override
+    public DoctorResponse findMe() {
+
+        UserContext context = UserContextHolder.get();
+
+        Doctor doctor = (context == null || context.userId() == null
+                ? Optional.<Doctor>empty()
+                : doctorRepository.findByUserId(context.userId()))
+                .orElseThrow(() -> new BusinessException(
+                        DoctorErrorCode.DOCTOR_NOT_FOUND,
+                        "El usuario no tiene un médico asociado"
                 ));
 
         return doctorMapper.toResponse(doctor);

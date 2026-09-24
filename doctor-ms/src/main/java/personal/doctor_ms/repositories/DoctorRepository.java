@@ -1,5 +1,7 @@
 package personal.doctor_ms.repositories;
 
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +14,8 @@ public interface DoctorRepository extends JpaRepository<Doctor,Long> {
      Page<Doctor> findBySpecialtyId(Long specialtyId, Pageable pageable);
 
      boolean existsByEmail(String email);
+
+     Optional<Doctor> findByUserId(Long userId);
 
      // specialtyId y search son opcionales (null = sin filtro); search llega como patrón LIKE en minúsculas
      @Query("""

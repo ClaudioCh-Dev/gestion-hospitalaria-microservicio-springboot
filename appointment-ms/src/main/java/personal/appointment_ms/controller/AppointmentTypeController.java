@@ -1,5 +1,6 @@
 package personal.appointment_ms.controller;
 
+import jakarta.validation.Valid;
 import personal.appointment_ms.docs.AppointmentTypeApiDocs;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public class AppointmentTypeController implements AppointmentTypeApiDocs {
         @PostMapping
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_CREATE')")
         public ResponseEntity<AppointmentTypeResponse> create(
-                        @RequestBody CreateAppointmentTypeRequest request) {
+                        @Valid @RequestBody CreateAppointmentTypeRequest request) {
 
                 AppointmentTypeResponse response = appointmentTypeService.create(request);
 
@@ -61,7 +62,7 @@ public class AppointmentTypeController implements AppointmentTypeApiDocs {
         @PreAuthorize("@auth.hasPermission('APPOINTMENT_TYPE_UPDATE')")
         public ResponseEntity<AppointmentTypeResponse> update(
                         @PathVariable Long id,
-                        @RequestBody UpdateAppointmentTypeRequest request) {
+                        @Valid @RequestBody UpdateAppointmentTypeRequest request) {
 
                 return ResponseEntity.ok(
                                 appointmentTypeService.update(id, request));

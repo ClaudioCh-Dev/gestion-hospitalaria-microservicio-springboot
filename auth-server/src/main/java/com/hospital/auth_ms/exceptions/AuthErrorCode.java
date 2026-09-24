@@ -40,7 +40,13 @@ public enum AuthErrorCode implements ErrorCode {
             HttpStatus.BAD_REQUEST.value()),
             
     EMAIL_SEND_FAILED(
-            HttpStatus.SERVICE_UNAVAILABLE.value());
+            HttpStatus.SERVICE_UNAVAILABLE.value()),
+
+    USER_CANNOT_DEACTIVATE_SELF(
+            HttpStatus.FORBIDDEN.value()),
+
+    ROLE_NOT_FOUND(
+            HttpStatus.NOT_FOUND.value());
 
             
     private final int status;
