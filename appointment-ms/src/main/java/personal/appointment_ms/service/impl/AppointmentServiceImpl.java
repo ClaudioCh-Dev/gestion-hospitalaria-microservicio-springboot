@@ -30,6 +30,8 @@ import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.repositories.DoctorRepository;
 import personal.appointment_ms.repositories.PatientRepository;
+import personal.appointment_ms.security.UserContext;
+import personal.appointment_ms.security.UserContextHolder;
 import personal.appointment_ms.service.IAppointmentService;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentCreatedEvent;
@@ -206,6 +208,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         public List<AppointmentResponse> getAppointmentsByDoctor(
                         Long doctorId) {
 
+                assertCanAccessDoctor(doctorId);
+
                 return appointmentRepository
                                 .findByDoctorId(doctorId)
                                 .stream()
@@ -237,6 +241,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                                 AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
                                                 "Cita no encontrada"));
 
+                assertCanAccessDoctor(appointment.getDoctorId());
+
                 if (request.status() == appointment.getStatus()) {
                         throw new BusinessException(
                                         AppointmentErrorCode.APPOINTMENT_STATUS_ALREADY_SET,
@@ -265,6 +271,33 @@ public class AppointmentServiceImpl implements IAppointmentService {
         @Override
         public void cancelAppointment(Long id) {
                updateStatus(id, new UpdateAppointmentStatusRequest(AppointmentStatus.CANCELLED));
+        }
+
+        /**
+         * Con APPOINTMENT_READ (agenda completa, administración) se accede a cualquier médico.
+         * Sin él (rol DOCTOR) solo a las citas propias: el médico consultado debe estar
+         * vinculado al usuario autenticado (userId en doctor-ms).
+         */
+        private void assertCanAccessDoctor(Long doctorId) {
+
+                UserContext context = UserContextHolder.get();
+
+                if (context != null && context.hasPermission("APPOINTMENT_READ")) {
+                        return;
+                }
+
+                DoctorResponse doctor = doctorClient.findById(doctorId);
+
+                boolean isOwner = context != null
+                                && context.userId() != null
+                                && doctor != null
+                                && context.userId().equals(doctor.userId());
+
+                if (!isOwner) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_ACCESS_DENIED,
+                                        "Solo puedes acceder a tus propias citas");
+                }
         }
 
         private AppointmentResponse toResponse(

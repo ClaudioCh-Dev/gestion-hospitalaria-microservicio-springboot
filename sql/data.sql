@@ -24,6 +24,7 @@ INSERT INTO specialties (name, description) VALUES
 -- ============================================================
 
 INSERT INTO doctors (
+    user_id,
     license_number,
     first_name,
     last_name,
@@ -33,19 +34,20 @@ INSERT INTO doctors (
     schedule_end,
     active
 ) VALUES
-    ('CMP-001', 'Carlos', 'Mendoza',
+    -- user_id 2 = doctor@example.com (DataSeeder de auth-server)
+    (2, 'CMP-001', 'Carlos', 'Mendoza',
      'c.mendoza@hospital.com', 1, '08:00', '16:00', true),
 
-    ('CMP-002', 'Ana', 'García',
+    (NULL, 'CMP-002', 'Ana', 'García',
      'a.garcia@hospital.com', 2, '09:00', '17:00', true),
 
-    ('CMP-003', 'Roberto', 'Quispe',
+    (NULL, 'CMP-003', 'Roberto', 'Quispe',
      'r.quispe@hospital.com', 3, '07:00', '15:00', true),
 
-    ('CMP-004', 'María', 'Torres',
+    (NULL, 'CMP-004', 'María', 'Torres',
      'm.torres@hospital.com', 4, '10:00', '18:00', true),
 
-    ('CMP-005', 'Luis', 'Vargas',
+    (NULL, 'CMP-005', 'Luis', 'Vargas',
      'l.vargas@hospital.com', 5, '08:00', '16:00', true);
 
 
