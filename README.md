@@ -4,6 +4,14 @@
   <img src="https://github.com/user-attachments/assets/0a92bd98-71d1-4093-84d4-e45a4616e505" width="800"/>
 </p>
 
+## 🔗 Frontend
+
+Este backend consume el frontend de Gestión Hospitalaria (Angular + signals).
+
+👉 https://github.com/ClaudioCh-Dev/gestion-hospitalaria-web-angular
+
+---
+
 # 🚧 Proyecto en construcción
 
 Sistema backend para la gestión de un hospital, construido con **Spring Boot** y **Spring Cloud** bajo una arquitectura de microservicios. Permite administrar:
