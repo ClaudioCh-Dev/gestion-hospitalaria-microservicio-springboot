@@ -5035,7 +5035,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "[\n  {\n    \"id\": 25,\n    \"appointmentId\": 10,\n    \"patientId\": 1,\n    \"patientName\": \"María Gonzales\",\n    \"doctorId\": 3,\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\",\n    \"eventType\": \"APPOINTMENT_SCHEDULED\",\n    \"status\": \"SCHEDULED\",\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"amount\": 80.00,\n    \"patientRead\": false,\n    \"doctorRead\": false,\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+							"body": "[\n  {\n    \"id\": 25,\n    \"type\": \"APPOINTMENT_SCHEDULED\",\n    \"title\": \"Cita programada\",\n    \"message\": \"Se ha creado una nueva cita para María Gonzales con el doctor Carlos Ramírez\",\n    \"referenceType\": \"APPOINTMENT\",\n    \"referenceId\": 10,\n    \"doctorId\": 3,\n    \"patientName\": \"María Gonzales\",\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\",\n    \"appointmentStatus\": \"SCHEDULED\",\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"read\": false,\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
 						}
 					],
 					"event": [
@@ -5053,20 +5053,19 @@
 					]
 				},
 				{
-					"name": "Get Notifications By Doctor",
+					"name": "Get My Notifications (Doctor)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url_gateway}}/notifications/crud/doctor/{{doctor_id}}",
+							"raw": "{{url_gateway}}/notifications/crud/me",
 							"host": [
 								"{{url_gateway}}"
 							],
 							"path": [
 								"notifications",
 								"crud",
-								"doctor",
-								"{{doctor_id}}"
+								"me"
 							]
 						},
 						"description": ""
@@ -5078,15 +5077,14 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{url_gateway}}/notifications/crud/doctor/{{doctor_id}}",
+									"raw": "{{url_gateway}}/notifications/crud/me",
 									"host": [
 										"{{url_gateway}}"
 									],
 									"path": [
 										"notifications",
 										"crud",
-										"doctor",
-										"{{doctor_id}}"
+										"me"
 									]
 								},
 								"description": ""
@@ -5101,7 +5099,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "[\n  {\n    \"id\": 25,\n    \"appointmentId\": 10,\n    \"patientId\": 1,\n    \"patientName\": \"María Gonzales\",\n    \"doctorId\": 3,\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\",\n    \"eventType\": \"APPOINTMENT_SCHEDULED\",\n    \"status\": \"SCHEDULED\",\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"amount\": 80.00,\n    \"patientRead\": false,\n    \"doctorRead\": false,\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
+							"body": "[\n  {\n    \"id\": 25,\n    \"type\": \"APPOINTMENT_SCHEDULED\",\n    \"title\": \"Cita programada\",\n    \"message\": \"Se ha creado una nueva cita para María Gonzales con el doctor Carlos Ramírez\",\n    \"referenceType\": \"APPOINTMENT\",\n    \"referenceId\": 10,\n    \"doctorId\": 3,\n    \"patientName\": \"María Gonzales\",\n    \"doctorName\": \"Carlos Ramírez\",\n    \"specialty\": \"Cardiología\",\n    \"appointmentStatus\": \"SCHEDULED\",\n    \"reason\": \"Dolor de cabeza persistente\",\n    \"scheduledAt\": \"2026-10-05T10:30:00\",\n    \"read\": false,\n    \"createdAt\": \"2026-09-23T17:45:00\"\n  }\n]"
 						}
 					],
 					"event": [
@@ -5179,7 +5177,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n  \"id\": 25,\n  \"appointmentId\": 10,\n  \"patientId\": 1,\n  \"patientName\": \"María Gonzales\",\n  \"doctorId\": 3,\n  \"doctorName\": \"Carlos Ramírez\",\n  \"specialty\": \"Cardiología\",\n  \"eventType\": \"APPOINTMENT_SCHEDULED\",\n  \"status\": \"SCHEDULED\",\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"scheduledAt\": \"2026-10-05T10:30:00\",\n  \"amount\": 80.00,\n  \"patientRead\": false,\n  \"doctorRead\": false,\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}"
+							"body": "{\n  \"id\": 25,\n  \"type\": \"APPOINTMENT_SCHEDULED\",\n  \"title\": \"Cita programada\",\n  \"message\": \"Se ha creado una nueva cita para María Gonzales con el doctor Carlos Ramírez\",\n  \"referenceType\": \"APPOINTMENT\",\n  \"referenceId\": 10,\n  \"doctorId\": 3,\n  \"patientName\": \"María Gonzales\",\n  \"doctorName\": \"Carlos Ramírez\",\n  \"specialty\": \"Cardiología\",\n  \"appointmentStatus\": \"SCHEDULED\",\n  \"reason\": \"Dolor de cabeza persistente\",\n  \"scheduledAt\": \"2026-10-05T10:30:00\",\n  \"read\": false,\n  \"createdAt\": \"2026-09-23T17:45:00\"\n}"
 						}
 					],
 					"event": [

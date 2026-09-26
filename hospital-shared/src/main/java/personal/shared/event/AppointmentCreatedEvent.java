@@ -11,6 +11,8 @@ public record AppointmentCreatedEvent(
         Long patientId,
         String patientName,
         Long doctorId,
+        // userId (auth-server) del médico: notification-ms le envía el evento solo a él (y a los admins)
+        Long doctorUserId,
         String doctorName,
         String specialty,
         LocalDateTime scheduledAt,

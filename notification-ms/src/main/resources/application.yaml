@@ -13,7 +13,8 @@ spring:
       maximum-pool-size: ${db.maximum-pool-size:10}
   cloud:
     function:
-      definition: appointmentCreatedConsumer;appointmentConfirmedConsumer;appointmentCompletedConsumer;appointmentCanceledConsumer;patientCreatedConsumer
+      # Deben coincidir con los @Bean de listeners/NotificationListener.java
+      definition: appointmentCreatedConsumer;appointmentUpdateStatusConsumer
 
     stream:
       kafka:
@@ -27,7 +28,7 @@ spring:
           group: notification-group
           content-type: application/json
 
-        appointmentUpdatedStatusConsumer-in-0:
+        appointmentUpdateStatusConsumer-in-0:
           destination: appointment-updated-status
           group: notification-group
           content-type: application/json

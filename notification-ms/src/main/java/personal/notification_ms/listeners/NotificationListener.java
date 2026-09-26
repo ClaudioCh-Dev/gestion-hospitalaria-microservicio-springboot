@@ -2,6 +2,7 @@ package personal.notification_ms.listeners;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import personal.notification_ms.dto.NotificationRequest;
+import personal.notification_ms.dto.NotificationResponse;
 import personal.notification_ms.model.NotificationType;
 import personal.notification_ms.security.UserContext;
 import personal.notification_ms.security.UserContextHolder;
@@ -58,9 +60,12 @@ public class NotificationListener {
                 NotificationRequest request =
                         buildAppointmentCreatedNotification(event);
 
-                notificationService.save(request);
+                // Se envía la guardada: el frontend recibe el id para marcarla como leída
+                NotificationResponse saved =
+                        notificationService.save(request);
 
-                sseService.sendNotification(request);
+                // Solo a los admins y al médico de la cita
+                sseService.sendNotification(event.doctorUserId(), saved);
 
             } finally {
 
@@ -93,12 +98,20 @@ public class NotificationListener {
                         event
                 );
 
+                Map<String, Object> metadata =
+                        buildStatusMetadata(event);
+
                 NotificationRequest request =
-                        buildAppointmentStatusNotification(event);
+                        buildAppointmentStatusNotification(event, metadata);
 
-                notificationService.save(request);
+                NotificationResponse saved =
+                        notificationService.save(request);
 
-                sseService.sendNotification(request);
+                // Solo a los admins y al médico de la cita
+                sseService.sendNotification(
+                        (Long) metadata.get("doctorUserId"),
+                        saved
+                );
 
             } finally {
 
@@ -113,6 +126,23 @@ public class NotificationListener {
 
     private NotificationRequest buildAppointmentCreatedNotification(
             AppointmentCreatedEvent event) {
+
+        // HashMap y no Map.of: Map.of falla con valores null (p. ej. reason vacío)
+        Map<String, Object> metadata = new HashMap<>();
+
+        putIfPresent(metadata, "patientId", event.patientId());
+        putIfPresent(metadata, "patientName", event.patientName());
+        putIfPresent(metadata, "doctorId", event.doctorId());
+        putIfPresent(metadata, "doctorUserId", event.doctorUserId());
+        putIfPresent(metadata, "doctorName", event.doctorName());
+        putIfPresent(metadata, "specialty", event.specialty());
+        putIfPresent(metadata, "scheduledAt",
+                event.scheduledAt() != null ? event.scheduledAt().toString() : null);
+        putIfPresent(metadata, "reason", event.reason());
+        putIfPresent(metadata, "status",
+                event.status() != null ? event.status().name() : null);
+        putIfPresent(metadata, "amount", event.amount());
+        putIfPresent(metadata, "currency", event.currency());
 
         return NotificationRequest.builder()
 
@@ -131,18 +161,7 @@ public class NotificationListener {
 
                 .referenceId(event.appointmentId())
 
-                .metadata(Map.of(
-                        "patientId", event.patientId(),
-                        "patientName", event.patientName(),
-                        "doctorId", event.doctorId(),
-                        "doctorName", event.doctorName(),
-                        "specialty", event.specialty(),
-                        "scheduledAt", event.scheduledAt().toString(),
-                        "reason", event.reason(),
-                        "status", event.status().name(),
-                        "amount", event.amount(),
-                        "currency", event.currency()
-                ))
+                .metadata(metadata)
 
                 .createdAt(LocalDateTime.now())
 
@@ -154,7 +173,8 @@ public class NotificationListener {
     // ============================================================
 
     private NotificationRequest buildAppointmentStatusNotification(
-            AppointmentUpdateStatusEvent event) {
+            AppointmentUpdateStatusEvent event,
+            Map<String, Object> metadata) {
 
         NotificationType type = switch (event.status()) {
 
@@ -186,20 +206,27 @@ public class NotificationListener {
                     "Cita cancelada";
         };
 
-        String message = switch (event.status()) {
+        String action = switch (event.status()) {
 
             case SCHEDULED ->
-                    "La cita ha sido programada.";
+                    "programada";
 
             case CONFIRMED ->
-                    "La cita ha sido confirmada.";
+                    "confirmada";
 
             case COMPLETED ->
-                    "La cita ha sido completada.";
+                    "completada";
 
             case CANCELLED ->
-                    "La cita ha sido cancelada.";
+                    "cancelada";
         };
+
+        // "La cita de María Gonzales ha sido confirmada." si se conoce el paciente
+        Object patientName = metadata.get("patientName");
+
+        String message = patientName != null
+                ? "La cita de " + patientName + " ha sido " + action + "."
+                : "La cita ha sido " + action + ".";
 
         return NotificationRequest.builder()
 
@@ -213,13 +240,42 @@ public class NotificationListener {
 
                 .referenceId(event.appointmentId())
 
-                .metadata(Map.of(
-                        "status", event.status().name()
-                ))
+                .metadata(metadata)
 
                 .createdAt(LocalDateTime.now())
 
                 .build();
+    }
+
+    /**
+     * El evento de estado solo trae appointmentId, status y el médico: el resto
+     * (paciente, fecha...) se copia de la notificación con la que se creó la cita.
+     * Los valores del evento tienen prioridad; si faltan (eventos publicados antes de
+     * añadir doctorId/doctorUserId), se usan los guardados.
+     */
+    private Map<String, Object> buildStatusMetadata(
+            AppointmentUpdateStatusEvent event) {
+
+        Map<String, Object> metadata = new HashMap<>(
+                notificationService.findAppointmentMetadata(event.appointmentId())
+        );
+
+        metadata.put("status", event.status().name());
+
+        putIfPresent(metadata, "doctorId", event.doctorId());
+        putIfPresent(metadata, "doctorUserId", event.doctorUserId());
+
+        return metadata;
+    }
+
+    private static void putIfPresent(
+            Map<String, Object> map,
+            String key,
+            Object value) {
+
+        if (value != null) {
+            map.put(key, value);
+        }
     }
 
     // ============================================================

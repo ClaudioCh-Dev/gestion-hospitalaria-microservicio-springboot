@@ -157,6 +157,7 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                 appointment.getPatientId(),
                                 patientEntity.getFullName(),
                                 appointment.getDoctorId(),
+                                findDoctorUserId(appointment.getDoctorId()),
                                 doctorEntity.getFullName(),
                                 doctorEntity.getSpecialty(),
                                 appointment.getScheduledAt(),
@@ -260,7 +261,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
                 AppointmentUpdateStatusEvent appointmentEvent = new AppointmentUpdateStatusEvent(
                                 updatedAppointment.getId(),
-                                StatusAppointment.valueOf(updatedAppointment.getStatus().name()));
+                                StatusAppointment.valueOf(updatedAppointment.getStatus().name()),
+                                updatedAppointment.getDoctorId(),
+                                findDoctorUserId(updatedAppointment.getDoctorId()));
 
                 appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);
@@ -297,6 +300,23 @@ public class AppointmentServiceImpl implements IAppointmentService {
                         throw new BusinessException(
                                         AppointmentErrorCode.APPOINTMENT_ACCESS_DENIED,
                                         "Solo puedes acceder a tus propias citas");
+                }
+        }
+
+        /**
+         * userId (auth-server) del médico, para que notification-ms le envíe la notificación solo a él.
+         * La copia local (doctors_appointment) no lo guarda, así que se consulta doctor-ms. Si falla,
+         * la cita no se bloquea: el evento sale sin destinatario médico y solo lo reciben los admins.
+         */
+        private Long findDoctorUserId(Long doctorId) {
+
+                try {
+                        DoctorResponse doctor = doctorClient.findById(doctorId);
+                        return doctor != null ? doctor.userId() : null;
+
+                } catch (RuntimeException e) {
+                        log.warn("No se pudo obtener el userId del doctor {}: {}", doctorId, e.getMessage());
+                        return null;
                 }
         }
 

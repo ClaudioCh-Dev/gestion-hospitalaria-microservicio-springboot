@@ -35,19 +35,19 @@ public final class NotificationExamples {
     public static final String NOTIFICATION_RESPONSE = """
             {
               "id": 25,
-              "appointmentId": 10,
-              "patientId": 1,
-              "patientName": "María Gonzales",
+              "type": "APPOINTMENT_SCHEDULED",
+              "title": "Cita programada",
+              "message": "Se ha creado una nueva cita para María Gonzales con el doctor Carlos Ramírez",
+              "referenceType": "APPOINTMENT",
+              "referenceId": 10,
               "doctorId": 3,
+              "patientName": "María Gonzales",
               "doctorName": "Carlos Ramírez",
               "specialty": "Cardiología",
-              "eventType": "APPOINTMENT_SCHEDULED",
-              "status": "SCHEDULED",
+              "appointmentStatus": "SCHEDULED",
               "reason": "Dolor de cabeza persistente",
               "scheduledAt": "2026-10-05T10:30:00",
-              "amount": 80.00,
-              "patientRead": false,
-              "doctorRead": false,
+              "read": false,
               "createdAt": "2026-09-23T17:45:00"
             }
             """;
@@ -56,19 +56,19 @@ public final class NotificationExamples {
             [
               {
                 "id": 25,
-                "appointmentId": 10,
-                "patientId": 1,
-                "patientName": "María Gonzales",
+                "type": "APPOINTMENT_SCHEDULED",
+                "title": "Cita programada",
+                "message": "Se ha creado una nueva cita para María Gonzales con el doctor Carlos Ramírez",
+                "referenceType": "APPOINTMENT",
+                "referenceId": 10,
                 "doctorId": 3,
+                "patientName": "María Gonzales",
                 "doctorName": "Carlos Ramírez",
                 "specialty": "Cardiología",
-                "eventType": "APPOINTMENT_SCHEDULED",
-                "status": "SCHEDULED",
+                "appointmentStatus": "SCHEDULED",
                 "reason": "Dolor de cabeza persistente",
                 "scheduledAt": "2026-10-05T10:30:00",
-                "amount": 80.00,
-                "patientRead": false,
-                "doctorRead": false,
+                "read": false,
                 "createdAt": "2026-09-23T17:45:00"
               }
             ]
@@ -77,7 +77,7 @@ public final class NotificationExamples {
     /** Formato text/event-stream: cada evento se llama "notification". */
     public static final String SSE_EVENT = """
             event:notification
-            data:{"type":"APPOINTMENT_SCHEDULED","title":"Nueva cita programada","message":"María Gonzales tiene una cita con Carlos Ramírez el 2026-10-05 a las 10:30","referenceType":"APPOINTMENT","referenceId":10,"metadata":{"patientName":"María Gonzales","doctorName":"Carlos Ramírez"},"createdAt":"2026-09-23T17:45:00"}
+            data:{"id":25,"type":"APPOINTMENT_SCHEDULED","title":"Cita programada","message":"Se ha creado una nueva cita para María Gonzales con el doctor Carlos Ramírez","referenceType":"APPOINTMENT","referenceId":10,"doctorId":3,"patientName":"María Gonzales","doctorName":"Carlos Ramírez","specialty":"Cardiología","appointmentStatus":"SCHEDULED","reason":"Dolor de cabeza persistente","scheduledAt":"2026-10-05T10:30:00","read":false,"createdAt":"2026-09-23T17:45:00"}
 
             """;
 }

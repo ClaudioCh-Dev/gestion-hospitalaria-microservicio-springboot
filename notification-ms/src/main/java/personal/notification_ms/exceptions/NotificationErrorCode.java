@@ -6,7 +6,8 @@ import personal.shared.exception.ErrorCode;
 
 public enum NotificationErrorCode implements ErrorCode {
 
-    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND.value());
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND.value()),
+    SSE_USER_REQUIRED(HttpStatus.UNAUTHORIZED.value());
 
     private final int status;
 

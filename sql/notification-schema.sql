@@ -15,6 +15,17 @@ CREATE TABLE IF NOT EXISTS notifications (
     message TEXT NOT NULL,
     reference_type VARCHAR(50),
     reference_id BIGINT,
+
+    -- Datos de la cita (metadata del evento de Kafka)
+    doctor_id BIGINT,
+    doctor_user_id BIGINT,
+    patient_name VARCHAR(255),
+    doctor_name VARCHAR(255),
+    specialty VARCHAR(255),
+    reason TEXT,
+    appointment_status VARCHAR(50),
+    scheduled_at TIMESTAMP NULL,
+
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -41,6 +52,10 @@ CREATE TABLE IF NOT EXISTS notification_recipients (
 
 CREATE INDEX idx_notifications_reference
     ON notifications(reference_type, reference_id);
+
+-- GET /crud/me: notificaciones del médico autenticado
+CREATE INDEX idx_notifications_doctor_user
+    ON notifications(doctor_user_id, created_at);
 
 CREATE INDEX idx_notification_recipients_user_id
     ON notification_recipients(user_id);

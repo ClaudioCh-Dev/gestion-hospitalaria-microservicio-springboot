@@ -34,12 +34,12 @@ public class NotificationController implements NotificationApiDocs {
 
     @Override
     @PreAuthorize("@auth.hasPermission('NOTIFICATION_READ_DOCTOR')")
-    @GetMapping("/doctor/{doctorId}")
-    public ResponseEntity<List<NotificationResponse>> findMyDoctorNotifications(
-            @PathVariable Long doctorId) {
+    @GetMapping("/me")
+    public ResponseEntity<List<NotificationResponse>> findMine() {
 
+        // El médico sale del token (X-User-Id): no se puede pedir las de otro
         return ResponseEntity.ok(
-                service.findMyDoctorNotifications(doctorId)
+                service.findMine()
         );
     }
 
@@ -54,7 +54,8 @@ public class NotificationController implements NotificationApiDocs {
     }
 
     @Override
-    @PreAuthorize("@auth.hasPermission('NOTIFICATION_MARK_READ_DOCTOR')")
+    // La lectura se guarda por userId (el del token): el permiso solo decide quién puede llamar
+    @PreAuthorize("@auth.hasPermission('NOTIFICATION_MARK_READ_DOCTOR') or @auth.hasPermission('NOTIFICATION_MARK_READ_ADMIN')")
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Void> markAsRead(
             @PathVariable Long notificationId) {

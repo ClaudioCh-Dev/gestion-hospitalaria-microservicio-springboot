@@ -42,20 +42,18 @@ public interface NotificationApiDocs {
                     examples = @ExampleObject(value = ErrorExamples.INVALID_REQUEST_BODY)))
     ResponseEntity<NotificationResponse> save(NotificationRequest request);
 
-    @Operation(summary = "Notificaciones de un doctor", description = "Requiere NOTIFICATION_READ_DOCTOR.")
-    @Parameter(name = "doctorId", in = ParameterIn.PATH, description = "ID del doctor", example = "3")
-    @ApiResponse(responseCode = "200", description = "Notificaciones del doctor (lista vacía si no tiene)",
+    @Operation(summary = "Mis notificaciones (médico)",
+            description = "Últimas 50 notificaciones de las citas del médico autenticado (el usuario sale del token), "
+                    + "de la más reciente a la más antigua. 'read' indica si este usuario ya la leyó. Requiere NOTIFICATION_READ_DOCTOR.")
+    @ApiResponse(responseCode = "200", description = "Notificaciones del médico (lista vacía si no tiene)",
             content = @Content(mediaType = "application/json",
                     array = @ArraySchema(schema = @Schema(implementation = NotificationResponse.class)),
                     examples = @ExampleObject(value = NotificationExamples.NOTIFICATION_LIST)))
-    @ApiResponse(responseCode = "400", description = "ID con formato inválido",
-            content = @Content(mediaType = ErrorExamples.PROBLEM_JSON,
-                    schema = @Schema(implementation = ProblemDetail.class),
-                    examples = @ExampleObject(value = ErrorExamples.INVALID_PARAMETER)))
-    ResponseEntity<List<NotificationResponse>> findMyDoctorNotifications(Long doctorId);
+    ResponseEntity<List<NotificationResponse>> findMine();
 
     @Operation(summary = "Notificaciones para administración",
-            description = "Todas las notificaciones, de la más reciente a la más antigua. Requiere NOTIFICATION_READ_ADMIN.")
+            description = "Últimas 50 notificaciones de todas las citas, de la más reciente a la más antigua. "
+                    + "'read' indica si el admin autenticado ya la leyó. Requiere NOTIFICATION_READ_ADMIN.")
     @ApiResponse(responseCode = "200", description = "Lista de notificaciones",
             content = @Content(mediaType = "application/json",
                     array = @ArraySchema(schema = @Schema(implementation = NotificationResponse.class)),
@@ -63,9 +61,10 @@ public interface NotificationApiDocs {
     ResponseEntity<List<NotificationResponse>> findForAdmin();
 
     @Operation(summary = "Marcar notificación como leída",
-            description = "Marca la notificación como leída para el usuario autenticado. Requiere NOTIFICATION_MARK_READ_DOCTOR.")
+            description = "Marca la notificación como leída para el usuario autenticado. Requiere NOTIFICATION_MARK_READ_DOCTOR o NOTIFICATION_MARK_READ_ADMIN.")
     @Parameter(name = "notificationId", in = ParameterIn.PATH, description = "ID de la notificación", example = "25")
     @ApiResponse(responseCode = "204", description = "Notificación marcada como leída", content = @Content)
+    @ApiResponse(responseCode = "404", description = "La notificación no existe", content = @Content)
     @ApiResponse(responseCode = "400", description = "ID con formato inválido",
             content = @Content(mediaType = ErrorExamples.PROBLEM_JSON,
                     schema = @Schema(implementation = ProblemDetail.class),
