@@ -51,6 +51,12 @@ public class RefreshTokenServiceImpl implements IRefreshTokenService {
                 tokenHash
         );
 
+        // El índice vive lo mismo que el token más nuevo: sin esto acumula hashes vencidos para siempre
+        redisTemplate.expire(
+                userKey,
+                Duration.ofSeconds(refreshTokenExpiration)
+        );
+
         return refreshToken;
     }
 

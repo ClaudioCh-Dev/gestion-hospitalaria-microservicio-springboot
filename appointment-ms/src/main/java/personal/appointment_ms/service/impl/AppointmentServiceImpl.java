@@ -149,20 +149,19 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 // 8. Guardar
                 Appointment savedAppointment = appointmentRepository.save(appointment);
 
-                // 9. Crear evento
-                // AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
+                // 9. Crear evento con la cita guardada (trae el id asignado por la BD)
                 AppointmentCreatedEvent appointmentEvent = new AppointmentCreatedEvent(
-                                appointment.getId(),
-                                appointment.getAppointmentType().getTitle(),
-                                appointment.getPatientId(),
+                                savedAppointment.getId(),
+                                savedAppointment.getAppointmentType().getTitle(),
+                                savedAppointment.getPatientId(),
                                 patientEntity.getFullName(),
-                                appointment.getDoctorId(),
-                                findDoctorUserId(appointment.getDoctorId()),
+                                savedAppointment.getDoctorId(),
+                                findDoctorUserId(savedAppointment.getDoctorId()),
                                 doctorEntity.getFullName(),
                                 doctorEntity.getSpecialty(),
-                                appointment.getScheduledAt(),
-                                appointment.getReason(),
-                                StatusAppointment.valueOf(appointment.getStatus().name()),
+                                savedAppointment.getScheduledAt(),
+                                savedAppointment.getReason(),
+                                StatusAppointment.valueOf(savedAppointment.getStatus().name()),
                                 tariff.price(),
                                 tariff.currency());
 

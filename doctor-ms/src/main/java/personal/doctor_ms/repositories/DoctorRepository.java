@@ -15,6 +15,10 @@ public interface DoctorRepository extends JpaRepository<Doctor,Long> {
 
      boolean existsByEmail(String email);
 
+     boolean existsByEmailAndIdNot(String email, Long id);
+
+     boolean existsByLicenseNumber(String licenseNumber);
+
      Optional<Doctor> findByUserId(Long userId);
 
      // specialtyId y search son opcionales (null = sin filtro); search llega como patrón LIKE en minúsculas

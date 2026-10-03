@@ -107,15 +107,25 @@ public class UserServiceImpl implements IUserService {
                                         "El correo electrónico ya está registrado");
                 }
 
+                boolean roleChanged = !role.getId().equals(user.getRole().getId());
+                boolean passwordChanged = request.password() != null && !request.password().isBlank();
+
                 user.setEmail(request.email());
                 user.setRole(role);
 
-                if (request.password() != null && !request.password().isBlank()) {
+                if (passwordChanged) {
                         user.setPassword(
                                         passwordEncoder.encode(request.password()));
                 }
 
-                return toResponse(userRepository.save(user));
+                UserEntity savedUser = userRepository.save(user);
+
+                // Con otro rol u otra contraseña las sesiones abiertas ya no son válidas
+                if (roleChanged || passwordChanged) {
+                        refreshTokenService.revokeAllByUserId(id);
+                }
+
+                return toResponse(savedUser);
         }
 
         @Override
@@ -204,7 +214,9 @@ public class UserServiceImpl implements IUserService {
                 }
 
                 RoleEntity role = roleRepository.findByName("DOCTOR")
-                                .orElseThrow(() -> new RuntimeException("Rol DOCTOR no encontrado"));
+                                .orElseThrow(() -> new BusinessException(
+                                                AuthErrorCode.ROLE_NOT_FOUND,
+                                                "Rol DOCTOR no encontrado"));
 
                 String activationToken = UUID.randomUUID().toString();
 
@@ -229,6 +241,12 @@ public class UserServiceImpl implements IUserService {
         public void changePasswordMe(ChangePasswordRequest request) {
 
                 UserContext context = UserContextHolder.get();
+
+                if (context == null || context.userId() == null) {
+                        throw new BusinessException(
+                                        AuthErrorCode.AUTH_INVALID_TOKEN,
+                                        "Usuario no autenticado");
+                }
 
                 UserEntity user = findUser(context.userId());
 

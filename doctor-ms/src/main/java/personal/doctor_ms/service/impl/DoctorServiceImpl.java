@@ -103,6 +103,14 @@ public class DoctorServiceImpl implements IDoctorService {
             );
         }
 
+        // Se valida antes de crear el usuario en auth-server para no dejarlo huérfano
+        if (doctorRepository.existsByLicenseNumber(request.licenseNumber())) {
+            throw new BusinessException(
+                    DoctorErrorCode.DOCTOR_LICENSE_NUMBER_ALREADY_EXISTS,
+                    "El número de licencia ya está registrado"
+            );
+        }
+
         // 1. Verificar especialidad
         Specialty specialty = specialtyRepository
                 .findById(request.specialtyId())
@@ -184,6 +192,14 @@ public class DoctorServiceImpl implements IDoctorService {
                         "Doctor no encontrado"
                 ));
 
+        if (request.email() != null
+                && doctorRepository.existsByEmailAndIdNot(request.email(), id)) {
+            throw new BusinessException(
+                    DoctorErrorCode.DOCTOR_ALREADY_EXISTS,
+                    "El correo electrónico ya está registrado"
+            );
+        }
+
         Specialty specialty = specialtyRepository
                 .findById(request.specialtyId())
                 .orElseThrow(() -> new BusinessException(
@@ -198,23 +214,26 @@ public class DoctorServiceImpl implements IDoctorService {
         doctor.setSpecialty(specialty);
         doctor.setScheduleStart(request.scheduleStart());
         doctor.setScheduleEnd(request.scheduleEnd());
-        doctor.setActive(request.active());
+        if (request.active() != null) {
+            doctor.setActive(request.active());
+        }
+
+        // Primero se guarda y luego se avisa: si el save falla no debe salir el evento
+        Doctor updatedDoctor = doctorRepository.save(doctor);
 
         doctorPublisher.publishDoctorUpdated(
                 new DoctorUpdateEvent(
-                        doctor.getId(),
-                        doctor.getLicenseNumber(),
-                        doctor.getFirstName(),
-                        doctor.getLastName(),
-                        doctor.getEmail(),
-                        doctor.getPhone(),
-                        doctor.getUserId(),
-                        doctor.getSpecialty().getName()
+                        updatedDoctor.getId(),
+                        updatedDoctor.getLicenseNumber(),
+                        updatedDoctor.getFirstName(),
+                        updatedDoctor.getLastName(),
+                        updatedDoctor.getEmail(),
+                        updatedDoctor.getPhone(),
+                        updatedDoctor.getUserId(),
+                        updatedDoctor.getSpecialty().getName()
                 )
         );
 
-        return doctorMapper.toResponse(
-                doctorRepository.save(doctor)
-        );
+        return doctorMapper.toResponse(updatedDoctor);
     }
 }

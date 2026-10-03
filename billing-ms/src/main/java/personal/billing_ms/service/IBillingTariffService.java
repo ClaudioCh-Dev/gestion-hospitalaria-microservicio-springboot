@@ -18,6 +18,9 @@ public interface IBillingTariffService {
 
     List<BillingTariffResponse> getTariffs();
 
+    boolean existsTariff(
+            Long appointmentTypeId);
+
     BillingTariffResponse getTariff(
             Long appointmentTypeId);
 

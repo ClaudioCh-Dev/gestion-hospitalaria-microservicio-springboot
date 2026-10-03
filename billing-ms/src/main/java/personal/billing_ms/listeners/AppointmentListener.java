@@ -70,18 +70,23 @@ public class AppointmentListener {
                             "Received appointment created type event: {}",
                             event);
                    
-                    if(billingTariffService.getTariff(event.id()) != null) {
+                    // getTariff lanza 404 si no existe: se pregunta con existsTariff
+                    BigDecimal price = event.price() != null
+                            ? event.price()
+                            : BigDecimal.ZERO;
+
+                    if (billingTariffService.existsTariff(event.id())) {
                         UpdateBillingTariffRequest request = new UpdateBillingTariffRequest(
-                            BigDecimal.ZERO,
+                            price,
                             "PEN");
-                        
+
                         billingTariffService.updateTariff(event.id(), request);
                         return;
                     }
 
                     CreateBillingTariffRequest request = new CreateBillingTariffRequest(
                             event.id(),
-                            BigDecimal.ZERO,
+                            price,
                             "PEN");
 
                     billingTariffService.createTariff(request);
