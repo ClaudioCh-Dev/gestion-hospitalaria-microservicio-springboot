@@ -38,7 +38,14 @@ public class MedicalRecordServiceImpl implements IMedicalRecordService {
     @Override
     public void save(MedicalRecordReadyEvent event) {
 
+        // Kafka puede reenviar el evento: si la cita ya tiene registro se actualiza
+        // (appointmentId es único y un segundo insert fallaría con DuplicateKeyException)
+        String existingId = repository.findByAppointmentId(event.appointmentId())
+                .map(MedicalRecord::getId)
+                .orElse(null);
+
         MedicalRecord record = MedicalRecord.builder()
+                .id(existingId)
                 .appointmentId(event.appointmentId())
                 .patientId(event.patientId())
                 .patientName(event.patientName())

@@ -30,6 +30,8 @@ import personal.appointment_ms.repositories.AppointmentRepository;
 import personal.appointment_ms.repositories.AppointmentTypeRepository;
 import personal.appointment_ms.repositories.DoctorRepository;
 import personal.appointment_ms.repositories.PatientRepository;
+import personal.appointment_ms.security.UserContext;
+import personal.appointment_ms.security.UserContextHolder;
 import personal.appointment_ms.service.IAppointmentService;
 import personal.appointment_ms.streams.AppointmentPublisher;
 import personal.shared.event.AppointmentCreatedEvent;
@@ -147,19 +149,19 @@ public class AppointmentServiceImpl implements IAppointmentService {
                 // 8. Guardar
                 Appointment savedAppointment = appointmentRepository.save(appointment);
 
-                // 9. Crear evento
-                // AppointmentEvent appointmentEvent = buildAppointmentEvent(savedAppointment);
+                // 9. Crear evento con la cita guardada (trae el id asignado por la BD)
                 AppointmentCreatedEvent appointmentEvent = new AppointmentCreatedEvent(
-                                appointment.getId(),
-                                appointment.getAppointmentType().getTitle(),
-                                appointment.getPatientId(),
+                                savedAppointment.getId(),
+                                savedAppointment.getAppointmentType().getTitle(),
+                                savedAppointment.getPatientId(),
                                 patientEntity.getFullName(),
-                                appointment.getDoctorId(),
+                                savedAppointment.getDoctorId(),
+                                findDoctorUserId(savedAppointment.getDoctorId()),
                                 doctorEntity.getFullName(),
                                 doctorEntity.getSpecialty(),
-                                appointment.getScheduledAt(),
-                                appointment.getReason(),
-                                StatusAppointment.valueOf(appointment.getStatus().name()),
+                                savedAppointment.getScheduledAt(),
+                                savedAppointment.getReason(),
+                                StatusAppointment.valueOf(savedAppointment.getStatus().name()),
                                 tariff.price(),
                                 tariff.currency());
 
@@ -206,6 +208,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
         public List<AppointmentResponse> getAppointmentsByDoctor(
                         Long doctorId) {
 
+                assertCanAccessDoctor(doctorId);
+
                 return appointmentRepository
                                 .findByDoctorId(doctorId)
                                 .stream()
@@ -237,6 +241,8 @@ public class AppointmentServiceImpl implements IAppointmentService {
                                                 AppointmentErrorCode.APPOINTMENT_NOT_FOUND,
                                                 "Cita no encontrada"));
 
+                assertCanAccessDoctor(appointment.getDoctorId());
+
                 if (request.status() == appointment.getStatus()) {
                         throw new BusinessException(
                                         AppointmentErrorCode.APPOINTMENT_STATUS_ALREADY_SET,
@@ -254,7 +260,9 @@ public class AppointmentServiceImpl implements IAppointmentService {
 
                 AppointmentUpdateStatusEvent appointmentEvent = new AppointmentUpdateStatusEvent(
                                 updatedAppointment.getId(),
-                                StatusAppointment.valueOf(updatedAppointment.getStatus().name()));
+                                StatusAppointment.valueOf(updatedAppointment.getStatus().name()),
+                                updatedAppointment.getDoctorId(),
+                                findDoctorUserId(updatedAppointment.getDoctorId()));
 
                 appointmentPublisher.publishAppointmentStatusUpdated(
                                 appointmentEvent);
@@ -265,6 +273,50 @@ public class AppointmentServiceImpl implements IAppointmentService {
         @Override
         public void cancelAppointment(Long id) {
                updateStatus(id, new UpdateAppointmentStatusRequest(AppointmentStatus.CANCELLED));
+        }
+
+        /**
+         * Con APPOINTMENT_READ (agenda completa, administración) se accede a cualquier médico.
+         * Sin él (rol DOCTOR) solo a las citas propias: el médico consultado debe estar
+         * vinculado al usuario autenticado (userId en doctor-ms).
+         */
+        private void assertCanAccessDoctor(Long doctorId) {
+
+                UserContext context = UserContextHolder.get();
+
+                if (context != null && context.hasPermission("APPOINTMENT_READ")) {
+                        return;
+                }
+
+                DoctorResponse doctor = doctorClient.findById(doctorId);
+
+                boolean isOwner = context != null
+                                && context.userId() != null
+                                && doctor != null
+                                && context.userId().equals(doctor.userId());
+
+                if (!isOwner) {
+                        throw new BusinessException(
+                                        AppointmentErrorCode.APPOINTMENT_ACCESS_DENIED,
+                                        "Solo puedes acceder a tus propias citas");
+                }
+        }
+
+        /**
+         * userId (auth-server) del médico, para que notification-ms le envíe la notificación solo a él.
+         * La copia local (doctors_appointment) no lo guarda, así que se consulta doctor-ms. Si falla,
+         * la cita no se bloquea: el evento sale sin destinatario médico y solo lo reciben los admins.
+         */
+        private Long findDoctorUserId(Long doctorId) {
+
+                try {
+                        DoctorResponse doctor = doctorClient.findById(doctorId);
+                        return doctor != null ? doctor.userId() : null;
+
+                } catch (RuntimeException e) {
+                        log.warn("No se pudo obtener el userId del doctor {}: {}", doctorId, e.getMessage());
+                        return null;
+                }
         }
 
         private AppointmentResponse toResponse(

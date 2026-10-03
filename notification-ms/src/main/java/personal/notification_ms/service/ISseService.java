@@ -6,6 +6,9 @@ public interface ISseService {
     
     SseEmitter subscribe();
     
-    void sendNotification(Object event);
+    /**
+     * Envía el evento a los admins conectados (NOTIFICATION_READ_ADMIN) y a las conexiones
+     * del usuario indicado (el médico de la cita). Si doctorUserId es null, solo a los admins.
+     */
+    void sendNotification(Long doctorUserId, Object event);
 }
-

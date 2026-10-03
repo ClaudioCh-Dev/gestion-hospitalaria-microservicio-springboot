@@ -34,7 +34,7 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
         AppointmentType appointmentType = AppointmentType.builder()
                 .title(request.title())
                 .description(request.description())
-                .active(false)
+                .active(true)
                 .color(request.color() != null
                         ? request.color()
                         : AppointmentTypeColor.DEFAULT)
@@ -48,7 +48,8 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
                         saved.getId(),
                         saved.getTitle(),
                         saved.getDescription(),
-                        saved.getActive()
+                        saved.getActive(),
+                        request.price()
                 )
         );
 
@@ -97,6 +98,10 @@ public class AppointmentTypeServiceImpl implements IAppointmentTypeService {
 
         if (request.color() != null) {
             appointmentType.setColor(request.color());
+        }
+
+        if (request.active() != null) {
+            appointmentType.setActive(request.active());
         }
 
         AppointmentType updated =

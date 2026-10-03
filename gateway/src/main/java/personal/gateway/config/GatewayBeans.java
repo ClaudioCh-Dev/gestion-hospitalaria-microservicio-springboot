@@ -222,6 +222,12 @@ public class GatewayBeans {
                                 // NOTIFICATION
                                 // ------------------------------------------------
 
+                                // Stream SSE: conexión larga, sin circuit breaker porque
+                                // su time limiter (4s) la cortaría. Debe ir antes de /notifications/**
+                                .route("notification-stream", route -> route
+                                                .path("/notifications/stream")
+                                                .uri("lb://notification-ms"))
+
                                 .route(route -> route
                                                 .path("/notifications/**")
                                                 .filters(filter -> filter

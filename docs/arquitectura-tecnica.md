@@ -128,8 +128,9 @@ Compartida por `patient-ms`, `doctor-ms`, `appointment-ms`, `billing-ms` (cada u
 ### MySQL `notification_db` (host `3307`, `sql/notification-schema.sql`)
 Solo `notification-ms`.
 
-- `notifications` — id, type, title, message, reference_type, reference_id, created_at
-- `notification_recipients` — id, notification_id → notifications (cascade), user_id, `read`, read_at (índices por reference, user_id, notification_id, user_id+read)
+- `notifications` — id, type, title, message, reference_type, reference_id, datos de la cita (doctor_id, doctor_user_id, patient_name, doctor_name, specialty, reason, appointment_status, scheduled_at), created_at
+- `notification_recipients` — lectura por usuario: id, notification_id → notifications (cascade), user_id, `read`, read_at (índices por reference, doctor_user_id, user_id, notification_id, user_id+read)
+- BD ya existente: aplicar `sql/notification-migration-001-appointment-fields.sql`
 
 ### MongoDB `medical_records` (puerto `27017`)
 Solo `medical-record-listener`. Colección `medical_records`, documento `MedicalRecord`: `_id`, `appointmentId` (único, indexado), `patientId`, `patientName`, `doctorId`, `doctorName`, `specialty`, `scheduledAt`, `reason`, `status`, `amount`.

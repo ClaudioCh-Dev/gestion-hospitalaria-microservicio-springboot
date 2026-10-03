@@ -85,6 +85,15 @@ public class BillingTariffServiceImpl implements IBillingTariffService {
 
     @Override
     @Transactional(readOnly = true)
+    public boolean existsTariff(
+            Long appointmentTypeId
+    ) {
+
+        return billingTariffRepository.existsById(appointmentTypeId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public BillingTariffResponse getTariff(
             Long appointmentTypeId
     ) {

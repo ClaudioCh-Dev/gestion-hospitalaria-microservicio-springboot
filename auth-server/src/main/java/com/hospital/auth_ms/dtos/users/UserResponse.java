@@ -5,5 +5,7 @@ public record UserResponse(
         String email,
         Long roleId,
         String role,
-        boolean active
+        boolean active,
+        // Inactivo y con un correo de activación enviado que aún no se usa
+        boolean activationPending
 ) {}

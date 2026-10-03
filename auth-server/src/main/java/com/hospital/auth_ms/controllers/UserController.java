@@ -12,6 +12,7 @@ import com.hospital.auth_ms.dtos.users.ChangePasswordRequest;
 import com.hospital.auth_ms.dtos.users.CreateDoctorRequest;
 import com.hospital.auth_ms.dtos.users.CreateUserRequest;
 import com.hospital.auth_ms.dtos.users.ResendActivationRequest;
+import com.hospital.auth_ms.dtos.users.RoleResponse;
 import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
 import com.hospital.auth_ms.dtos.users.UserResponse;
 import com.hospital.auth_ms.services.IUserService;
@@ -33,6 +34,12 @@ public class UserController {
     }
 
     @PreAuthorize("@auth.hasPermission('USER_READ')")
+    @GetMapping("/roles")
+    public ResponseEntity<List<RoleResponse>> findAllRoles() {
+        return ResponseEntity.ok(userService.findAllRoles());
+    }
+
+    @PreAuthorize("@auth.hasPermission('USER_READ')")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> findById(
             @PathVariable Long id) {
@@ -44,7 +51,7 @@ public class UserController {
     @PreAuthorize("@auth.hasPermission('USER_CREATE')")
     @PostMapping
     public ResponseEntity<UserResponse> create(
-            @RequestBody CreateUserRequest request) {
+            @Valid @RequestBody CreateUserRequest request) {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -55,7 +62,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> update(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request) {
+            @Valid @RequestBody UpdateUserRequest request) {
 
         return ResponseEntity.ok(
                 userService.update(id, request));
@@ -74,7 +81,7 @@ public class UserController {
     @PreAuthorize("@auth.hasPermission('USER_CREATE')")
     @PostMapping("/doctor")
     public ResponseEntity<UserResponse> createDoctor(
-            @RequestBody CreateDoctorRequest request) {
+            @Valid @RequestBody CreateDoctorRequest request) {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -99,7 +106,7 @@ public class UserController {
 
     @PostMapping("/activate")
     public ResponseEntity<Void> activateByToken(
-            @RequestBody ActivateUserRequest request) {
+            @Valid @RequestBody ActivateUserRequest request) {
 
         userService.activateByToken(request);
 

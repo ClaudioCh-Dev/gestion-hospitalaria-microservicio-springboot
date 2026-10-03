@@ -7,11 +7,14 @@ import com.hospital.auth_ms.dtos.users.ChangePasswordRequest;
 import com.hospital.auth_ms.dtos.users.CreateDoctorRequest;
 import com.hospital.auth_ms.dtos.users.CreateUserRequest;
 import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
+import com.hospital.auth_ms.dtos.users.RoleResponse;
 import com.hospital.auth_ms.dtos.users.UserResponse;
 
 public interface IUserService {
 
     List<UserResponse> findAll();
+
+    List<RoleResponse> findAllRoles();
 
     UserResponse findById(Long id);
 

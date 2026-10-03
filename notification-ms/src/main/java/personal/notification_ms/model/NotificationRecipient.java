@@ -21,6 +21,8 @@ public class NotificationRecipient {
 
     private Long userId;
 
+    // READ es palabra reservada en MySQL: sin comillas el INSERT falla
+    @Column(name = "`read`")
     private boolean read;
 
     private LocalDateTime readAt;

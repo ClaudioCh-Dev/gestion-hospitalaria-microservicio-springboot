@@ -17,6 +17,8 @@ import personal.doctor_ms.mapper.DoctorMapper;
 import personal.doctor_ms.mapper.SpecialtyMapper;
 import personal.doctor_ms.repositories.DoctorRepository;
 import personal.doctor_ms.repositories.SpecialtyRepository;
+import personal.doctor_ms.security.UserContext;
+import personal.doctor_ms.security.UserContextHolder;
 import personal.doctor_ms.service.IDoctorService;
 import personal.doctor_ms.stream.DoctorPublisher;
 import personal.shared.event.DoctorCreatedEvent;
@@ -24,6 +26,7 @@ import personal.shared.event.DoctorUpdateEvent;
 import personal.shared.exception.BusinessException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +52,22 @@ public class DoctorServiceImpl implements IDoctorService {
                 .orElseThrow(() -> new BusinessException(
                         DoctorErrorCode.DOCTOR_NOT_FOUND,
                         "Doctor no encontrado"
+                ));
+
+        return doctorMapper.toResponse(doctor);
+    }
+
+    @Override
+    public DoctorResponse findMe() {
+
+        UserContext context = UserContextHolder.get();
+
+        Doctor doctor = (context == null || context.userId() == null
+                ? Optional.<Doctor>empty()
+                : doctorRepository.findByUserId(context.userId()))
+                .orElseThrow(() -> new BusinessException(
+                        DoctorErrorCode.DOCTOR_NOT_FOUND,
+                        "El usuario no tiene un médico asociado"
                 ));
 
         return doctorMapper.toResponse(doctor);
@@ -81,6 +100,14 @@ public class DoctorServiceImpl implements IDoctorService {
             throw new BusinessException(
                     DoctorErrorCode.DOCTOR_ALREADY_EXISTS,
                     "El correo electrónico ya está registrado"
+            );
+        }
+
+        // Se valida antes de crear el usuario en auth-server para no dejarlo huérfano
+        if (doctorRepository.existsByLicenseNumber(request.licenseNumber())) {
+            throw new BusinessException(
+                    DoctorErrorCode.DOCTOR_LICENSE_NUMBER_ALREADY_EXISTS,
+                    "El número de licencia ya está registrado"
             );
         }
 
@@ -165,6 +192,14 @@ public class DoctorServiceImpl implements IDoctorService {
                         "Doctor no encontrado"
                 ));
 
+        if (request.email() != null
+                && doctorRepository.existsByEmailAndIdNot(request.email(), id)) {
+            throw new BusinessException(
+                    DoctorErrorCode.DOCTOR_ALREADY_EXISTS,
+                    "El correo electrónico ya está registrado"
+            );
+        }
+
         Specialty specialty = specialtyRepository
                 .findById(request.specialtyId())
                 .orElseThrow(() -> new BusinessException(
@@ -179,23 +214,26 @@ public class DoctorServiceImpl implements IDoctorService {
         doctor.setSpecialty(specialty);
         doctor.setScheduleStart(request.scheduleStart());
         doctor.setScheduleEnd(request.scheduleEnd());
-        doctor.setActive(request.active());
+        if (request.active() != null) {
+            doctor.setActive(request.active());
+        }
+
+        // Primero se guarda y luego se avisa: si el save falla no debe salir el evento
+        Doctor updatedDoctor = doctorRepository.save(doctor);
 
         doctorPublisher.publishDoctorUpdated(
                 new DoctorUpdateEvent(
-                        doctor.getId(),
-                        doctor.getLicenseNumber(),
-                        doctor.getFirstName(),
-                        doctor.getLastName(),
-                        doctor.getEmail(),
-                        doctor.getPhone(),
-                        doctor.getUserId(),
-                        doctor.getSpecialty().getName()
+                        updatedDoctor.getId(),
+                        updatedDoctor.getLicenseNumber(),
+                        updatedDoctor.getFirstName(),
+                        updatedDoctor.getLastName(),
+                        updatedDoctor.getEmail(),
+                        updatedDoctor.getPhone(),
+                        updatedDoctor.getUserId(),
+                        updatedDoctor.getSpecialty().getName()
                 )
         );
 
-        return doctorMapper.toResponse(
-                doctorRepository.save(doctor)
-        );
+        return doctorMapper.toResponse(updatedDoctor);
     }
 }

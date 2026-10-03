@@ -35,6 +35,12 @@ public class DoctorController implements DoctorApiDocs {
                                 doctorService.findAll(pageable, search));
         }
 
+        // Sin permiso específico: cada médico puede ver su propio perfil
+        @GetMapping("/me")
+        public ResponseEntity<DoctorResponse> findMe() {
+                return ResponseEntity.ok(doctorService.findMe());
+        }
+
         @Override
         @GetMapping("/{id}")
         @PreAuthorize("@auth.hasPermission('DOCTOR_READ')")

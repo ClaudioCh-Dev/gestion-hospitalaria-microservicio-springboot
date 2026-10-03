@@ -3,6 +3,7 @@ package personal.billing_ms.repositories;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,8 @@ import personal.billing_ms.entities.BillingStatus;
 public interface BillingRepository
         extends JpaRepository<BillingRecord, Long>,
         JpaSpecificationExecutor<BillingRecord> {
+
+    Optional<BillingRecord> findByAppointmentId(Long appointmentId);
 
     Page<BillingRecord> findByPatientId(
             Long patientId,

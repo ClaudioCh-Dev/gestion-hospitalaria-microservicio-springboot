@@ -204,7 +204,7 @@ public class BillingRecordServiceImpl
     public BillingRecordResponse cancelBillingRecord(Long appointmentId) {
 
         BillingRecord billingRecord =
-                billingRepository.findById(appointmentId)
+                billingRepository.findByAppointmentId(appointmentId)
                         .orElseThrow(() -> new BusinessException(
                                 BillingErrorCode.BILLING_RECORD_NOT_FOUND,
                                 "Registro de facturación no encontrado"

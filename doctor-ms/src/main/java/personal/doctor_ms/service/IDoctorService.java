@@ -17,6 +17,9 @@ public interface IDoctorService {
 
     DoctorResponse findById(Long id);
 
+    // Médico vinculado al usuario autenticado
+    DoctorResponse findMe();
+
     Page<DoctorResponse> findBySpecialty(
             Long specialtyId,
             Pageable pageable,

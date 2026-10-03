@@ -10,7 +10,7 @@ public record UpdateUserRequest(
         @Email(message = "El email debe ser válido")
         String email,
 
-        @NotBlank(message = "La contraseña es requerida")
+        // Opcional: si viene vacía se conserva la actual
         String password,
 
         @NotNull(message = "El rol es requerido")

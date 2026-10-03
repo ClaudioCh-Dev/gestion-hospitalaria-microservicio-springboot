@@ -308,6 +308,22 @@ public class DataSeeder {
 
                                 log.info("Permiso creado: USER_DELETE");
 
+                                // Panel de indicadores generales: solo administración
+                                PermissionEntity dashboardRead = permissionRepository.save(
+                                                PermissionEntity.builder()
+                                                                .name("DASHBOARD_READ")
+                                                                .build());
+
+                                log.info("Permiso creado: DASHBOARD_READ");
+
+                                // Pantalla de gestión de tipos de cita (leerlos sigue siendo APPOINTMENT_TYPE_READ)
+                                PermissionEntity appointmentTypeManage = permissionRepository.save(
+                                                PermissionEntity.builder()
+                                                                .name("APPOINTMENT_TYPE_MANAGE")
+                                                                .build());
+
+                                log.info("Permiso creado: APPOINTMENT_TYPE_MANAGE");
+
                                 log.info("TODOS LOS PERMISOS CREADOS");
 
                                 // =========================
@@ -355,7 +371,9 @@ public class DataSeeder {
                                                                                 userRead,
                                                                                 userCreate,
                                                                                 userUpdate,
-                                                                                userDelete))
+                                                                                userDelete,
+                                                                                dashboardRead,
+                                                                                appointmentTypeManage))
                                                                 .build());
 
                                 log.info("ROL ADMIN CREADO - ID: {}", admin.getId());
@@ -367,7 +385,6 @@ public class DataSeeder {
                                                                 .name("DOCTOR")
                                                                 .permissions(Set.of(
                                                                                 patientRead,
-                                                                                appointmentRead,
                                                                                 appointmentReadByDoctor,
                                                                                 appointmentUpdateStatus,
                                                                                 appointmentTypeRead,

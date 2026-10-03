@@ -11,6 +11,7 @@ import com.hospital.auth_ms.dtos.users.ActivateUserRequest;
 import com.hospital.auth_ms.dtos.users.ChangePasswordRequest;
 import com.hospital.auth_ms.dtos.users.CreateDoctorRequest;
 import com.hospital.auth_ms.dtos.users.CreateUserRequest;
+import com.hospital.auth_ms.dtos.users.RoleResponse;
 import com.hospital.auth_ms.dtos.users.UpdateUserRequest;
 import com.hospital.auth_ms.dtos.users.UserResponse;
 import com.hospital.auth_ms.entities.RoleEntity;
@@ -49,6 +50,14 @@ public class UserServiceImpl implements IUserService {
         }
 
         @Override
+        public List<RoleResponse> findAllRoles() {
+                return roleRepository.findAll()
+                                .stream()
+                                .map(role -> new RoleResponse(role.getId(), role.getName()))
+                                .toList();
+        }
+
+        @Override
         public UserResponse findById(Long id) {
                 return toResponse(findUser(id));
         }
@@ -63,8 +72,7 @@ public class UserServiceImpl implements IUserService {
                                         "El correo electrónico ya está registrado");
                 }
 
-                RoleEntity role = roleRepository.findById(request.roleId())
-                                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+                RoleEntity role = findRole(request.roleId());
 
                 String activationToken = UUID.randomUUID().toString();
 
@@ -90,24 +98,48 @@ public class UserServiceImpl implements IUserService {
 
                 UserEntity user = findUser(id);
 
-                RoleEntity role = roleRepository.findById(request.roleId())
-                                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+                RoleEntity role = findRole(request.roleId());
+
+                if (!user.getEmail().equalsIgnoreCase(request.email())
+                                && userRepository.existsByEmail(request.email())) {
+                        throw new BusinessException(
+                                        AuthErrorCode.EMAIL_ALREADY_EXISTS,
+                                        "El correo electrónico ya está registrado");
+                }
+
+                boolean roleChanged = !role.getId().equals(user.getRole().getId());
+                boolean passwordChanged = request.password() != null && !request.password().isBlank();
 
                 user.setEmail(request.email());
                 user.setRole(role);
 
-                if (request.password() != null && !request.password().isBlank()) {
+                if (passwordChanged) {
                         user.setPassword(
                                         passwordEncoder.encode(request.password()));
                 }
 
-                return toResponse(userRepository.save(user));
+                UserEntity savedUser = userRepository.save(user);
+
+                // Con otro rol u otra contraseña las sesiones abiertas ya no son válidas
+                if (roleChanged || passwordChanged) {
+                        refreshTokenService.revokeAllByUserId(id);
+                }
+
+                return toResponse(savedUser);
         }
 
         @Override
         public void delete(Long id) {
 
                 UserEntity user = findUser(id);
+
+                UserContext context = UserContextHolder.get();
+
+                if (context != null && id.equals(context.userId())) {
+                        throw new BusinessException(
+                                        AuthErrorCode.USER_CANNOT_DEACTIVATE_SELF,
+                                        "No puedes desactivar tu propio usuario");
+                }
 
                 if ("ADMIN".equals(user.getRole().getName())) {
                         throw new BusinessException(
@@ -182,7 +214,9 @@ public class UserServiceImpl implements IUserService {
                 }
 
                 RoleEntity role = roleRepository.findByName("DOCTOR")
-                                .orElseThrow(() -> new RuntimeException("Rol DOCTOR no encontrado"));
+                                .orElseThrow(() -> new BusinessException(
+                                                AuthErrorCode.ROLE_NOT_FOUND,
+                                                "Rol DOCTOR no encontrado"));
 
                 String activationToken = UUID.randomUUID().toString();
 
@@ -208,6 +242,12 @@ public class UserServiceImpl implements IUserService {
 
                 UserContext context = UserContextHolder.get();
 
+                if (context == null || context.userId() == null) {
+                        throw new BusinessException(
+                                        AuthErrorCode.AUTH_INVALID_TOKEN,
+                                        "Usuario no autenticado");
+                }
+
                 UserEntity user = findUser(context.userId());
 
                 if (!passwordEncoder.matches(
@@ -229,7 +269,16 @@ public class UserServiceImpl implements IUserService {
 
         private UserEntity findUser(Long id) {
                 return userRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                                .orElseThrow(() -> new BusinessException(
+                                                AuthErrorCode.USER_NOT_FOUND,
+                                                "Usuario no encontrado"));
+        }
+
+        private RoleEntity findRole(Long id) {
+                return roleRepository.findById(id)
+                                .orElseThrow(() -> new BusinessException(
+                                                AuthErrorCode.ROLE_NOT_FOUND,
+                                                "Rol no encontrado"));
         }
 
         private UserResponse toResponse(UserEntity user) {
@@ -239,7 +288,8 @@ public class UserServiceImpl implements IUserService {
                                 user.getEmail(),
                                 user.getRole().getId(),
                                 user.getRole().getName(),
-                                user.isActive());
+                                user.isActive(),
+                                !user.isActive() && user.getActivationToken() != null);
         }
 
         /*

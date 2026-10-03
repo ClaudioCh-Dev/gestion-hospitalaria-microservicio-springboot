@@ -85,7 +85,9 @@ public class PatientServiceImpl implements IPatientService {
                     "El número de documento ya está registrado");
         }
 
-        if (patientRepository.existsByEmail(request.email())) {
+        // El email es opcional: existsByEmail(null) haría "email IS NULL" y chocaría con otros pacientes sin email
+        if (request.email() != null
+                && patientRepository.existsByEmail(request.email())) {
             throw new BusinessException(
                     PatientErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
                     "El correo electrónico ya está registrado");
@@ -126,9 +128,10 @@ public class PatientServiceImpl implements IPatientService {
                     "El número de documento ya está registrado");
         }
 
-        if (patientRepository.existsByEmailAndIdNot(
-                request.email(),
-                id)) {
+        if (request.email() != null
+                && patientRepository.existsByEmailAndIdNot(
+                        request.email(),
+                        id)) {
             throw new BusinessException(
                     PatientErrorCode.PATIENT_EMAIL_ALREADY_EXISTS,
                     "El correo electrónico ya está registrado");

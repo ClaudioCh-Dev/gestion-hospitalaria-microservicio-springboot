@@ -30,5 +30,15 @@ public class Notification {
     private String referenceType; // APPOINTMENT, PAYMENT, PATIENT, etc.
     private Long referenceId;     // ID del recurso relacionado
 
+    // Datos de la cita (salen del metadata del evento): la campana los muestra sin consultar otros micros
+    private Long doctorId;
+    private Long doctorUserId;    // userId (auth-server) del médico: filtra "mis notificaciones"
+    private String patientName;
+    private String doctorName;
+    private String specialty;
+    private String reason;
+    private String appointmentStatus;
+    private LocalDateTime scheduledAt;
+
     private LocalDateTime createdAt;
 }
